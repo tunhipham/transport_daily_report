@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Output files (generated, not source code)
+output/
+!output/_build_history.py
+
+# Data files (downloaded daily, not source code)
+data/
+*.tmp
+
+# Google Drive metadata
+~$*
+~*.xlsx
+.~lock.*
+
+# Sensitive / auth
+.chrome_automail/
+.edge_automail/
+credentials.json
+token.json
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Backups (old versions stored separately)
+backups/
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,108 @@
+{
+  "schedules": [
+    {
+      "kho": "KRC",
+      "session": null,
+      "check_time": "17:00",
+      "cutoff_time": "19:00",
+      "retry_interval_min": 15,
+      "enabled": true,
+      "skip_delivery_days": [],
+      "notes": "D+1 schedule",
+      "drive_sources": [
+        {
+          "name": "KRC",
+          "type": "sheet",
+          "url": "https://docs.google.com/spreadsheets/d/1tWamqjpOI2j2MrYW3Ah6ptmT524CAlQvEP8fCkxfuII/export?format=xlsx"
+        }
+      ],
+      "require_all_sources": true
+    },
+    {
+      "kho": "DRY",
+      "session": "sang",
+      "check_time": "15:00",
+      "cutoff_time": "16:30",
+      "retry_interval_min": 15,
+      "enabled": true,
+      "skip_delivery_days": [6],
+      "notes": "D+1 morning. Skip Sunday (6) delivery",
+      "drive_sources": [
+        {
+          "name": "KFM/DRY",
+          "type": "sheet",
+          "url": "https://docs.google.com/spreadsheets/d/1LkJFJhOQ8F2WEB3uCk7kA2Phvu8IskVi3YBfVr7pBx0/export?format=xlsx"
+        }
+      ],
+      "require_all_sources": true
+    },
+    {
+      "kho": "DRY",
+      "session": "toi",
+      "check_time": "12:00",
+      "cutoff_time": "14:00",
+      "retry_interval_min": 15,
+      "enabled": true,
+      "skip_delivery_days": [6],
+      "notes": "Same-day D evening. Skip Sunday (6) delivery",
+      "drive_sources": [
+        {
+          "name": "KFM/DRY",
+          "type": "sheet",
+          "url": "https://docs.google.com/spreadsheets/d/1LkJFJhOQ8F2WEB3uCk7kA2Phvu8IskVi3YBfVr7pBx0/export?format=xlsx"
+        }
+      ],
+      "require_all_sources": true
+    },
+    {
+      "kho": "ĐÔNG MÁT",
+      "session": null,
+      "check_time": "15:00",
+      "cutoff_time": "19:00",
+      "retry_interval_min": 15,
+      "enabled": true,
+      "skip_delivery_days": [0],
+      "notes": "D+1 schedule. Skip Monday (0) delivery. Requires both ĐÔNG and MÁT files",
+      "drive_sources": [
+        {
+          "name": "KH HÀNG ĐÔNG",
+          "type": "drive_folder",
+          "url": "https://drive.google.com/drive/folders/1pQ8coYeV-K0dcHlkvXcJ8KngmH22xp1Z",
+          "file_pattern": "DD.MM.YYYY"
+        },
+        {
+          "name": "KH HÀNG MÁT",
+          "type": "drive_folder",
+          "url": "https://drive.google.com/drive/folders/1c2zfgcXM8O9ezkOZYj0p4t_ihaJmb98f",
+          "file_pattern": "DD.MM.YYYY"
+        }
+      ],
+      "require_all_sources": true
+    },
+    {
+      "kho": "THỊT CÁ",
+      "session": null,
+      "check_time": "17:00",
+      "cutoff_time": "19:00",
+      "retry_interval_min": 15,
+      "enabled": true,
+      "skip_delivery_days": [],
+      "notes": "D+1 schedule",
+      "drive_sources": [
+        {
+          "name": "KH MEAT",
+          "type": "drive_folder",
+          "url": "https://drive.google.com/drive/folders/1GIzH8nmCbLhWfpdmxFIn9cHTvQNbnwWr",
+          "file_pattern": "DD.MM.YYYY"
+        }
+      ],
+      "require_all_sources": true
+    }
+  ],
+  "global": {
+    "max_na_percent": 10,
+    "notification_sound": true,
+    "log_file": "output/auto_compose.log",
+    "watch_poll_interval_min": 10
+  }
+}
