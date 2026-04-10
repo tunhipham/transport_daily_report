@@ -61,3 +61,12 @@ Based on "Loại rổ" (col S in trip data):
 - Review ⚠ warnings in output and report to user
 - Check weekly tables: color gradient, SLA rows, sticky columns
 - ĐÔNG MÁT plan ontime ~80% is correct (data verified 2026-04-09)
+
+## ⚠ MANDATORY: Push code lên GitHub sau khi sửa
+Repo: https://github.com/tunhipham/transport_daily_report
+```powershell
+$git = "C:\Program Files\Git\bin\git.exe"
+& $git add -A
+& $git commit -m "mô tả thay đổi"
+& $git push
+```
