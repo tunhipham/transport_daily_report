@@ -29,8 +29,7 @@ description: Daily report automation - download data and generate summary report
 ## Prerequisites
 
 - Python packages: `openpyxl`, `requests`, `playwright`
-- Working directory: `c:\Users\admin\Downloads\transport_daily_report`
-- Backup on Drive: `G:\My Drive\DOCS\transport_daily_report`
+- Working directory: `G:\My Drive\DOCS\transport_daily_report`
 
 ## Steps
 
