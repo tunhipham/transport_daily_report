@@ -243,17 +243,23 @@ Script track thay đổi ở mức **từng store + thời gian**:
 
 ## Troubleshooting
 
-### Inject bị treo / không tìm thread
-- Kill driver: `taskkill /f /im msedgedriver.exe`
-- Xoá lock: `Remove-Item .edge_automail\lockfile -Force`
+### Inject lỗi sau khi bị gián đoạn (resume/restart)
+> **Đã fix 11/04/2026** — script tự cleanup khi khởi động:
+> - Tự kill stale `msedgedriver.exe` từ session trước
+> - Tự xoá `lockfile` nếu profile bị khoá
+> - Clipboard PS1 đã trỏ đúng path Google Drive
+>
+> Nếu vẫn lỗi, chạy thủ công:
+- `taskkill /f /im msedgedriver.exe`
+- `Remove-Item $HOME\.edge_automail\lockfile -Force`
 - Chạy lại inject
 
 ### Session hết hạn
 - Script tự detect → mở login → chờ user login
-- Nếu bị lỗi: xoá `.edge_automail/` folder → chạy lại (login từ đầu)
+- Nếu bị lỗi: xoá `$HOME\.edge_automail\` folder → chạy lại (login từ đầu)
 
 ### Edge đang mở conflict
-- Script dùng profile riêng `.edge_automail/` nên KHÔNG conflict với Edge user đang dùng
+- Script dùng profile riêng `$HOME\.edge_automail\` (local disk, không phải Google Drive) nên KHÔNG conflict với Edge user đang dùng
 - Nếu vẫn lỗi: đóng tất cả Edge → chạy lại
 
 ### Data thiếu rows / có #N/A
