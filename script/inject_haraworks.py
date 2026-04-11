@@ -85,6 +85,32 @@ def get_clip_ps1_path(kho, session):
     return os.path.join(OUTPUT, "_clip_html.ps1")
 
 
+def _kill_stale_drivers():
+    """Kill leftover msedgedriver.exe from previous interrupted sessions.
+    Prevents profile lock conflicts when resuming after interruption.
+    """
+    import subprocess as _sp
+    try:
+        # Only kill msedgedriver (the Selenium-managed process), not user's Edge
+        result = _sp.run(
+            ["taskkill", "/f", "/im", "msedgedriver.exe"],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode == 0:
+            print("  🧹 Killed stale msedgedriver.exe")
+            time.sleep(1)
+    except Exception:
+        pass
+    # Also clean up lockfile if present
+    lock_path = os.path.join(os.path.expanduser("~"), ".edge_automail", "lockfile")
+    if os.path.exists(lock_path):
+        try:
+            os.remove(lock_path)
+            print("  🧹 Removed stale lockfile")
+        except Exception:
+            pass
+
+
 def setup_driver():
     """Setup Selenium WebDriver with Edge (Chromium).
     Uses a SEPARATE profile directory ('AutoMail') to avoid conflicts
@@ -92,6 +118,9 @@ def setup_driver():
     """
     from selenium import webdriver
     from selenium.webdriver.edge.options import Options as EdgeOptions
+
+    # Clean up stale processes from previous interrupted sessions
+    _kill_stale_drivers()
 
     # Use LOCAL disk for browser profile — Google Drive streaming FS causes Edge to hang
     auto_profile_dir = os.path.join(os.path.expanduser("~"), ".edge_automail")
@@ -981,7 +1010,7 @@ def inject_html_body(driver, html_content, kho="", session=None):
                         # Pass the temp file as argument
                         cp = _sp.run(
                             ["powershell", "-ExecutionPolicy", "Bypass",
-                             "-File", clip_candidate, "-File", "_inject_temp.html"],
+                             "-File", clip_candidate, "_inject_temp.html"],
                             capture_output=True, text=True, timeout=15,
                             encoding='utf-8', errors='replace'
                         )
