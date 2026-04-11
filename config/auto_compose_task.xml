@@ -44,8 +44,8 @@
   </Settings>
   <Actions Context="Author">
     <Exec>
-      <Command>c:\Users\admin\Downloads\transport_daily_report\script\auto_compose_task.bat</Command>
-      <WorkingDirectory>c:\Users\admin\Downloads\transport_daily_report</WorkingDirectory>
+      <Command>g:\My Drive\DOCS\transport_daily_report\script\auto_compose_task.bat</Command>
+      <WorkingDirectory>g:\My Drive\DOCS\transport_daily_report</WorkingDirectory>
     </Exec>
   </Actions>
 </Task>

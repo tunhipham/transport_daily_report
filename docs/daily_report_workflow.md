@@ -50,10 +50,12 @@ python -u script/generate_report.py --date DD/MM/YYYY --send
    - Donut chart: % Đóng góp sản lượng
    - Trend chart: Sản lượng theo kho (lịch sử 30 ngày)
 
-3. Sync backup to Google Drive:
+3. Push script changes to GitHub (nếu có thay đổi script):
 ```
-Copy-Item "c:\Users\admin\Downloads\transport_daily_report\script\generate_report.py" "G:\My Drive\DOCS\transport_daily_report\script\" -Force
-Copy-Item "c:\Users\admin\Downloads\transport_daily_report\output\history.json" "G:\My Drive\DOCS\transport_daily_report\output\" -Force
+git -C "G:\My Drive\DOCS\transport_daily_report" add -A
+git -C "G:\My Drive\DOCS\transport_daily_report" status
+git -C "G:\My Drive\DOCS\transport_daily_report" commit -m "mô tả thay đổi"
+git -C "G:\My Drive\DOCS\transport_daily_report" push
 ```
 
 ## Lịch Giao Hàng Theo Kho

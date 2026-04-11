@@ -82,19 +82,36 @@ def _load_backup(name):
 
 def read_xlsx_from_url(url, backup_name=None):
     import requests
-    try:
-        r = requests.get(url, allow_redirects=True, timeout=120)
-        r.raise_for_status()
-        if backup_name:
-            _save_backup(backup_name, r.content)
-        return load_workbook(BytesIO(r.content), read_only=True, data_only=True)
-    except Exception as e:
-        if backup_name:
-            cached = _load_backup(backup_name)
-            if cached:
-                print(f"    ⚠ Online lỗi, dùng backup: {backup_name}")
-                return load_workbook(BytesIO(cached), read_only=True, data_only=True)
-        raise
+    import time as _time
+    max_retries = 3
+    last_err = None
+    for attempt in range(max_retries):
+        try:
+            r = requests.get(url, allow_redirects=True, timeout=120, stream=True)
+            r.raise_for_status()
+            chunks = []
+            for chunk in r.iter_content(chunk_size=65536):
+                chunks.append(chunk)
+            content = b''.join(chunks)
+            if len(content) < 500:
+                raise ValueError(f"Response too small ({len(content)} bytes)")
+            if backup_name:
+                _save_backup(backup_name, content)
+            return load_workbook(BytesIO(content), read_only=True, data_only=True)
+        except Exception as e:
+            last_err = e
+            if attempt < max_retries - 1:
+                wait = 3 * (attempt + 1)
+                print(f"    ⚠ Attempt {attempt+1}/{max_retries} failed: {e}")
+                print(f"      Retry in {wait}s...")
+                _time.sleep(wait)
+    # All retries failed — try backup
+    if backup_name:
+        cached = _load_backup(backup_name)
+        if cached:
+            print(f"    ⚠ Online lỗi sau {max_retries} lần thử, dùng backup: {backup_name}")
+            return load_workbook(BytesIO(cached), read_only=True, data_only=True)
+    raise last_err
 
 
 def read_csv_from_url(url, retries=2, backup_name=None):
