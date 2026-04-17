@@ -38,13 +38,13 @@
     <Enabled>true</Enabled>
     <Hidden>false</Hidden>
     <RunOnlyIfIdle>false</RunOnlyIfIdle>
-    <WakeToRun>false</WakeToRun>
+    <WakeToRun>true</WakeToRun>
     <ExecutionTimeLimit>PT10M</ExecutionTimeLimit>
     <Priority>7</Priority>
   </Settings>
   <Actions Context="Author">
     <Exec>
-      <Command>g:\My Drive\DOCS\transport_daily_report\script\auto_compose_task.bat</Command>
+      <Command>g:\My Drive\DOCS\transport_daily_report\script\compose\auto_compose_task.bat</Command>
       <WorkingDirectory>g:\My Drive\DOCS\transport_daily_report</WorkingDirectory>
     </Exec>
   </Actions>
