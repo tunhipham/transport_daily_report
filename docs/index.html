@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KFM Logistics — Command Center</title>
+<meta name="description" content="Dashboard theo dõi vận hành logistics KFM — Daily, Performance, Inventory, NSO">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0b0f1a;--bg2:#111827;--bg3:#1a1f2e;--bg4:#222839;
+  --surface:rgba(17,24,39,.92);--surface2:rgba(26,31,46,.85);
+  --bd:rgba(148,163,184,.08);--bd2:rgba(148,163,184,.15);
+  --t1:#f1f5f9;--t2:#94a3b8;--t3:#64748b;--t4:#475569;
+  --ac:#6366f1;--acl:#818cf8;--acs:#4f46e5;
+  --grn:#10b981;--grnl:#34d399;--org:#f59e0b;--orgl:#fbbf24;
+  --red:#ef4444;--redl:#f87171;--pur:#a855f7;--purl:#c084fc;
+  --blu:#3b82f6;--blul:#60a5fa;--cyan:#06b6d4;--cyanl:#22d3ee;
+  --g1:linear-gradient(135deg,#6366f1,#8b5cf6);
+  --g2:linear-gradient(135deg,#06b6d4,#3b82f6);
+  --g3:linear-gradient(135deg,#10b981,#06b6d4);
+  --shadow:0 4px 24px rgba(0,0,0,.4);
+  --radius:14px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--t1);line-height:1.6;min-height:100vh;overflow-x:hidden}
+
+/* ═══ TOPBAR ═══ */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(11,15,26,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd);padding:0 2rem}
+.topbar-inner{max-width:1600px;margin:0 auto;display:flex;align-items:center;gap:1.5rem;height:60px}
+.logo{font-size:1.3rem;font-weight:800;background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;letter-spacing:-.02em}
+.tabs{display:flex;gap:2px;margin-left:1rem}
+.tab{padding:.55rem 1.2rem;border-radius:10px;font-size:.82rem;font-weight:600;color:var(--t3);cursor:pointer;transition:all .25s;border:1px solid transparent;white-space:nowrap;user-select:none}
+.tab:hover{color:var(--t2);background:rgba(99,102,241,.06)}
+.tab.active{color:var(--acl);background:rgba(99,102,241,.12);border-color:rgba(99,102,241,.2)}
+.meta{margin-left:auto;display:flex;align-items:center;gap:.8rem;font-size:.75rem;color:var(--t3)}
+.meta .dot{width:8px;height:8px;border-radius:50%;background:var(--grn);animation:pulse-dot 2s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ═══ MAIN CONTAINER ═══ */
+.main{max-width:1600px;margin:0 auto;padding:1.5rem 2rem 3rem}
+.tab-content{display:none;animation:fadeIn .4s ease}
+.tab-content.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══ LOADING ═══ */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;gap:1rem;color:var(--t3)}
+.spinner{width:40px;height:40px;border:3px solid var(--bd2);border-top-color:var(--ac);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-msg{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius);padding:1.5rem;text-align:center;color:var(--redl)}
+
+/* ═══ SECTION HEADERS ═══ */
+.section{margin-bottom:2rem}
+.section-header{display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid var(--bd)}
+.section-header h2{font-size:1.15rem;font-weight:700}
+.section-header .icon{font-size:1.2rem}
+
+/* ═══ STAT CARDS ═══ */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem}
+.stat-card{background:var(--surface);border:1px solid var(--bd);border-radius:var(--radius);padding:1.2rem 1.5rem;backdrop-filter:blur(10px);transition:all .3s}
+.stat-card:hover{transform:translateY(-3px);border-color:rgba(99,102,241,.25);box-shadow:var(--shadow)}
+.stat-card .value{font-size:2rem;font-weight:800;margin-bottom:.15rem}
+.stat-card .label{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--t3)}
+.stat-card .sub{font-size:.7rem;color:var(--t4);margin-top:.3rem}
+
+/* ═══ CHART CONTAINERS ═══ */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem}
+.chart-box{background:var(--surface);border:1px solid var(--bd);border-radius:var(--radius);padding:1.25rem;backdrop-filter:blur(10px)}
+.chart-box.full{grid-column:1/-1}
+.chart-title{font-size:.88rem;font-weight:700;color:var(--orgl);text-align:center;margin-bottom:.8rem;text-transform:uppercase;letter-spacing:.04em}
+.chart-wrap{position:relative;height:320px}
+.chart-note{font-size:.78rem;color:var(--t2);text-align:center;padding:.5rem 0;font-weight:500}
+
+/* ═══ FILTER BAR ═══ */
+.filter-bar{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;padding:.8rem 1rem;background:var(--surface);border:1px solid var(--bd);border-radius:var(--radius);margin-bottom:1.25rem;backdrop-filter:blur(10px)}
+.filter-bar label{color:var(--t2);font-size:.78rem;font-weight:600;white-space:nowrap}
+.filter-bar select,.filter-bar input[type="date"]{background:rgba(30,41,59,.8);border:1px solid var(--bd2);color:var(--t1);padding:.4rem .7rem;border-radius:8px;font-family:inherit;font-size:.8rem;outline:none;transition:border-color .2s}
+.filter-bar select:focus,.filter-bar input:focus{border-color:var(--ac)}
+.filter-bar input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(.7)}
+.fbtn{padding:.4rem .9rem;border-radius:8px;border:1px solid var(--bd2);background:transparent;color:var(--t2);cursor:pointer;font-family:inherit;font-size:.78rem;font-weight:600;transition:all .2s}
+.fbtn:hover{border-color:var(--ac);color:var(--t1)}
+.fbtn.active{background:rgba(99,102,241,.18);color:var(--acl);border-color:rgba(99,102,241,.3)}
+.fbtn.primary{background:var(--g1);color:#fff;border-color:transparent}
+.fbtn.primary:hover{opacity:.85}
+.filter-info{color:var(--t4);font-size:.72rem;margin-left:auto}
+
+/* ═══ TABLES ═══ */
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--bd)}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+thead th{background:rgba(99,102,241,.1);color:var(--acl);font-weight:600;padding:.65rem .75rem;text-align:left;white-space:nowrap;border-bottom:2px solid var(--bd)}
+tbody td{padding:.55rem .75rem;border-bottom:1px solid var(--bd);transition:background .2s}
+tbody tr:hover td{background:rgba(30,41,59,.5)}
+.tc{text-align:center}
+.tr{text-align:right}
+.number{font-variant-numeric:tabular-nums}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.badge{display:inline-block;padding:.2rem .6rem;border-radius:16px;font-size:.72rem;font-weight:600;white-space:nowrap}
+.badge-green{background:rgba(16,185,129,.12);color:var(--grn);border:1px solid rgba(16,185,129,.25)}
+.badge-orange{background:rgba(245,158,11,.12);color:var(--org);border:1px solid rgba(245,158,11,.25)}
+.badge-red{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.badge-purple{background:rgba(168,85,247,.12);color:var(--pur);border:1px solid rgba(168,85,247,.25)}
+.badge-blue{background:rgba(59,130,246,.12);color:var(--blu);border:1px solid rgba(59,130,246,.25)}
+.total-row td{background:rgba(99,102,241,.06)!important;font-weight:700;border-top:2px solid var(--bd2)}
+.kho-cell{font-weight:700}
+
+/* ═══ DONUT ═══ */
+.donut-section{display:flex;align-items:center;gap:1.5rem;justify-content:center;flex-wrap:wrap}
+.donut{width:160px;height:160px;border-radius:50%;position:relative;box-shadow:0 0 20px rgba(0,0,0,.3);flex-shrink:0}
+.donut-hole{position:absolute;top:34px;left:34px;width:92px;height:92px;border-radius:50%;background:var(--bg3);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut-val{font-size:1.5rem;font-weight:800}
+.donut-lbl{font-size:.7rem;color:var(--t3);text-transform:uppercase;font-weight:600}
+.legend{font-size:.82rem;color:var(--t1);font-weight:600}
+.legend-item{margin:.4rem 0;display:flex;align-items:center;gap:.5rem}
+.legend-color{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+
+/* ═══ NSO CALENDAR ═══ */
+.cal-wrap{background:var(--surface);border:1px solid var(--bd);border-radius:var(--radius);padding:1.25rem;backdrop-filter:blur(10px);margin-bottom:1.25rem}
+.cal-nav{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem}
+.cal-nav button{background:transparent;border:1px solid var(--bd2);color:var(--t2);width:34px;height:34px;border-radius:8px;font-size:1rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.cal-nav button:hover{border-color:var(--ac);color:var(--t1);background:rgba(99,102,241,.1)}
+.cal-title{font-size:1.05rem;font-weight:700;min-width:160px;text-align:center}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-hd{background:rgba(99,102,241,.12);color:var(--acl);font-weight:600;font-size:.72rem;padding:.4rem .3rem;text-align:center;border-radius:5px}
+.cal-cell{min-height:72px;background:rgba(30,41,59,.35);border-radius:5px;padding:.25rem .3rem;transition:background .2s}
+.cal-cell:hover{background:rgba(30,41,59,.6)}
+.cal-cell.empty{background:transparent;min-height:36px}
+.cal-cell.today{border:2px solid var(--ac)}
+.cal-day{font-size:.7rem;font-weight:600;color:var(--t3);margin-bottom:2px}
+.cal-day.sun{color:var(--red)}
+.cal-ev{font-size:.6rem;line-height:1.2;padding:2px 3px;border-radius:3px;margin-bottom:1px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-ev.upcoming{background:rgba(16,185,129,.12);color:var(--grn)}
+.cal-ev.opening{background:rgba(245,158,11,.12);color:var(--org)}
+.cal-ev.reschedule{background:rgba(168,85,247,.12);color:var(--pur)}
+
+/* ═══ NSO REPLENISHMENT CARDS ═══ */
+.rcard{background:var(--surface);border:1px solid var(--bd);border-radius:var(--radius);padding:1.2rem;margin-bottom:1rem;backdrop-filter:blur(10px)}
+.rcard-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;flex-wrap:wrap;gap:.4rem}
+.rcard-head h3{font-size:.95rem;font-weight:700}
+.vbadge{background:var(--g2);color:#fff;padding:.2rem .6rem;border-radius:8px;font-size:.72rem;font-weight:600}
+
+/* ═══ PERF FILTER PILLS ═══ */
+.pill-bar{display:inline-flex;gap:4px;margin-left:12px;vertical-align:middle;flex-wrap:wrap}
+.pill{padding:4px 12px;border-radius:16px;border:1px solid var(--bd2);background:transparent;color:var(--t3);cursor:pointer;font-size:.72rem;font-family:inherit;transition:all .2s}
+.pill:hover{background:rgba(255,255,255,.06);color:var(--t2)}
+.pill.active{background:rgba(99,102,241,.18);color:var(--acl);border-color:rgba(99,102,241,.3);font-weight:600}
+
+/* ═══ WEEKLY TABLE (PERF) ═══ */
+.weekly-table{font-size:.72rem}
+.weekly-table th,.weekly-table td{padding:5px 8px;border:1px solid var(--bd);text-align:center}
+.weekly-table thead th{background:rgba(99,102,241,.1);color:var(--acl);font-weight:600}
+.wt-kho-cell{font-weight:700;text-align:left!important;padding-left:10px!important;background:var(--bg3)!important;position:sticky;left:0;z-index:2}
+.wt-metric-cell{text-align:left!important;color:var(--t2);font-weight:500;white-space:nowrap;background:var(--bg3)!important;position:sticky;left:56px;z-index:2}
+.wt-total-cell{background:rgba(99,102,241,.06);font-weight:600}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:1024px){.chart-grid{grid-template-columns:1fr}}
+@media(max-width:768px){
+  .topbar{padding:0 1rem}
+  .topbar-inner{height:52px;gap:.8rem}
+  .logo{font-size:1.1rem}
+  .tabs{gap:1px}
+  .tab{padding:.4rem .7rem;font-size:.72rem}
+  .main{padding:1rem}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:.7rem}
+  .stat-card .value{font-size:1.5rem}
+  .chart-grid{grid-template-columns:1fr}
+  .meta{display:none}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr}
+  .tab{padding:.35rem .5rem;font-size:.68rem}
+}
+
+/* ═══ FOOTER ═══ */
+.footer{text-align:center;padding:1.5rem 0;color:var(--t4);font-size:.72rem;border-top:1px solid var(--bd);margin-top:2rem}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="logo">📊 KFM Command Center</div>
+    <div class="tabs" id="tabNav">
+      <div class="tab active" data-tab="daily" id="tab-daily">📦 Daily Report</div>
+      <div class="tab" data-tab="performance" id="tab-performance">🚛 Performance</div>
+      <div class="tab" data-tab="inventory" id="tab-inventory">📋 Inventory</div>
+      <div class="tab" data-tab="nso" id="tab-nso">🏪 NSO</div>
+    </div>
+    <div class="meta">
+      <span class="dot"></span>
+      <span id="lastUpdated">Loading...</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- ═══ DAILY TAB ═══ -->
+  <div class="tab-content active" id="content-daily">
+    <div class="loading" id="daily-loading"><div class="spinner"></div><span>Đang tải dữ liệu Daily...</span></div>
+    <div id="daily-content" style="display:none"></div>
+  </div>
+
+  <!-- ═══ PERFORMANCE TAB ═══ -->
+  <div class="tab-content" id="content-performance">
+    <div class="loading" id="perf-loading"><div class="spinner"></div><span>Đang tải dữ liệu Performance...</span></div>
+    <div id="perf-content" style="display:none"></div>
+  </div>
+
+  <!-- ═══ INVENTORY TAB ═══ -->
+  <div class="tab-content" id="content-inventory">
+    <div class="loading" id="inv-loading"><div class="spinner"></div><span>Đang tải dữ liệu Inventory...</span></div>
+    <div id="inv-content" style="display:none"></div>
+  </div>
+
+  <!-- ═══ NSO TAB ═══ -->
+  <div class="tab-content" id="content-nso">
+    <div class="loading" id="nso-loading"><div class="spinner"></div><span>Đang tải dữ liệu NSO...</span></div>
+    <div id="nso-content" style="display:none"></div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>KFM Logistics Command Center — Powered by GitHub Pages</p>
+  <p>Data updates after each report generation. Bookmark this page for latest data.</p>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// TAB NAVIGATION
+// ═══════════════════════════════════════════════
+const tabs = document.querySelectorAll('.tab');
+const contents = document.querySelectorAll('.tab-content');
+const loaded = {};
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.tab;
+    tabs.forEach(t => t.classList.remove('active'));
+    contents.forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('content-' + target).classList.add('active');
+    if (!loaded[target]) loadTab(target);
+  });
+});
+
+// ═══════════════════════════════════════════════
+// DATA FETCHING
+// ═══════════════════════════════════════════════
+async function fetchJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+function fN(v) { return Math.round(v).toLocaleString(); }
+function fD(v) { return v != null ? v.toFixed(2) : '—'; }
+function fPct(v) { return v != null ? v.toFixed(1) + '%' : '—'; }
+
+const updateTimes = {};
+function updateMeta() {
+  const times = Object.values(updateTimes).filter(Boolean);
+  if (times.length) {
+    const latest = times.sort().pop();
+    document.getElementById('lastUpdated').textContent = 'Cập nhật: ' + latest;
+  }
+}
+
+// ═══════════════════════════════════════════════
+// LOAD TAB
+// ═══════════════════════════════════════════════
+async function loadTab(name) {
+  try {
+    const data = await fetchJSON('data/' + name + '.json');
+    loaded[name] = data;
+    updateTimes[name] = data._updated || '';
+    updateMeta();
+    switch(name) {
+      case 'daily': renderDaily(data); break;
+      case 'performance': renderPerformance(data); break;
+      case 'inventory': renderInventory(data); break;
+      case 'nso': renderNSO(data); break;
+    }
+  } catch(e) {
+    document.getElementById(name === 'performance' ? 'perf' : name + '-loading' ? name : name)
+    const loadEl = document.getElementById(
+      name === 'performance' ? 'perf-loading' :
+      name === 'inventory' ? 'inv-loading' :
+      name + '-loading'
+    );
+    if (loadEl) loadEl.innerHTML = `<div class="error-msg">⚠️ Chưa có dữ liệu ${name}.<br><small>${e.message}</small><br><small>Chạy report để tạo data.</small></div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════
+// DAILY TAB
+// ═══════════════════════════════════════════════
+function renderDaily(data) {
+  document.getElementById('daily-loading').style.display = 'none';
+  const el = document.getElementById('daily-content');
+  el.style.display = 'block';
+
+  const cur = data.current;
+  const history = data.history || [];
+  const KHOS = data.kho_list || [];
+  const COLORS = data.kho_colors || {};
+
+  // Cards
+  let html = `<div class="stats-grid">
+    <div class="stat-card"><div class="value" style="color:var(--grn)">${fD(cur.total_tons)}</div><div class="label">Tổng Tấn</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--blu)">${cur.total_xe}</div><div class="label">Tổng Xe</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--org)">${cur.total_sthi}</div><div class="label">Tổng Siêu Thị</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--pur)">${fN(cur.total_items)}</div><div class="label">Tổng Items</div></div>
+  </div>`;
+
+  // Date picker
+  html += `<div class="filter-bar">
+    <label>📅 Chọn ngày:</label>
+    <select id="dailyDP" onchange="dailyOnDP(this.value)">`;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const h = history[i];
+    const isCur = h.date === cur.date;
+    html += `<option value="${h.date}"${isCur ? ' selected' : ''}>${h.date}${isCur ? ' (Hôm nay)' : ''}</option>`;
+  }
+  html += `</select></div>`;
+
+  // Table
+  html += `<div class="section"><div class="section-header"><span class="icon">📊</span><h2>Chi Tiết Theo Kho — <span id="dailyTableDate">${cur.date}</span></h2></div>
+  <div class="table-wrap"><table>
+    <thead><tr>
+      <th>Ngày</th><th>Kho</th><th class="tr">Siêu Thị</th><th class="tr">Items</th><th class="tr">Xe</th><th class="tr">Tấn</th>
+      <th class="tr" style="color:var(--blul)">Tấn/Xe</th><th class="tr" style="color:var(--blul)">Items/ST</th>
+      <th class="tr" style="color:var(--blul)">ST/Xe</th><th class="tr" style="color:var(--blul)">KG/ST</th>
+    </tr></thead>
+    <tbody id="dailyTableBody"></tbody>
+  </table></div></div>`;
+
+  // Chart controls
+  html += `<div class="filter-bar" id="dailyChartCtrl">
+    <label>📈 Khoảng thời gian:</label>
+    <button class="fbtn" onclick="dailySetRange(7,this)">7 ngày</button>
+    <button class="fbtn active" onclick="dailySetRange(14,this)">14 ngày</button>
+    <button class="fbtn" onclick="dailySetRange(30,this)">30 ngày</button>
+  </div>`;
+
+  // Charts
+  html += `<div class="chart-grid">
+    <div class="chart-box"><div class="chart-title">Trend Sản Lượng (Tấn)</div><div class="chart-wrap"><canvas id="dailyChartTon"></canvas></div><div class="chart-note" id="dailyNoteTon"></div></div>
+    <div class="chart-box"><div class="chart-title">% Đóng Góp Sản Lượng</div><div id="dailyDonut" class="donut-section" style="min-height:200px"></div></div>
+    <div class="chart-box"><div class="chart-title">Trend Items</div><div class="chart-wrap"><canvas id="dailyChartItems"></canvas></div><div class="chart-note" id="dailyNoteItems"></div></div>
+    <div class="chart-box"><div class="chart-title">Trend Xe</div><div class="chart-wrap"><canvas id="dailyChartXe"></canvas></div><div class="chart-note" id="dailyNoteXe"></div></div>
+  </div>`;
+
+  el.innerHTML = html;
+
+  // Render table
+  window._dailyData = data;
+  dailyRenderTable(cur);
+  dailyRenderDonut(cur);
+  dailyInitCharts(14);
+}
+
+function dailyRenderTable(entry) {
+  const data = window._dailyData;
+  const KHOS = data.kho_list;
+  const COLORS = data.kho_colors;
+  const full = data.current;
+  const tbody = document.getElementById('dailyTableBody');
+  if (!tbody) return;
+  document.getElementById('dailyTableDate').textContent = entry.date;
+
+  let html = '';
+  let tST=0,tIT=0,tXE=0,tTN=0;
+  KHOS.forEach(kho => {
+    const kd = entry.khos[kho] || {};
+    const fd = (entry.date === full.date) ? (full.khos[kho] || {}) : {};
+    const st=fd.sl_sthi||kd.sl_sthi||0, it=kd.sl_items||0, xe=kd.sl_xe||0, tn=kd.san_luong_tan||0;
+    const col=COLORS[kho]||'#666';
+    const txe=xe>0?(tn/xe).toFixed(2):'—';
+    const ist=st>0?fN(it/st):'—';
+    const stxe=(st>0&&xe>0)?(st/xe).toFixed(1):'—';
+    const kgst=st>0?(tn*1000/st).toFixed(1):'—';
+    html += `<tr>
+      <td>${entry.date}</td>
+      <td class="kho-cell"><span class="dot" style="background:${col}"></span>${kho}</td>
+      <td class="tr number">${st>0?st.toLocaleString():'—'}</td>
+      <td class="tr number">${fN(it)}</td>
+      <td class="tr number">${xe.toLocaleString()}</td>
+      <td class="tr number">${tn.toFixed(2)}</td>
+      <td class="tr number" style="color:var(--blul)">${txe}</td>
+      <td class="tr number" style="color:var(--blul)">${ist}</td>
+      <td class="tr number" style="color:var(--blul)">${stxe}</td>
+      <td class="tr number" style="color:var(--blul)">${kgst}</td>
+    </tr>`;
+    tST+=st; tIT+=it; tXE+=xe; tTN+=tn;
+  });
+  if(tST===0&&entry.total_sthi>0) tST=entry.total_sthi;
+  html += `<tr class="total-row">
+    <td colspan="2">TOTAL</td>
+    <td class="tr number">${tST>0?tST.toLocaleString():'—'}</td>
+    <td class="tr number">${fN(tIT)}</td>
+    <td class="tr number">${tXE.toLocaleString()}</td>
+    <td class="tr number">${tTN.toFixed(2)}</td>
+    <td class="tr number" style="color:var(--blul)">${tXE>0?(tTN/tXE).toFixed(2):'—'}</td>
+    <td class="tr number" style="color:var(--blul)">${tST>0?fN(tIT/tST):'—'}</td>
+    <td class="tr number" style="color:var(--blul)">${(tST>0&&tXE>0)?(tST/tXE).toFixed(1):'—'}</td>
+    <td class="tr number" style="color:var(--blul)">${tST>0?(tTN*1000/tST).toFixed(1):'—'}</td>
+  </tr>`;
+  tbody.innerHTML = html;
+}
+
+function dailyRenderDonut(entry) {
+  const data = window._dailyData;
+  const KHOS = data.kho_list;
+  const COLORS = data.kho_colors;
+  const el = document.getElementById('dailyDonut');
+  if (!el) return;
+  const tot = entry.total_tons;
+  if (tot <= 0) { el.innerHTML = '<p style="color:var(--t3)">Không có dữ liệu</p>'; return; }
+  let stops=[], legs='', cum=0;
+  KHOS.forEach(kho => {
+    const pct = ((entry.khos[kho]||{}).san_luong_tan||0)/tot*100;
+    const cl = COLORS[kho];
+    stops.push(`${cl} ${cum.toFixed(1)}% ${(cum+pct).toFixed(1)}%`);
+    legs += `<div class="legend-item"><span class="legend-color" style="background:${cl}"></span>${kho} ${pct.toFixed(1)}%</div>`;
+    cum += pct;
+  });
+  el.innerHTML = `<div class="donut" style="background:conic-gradient(${stops.join(', ')})"><div class="donut-hole"><span class="donut-val">${tot.toFixed(1)}</span><span class="donut-lbl">Tấn</span></div></div><div class="legend">${legs}</div>`;
+}
+
+window.dailyOnDP = function(d) {
+  const data = window._dailyData;
+  const entry = data.history.find(h => h.date === d);
+  if (entry) { dailyRenderTable(entry); dailyRenderDonut(entry); }
+};
+
+// Daily charts
+let dailyCharts = {};
+function dailyMkDS(filteredData, metricKey, totalKey) {
+  const data = window._dailyData;
+  const KHOS = data.kho_list;
+  const COLORS = data.kho_colors;
+  const ds = [];
+  ds.push({type:'bar',label:'TOTAL',data:filteredData.map(h=>h[totalKey]),
+    backgroundColor:'rgba(255,255,255,0.15)',borderColor:'rgba(255,255,255,0.3)',
+    borderWidth:1,borderRadius:3,order:2,barPercentage:0.6,categoryPercentage:0.8});
+  KHOS.forEach(kho => {
+    ds.push({type:'line',label:kho,data:filteredData.map(h=>(h.khos[kho]||{})[metricKey]||0),
+      borderColor:COLORS[kho],backgroundColor:COLORS[kho],
+      borderWidth:2,pointRadius:2.5,pointHoverRadius:5,tension:0.15,fill:false,order:1});
+  });
+  ds.push({type:'line',label:'TOTAL (avg)',data:filteredData.map(h=>h[totalKey]),
+    borderColor:'rgba(255,255,255,0.7)',borderWidth:2,borderDash:[6,3],
+    pointRadius:0,tension:0.15,fill:false,order:0});
+  return ds;
+}
+const dailyChartOpts = {
+  responsive:true,maintainAspectRatio:false,
+  interaction:{mode:'index',intersect:false},
+  plugins:{
+    legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:11,weight:'600'},usePointStyle:true,padding:12,
+      filter:item=>item.text!=='TOTAL (avg)'}},
+    tooltip:{backgroundColor:'rgba(17,24,39,0.95)',titleColor:'#f0c060',bodyColor:'#d8dbe0',
+      borderColor:'rgba(148,163,184,.15)',borderWidth:1,padding:10}
+  },
+  scales:{
+    x:{ticks:{color:'#94a3b8',font:{size:11,weight:'600'},maxRotation:45,autoSkip:true,maxTicksLimit:20},grid:{color:'rgba(148,163,184,.06)'}},
+    y:{ticks:{color:'#94a3b8',font:{size:11,weight:'600'}},grid:{color:'rgba(148,163,184,.06)'},beginAtZero:true}
+  }
+};
+
+function dailyInitCharts(days) {
+  const data = window._dailyData;
+  const history = data.history;
+  const n = history.length;
+  const start = Math.max(0, n - days);
+  const filtered = history.slice(start);
+  const labels = filtered.map(h => h.date.substring(0, 5));
+
+  ['dailyChartTon','dailyChartItems','dailyChartXe'].forEach(id => {
+    if (dailyCharts[id]) dailyCharts[id].destroy();
+  });
+
+  const configs = [
+    ['dailyChartTon','san_luong_tan','total_tons'],
+    ['dailyChartItems','sl_items','total_items'],
+    ['dailyChartXe','sl_xe','total_xe']
+  ];
+  configs.forEach(([id,mk,tk]) => {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    dailyCharts[id] = new Chart(canvas, {
+      type:'bar', data:{labels, datasets:dailyMkDS(filtered,mk,tk)},
+      options:JSON.parse(JSON.stringify(dailyChartOpts))
+    });
+  });
+}
+
+window.dailySetRange = function(days, btn) {
+  document.querySelectorAll('#dailyChartCtrl .fbtn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  dailyInitCharts(days);
+};
+
+// ═══════════════════════════════════════════════
+// PERFORMANCE TAB
+// ═══════════════════════════════════════════════
+function renderPerformance(data) {
+  document.getElementById('perf-loading').style.display = 'none';
+  const el = document.getElementById('perf-content');
+  el.style.display = 'block';
+
+  const labels = data.labels;
+  const charts = data.charts;
+  const cards = data.cards;
+  const khoNames = data.kho_names;
+  const khoColors = data.kho_colors;
+  const isoDates = data.iso_dates || [];
+  const weeklyHtml = data.weekly_tables_html || '';
+
+  // Cards
+  function cardTbl(title, prefix) {
+    let rows = '';
+    khoNames.forEach(kho => {
+      const d = cards[`${prefix}_${kho}`] || {};
+      const pct = d.pct || 0;
+      const total = d.total || 0;
+      const color = pct>=95?'var(--grn)':pct>=90?'var(--org)':'var(--red)';
+      rows += `<tr><td class="kho-cell" style="font-size:.78rem">${kho}</td><td class="tc number" style="font-size:.78rem">${total}</td><td class="tc number" style="color:${color};font-weight:700;font-size:.78rem">${pct.toFixed(1)}%</td></tr>`;
+    });
+    return `<div class="stat-card" style="padding:1rem"><h3 style="font-size:.82rem;font-weight:700;margin-bottom:.6rem;color:var(--t2)">${title}</h3><table style="width:100%"><thead><tr><th style="font-size:.72rem;text-align:left">Kho</th><th class="tc" style="font-size:.72rem">Tổng</th><th class="tc" style="font-size:.72rem">Tỷ lệ</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+
+  let html = `<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+    ${cardTbl('📊 Đúng Giờ SLA','sla')}
+    ${cardTbl('📅 On Time Per Dest','plan')}
+    ${cardTbl('🗺 Đúng Tuyến','route')}
+    ${cardTbl('📋 Đúng Kế Hoạch','plancmp')}
+  </div>`;
+
+  // Date filter
+  html += `<div class="filter-bar">
+    <label>📅 Từ:</label><input type="date" id="perfDateFrom" value="${isoDates[0]||''}" onchange="perfApplyDate()">
+    <label>Đến:</label><input type="date" id="perfDateTo" value="${isoDates[isoDates.length-1]||''}" onchange="perfApplyDate()">
+    <button class="fbtn" onclick="perfResetDate()">↻ Reset</button>
+    <span class="filter-info" id="perfRangeInfo">${isoDates.length} ngày</span>
+  </div>`;
+
+  // Chart boxes
+  const chartConfigs = [
+    ['perfChartSLA','1. Đúng Giờ SLA','filterPerfSLA'],
+    ['perfChartPlan','2. On Time Per Dest','filterPerfPlan'],
+    ['perfChartRoute','3. Đúng Tuyến','filterPerfRoute'],
+    ['perfChartPlanCmp','4. Đúng Kế Hoạch','filterPerfPlanCmp'],
+    ['perfChartTrips','5. Số Chuyến & Hoàn Thành','filterPerfTrips'],
+  ];
+
+  html += '<div class="chart-grid">';
+  chartConfigs.forEach(([id, title, filterId]) => {
+    html += `<div class="chart-box"><div style="display:flex;align-items:center;flex-wrap:wrap;margin-bottom:.6rem"><h3 style="font-size:.88rem;font-weight:700;color:var(--t1)">${title}</h3><span class="pill-bar" id="${filterId}"></span></div><div class="chart-wrap"><canvas id="${id}"></canvas></div></div>`;
+  });
+  html += '</div>';
+
+  // Weekly tables
+  if (weeklyHtml) {
+    html += `<div class="section"><div class="section-header"><span class="icon">📋</span><h2>Bảng Tổng Hợp Tuần</h2></div><div class="table-wrap" style="overflow-x:auto">${weeklyHtml}</div></div>`;
+  }
+
+  el.innerHTML = html;
+
+  // Store perf data globally
+  window._perfData = {
+    labels: [...labels],
+    fullLabels: [...labels],
+    charts: JSON.parse(JSON.stringify(charts)),
+    fullCharts: JSON.parse(JSON.stringify(charts)),
+    khoNames, khoColors, isoDates
+  };
+
+  // Build filter pills & init charts
+  Chart.defaults.color = '#94a3b8';
+  Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+
+  const TT = {backgroundColor:'rgba(17,24,39,0.95)',titleColor:'#E0E0E0',bodyColor:'#CCC',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:8,padding:10};
+  window._perfTT = TT;
+  window._perfChartInstances = {};
+
+  function makePills(containerId, initFn) {
+    const bar = document.getElementById(containerId);
+    if (!bar) return;
+    const btns = ['Tổng', ...khoNames];
+    btns.forEach(name => {
+      const b = document.createElement('button');
+      b.className = 'pill' + (name==='Tổng'?' active':'');
+      b.textContent = name;
+      b.onclick = () => {
+        bar.querySelectorAll('.pill').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        initFn(name==='Tổng'?null:name);
+      };
+      bar.appendChild(b);
+    });
+  }
+
+  function buildBarTrend(canvasId, chartData, lbl1, lbl2, yLabel, refLine, filterKho) {
+    if (window._perfChartInstances[canvasId]) window._perfChartInstances[canvasId].destroy();
+    const pd = window._perfData;
+    const data = pd.charts;
+    const d = data[chartData];
+    if (!d) return;
+
+    let barOn, barLate;
+    if (filterKho && d.kho_bars && d.kho_bars[filterKho]) {
+      barOn = d.kho_bars[filterKho].on;
+      barLate = d.kho_bars[filterKho].late;
+    } else {
+      barOn = d.on_times || d.corrects;
+      barLate = d.lates || d.wrongs;
+    }
+
+    const datasets = [
+      {label:lbl1,data:barOn,backgroundColor:'rgba(46,204,113,0.7)',borderRadius:4,type:'bar',order:2,yAxisID:'y'},
+      {label:lbl2,data:barLate,backgroundColor:'rgba(231,76,60,0.7)',borderRadius:4,type:'bar',order:2,yAxisID:'y'},
+    ];
+
+    if (filterKho) {
+      const t = d.trends.find(t=>t.label===filterKho);
+      if (t) datasets.push({label:t.label,data:t.data,borderColor:t.color,backgroundColor:t.color+'33',type:'line',order:1,yAxisID:'y1',tension:.3,pointRadius:3,pointHoverRadius:6,borderWidth:2.5,spanGaps:true,clip:false});
+    } else {
+      datasets.push({label:'Trung bình',data:d.avg,borderColor:'#818cf8',backgroundColor:'#818cf833',type:'line',order:1,yAxisID:'y1',tension:.3,pointRadius:3,pointHoverRadius:6,borderWidth:3,spanGaps:true,clip:false});
+    }
+
+    const ann = refLine ? {annotation:{annotations:{ref:{type:'line',yMin:refLine,yMax:refLine,yScaleID:'y1',borderColor:'#FF6B6B',borderWidth:1.5,borderDash:[6,4],label:{content:refLine+'%',display:true,position:'end',backgroundColor:'rgba(255,107,107,0.85)',color:'#fff',font:{size:10},padding:3}}}}} : {};
+
+    window._perfChartInstances[canvasId] = new Chart(document.getElementById(canvasId), {
+      data:{labels:pd.labels,datasets},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{tooltip:window._perfTT,...ann},
+        scales:{
+          x:{stacked:true,grid:{display:false}},
+          y:{stacked:true,grid:{color:'rgba(255,255,255,0.04)'},ticks:{precision:0}},
+          y1:{position:'right',min:0,max:100,grid:{drawOnChartArea:false},ticks:{stepSize:20}},
+        }
+      }
+    });
+  }
+
+  function initSLA(k){buildBarTrend('perfChartSLA','sla','Đúng SLA','Trễ SLA','% SLA',95,k)}
+  function initPlan(k){buildBarTrend('perfChartPlan','plan','Đúng KH','Trễ KH','% Plan',95,k)}
+  function initRoute(k){buildBarTrend('perfChartRoute','route','Đúng Tuyến','Sai Tuyến','% Route',null,k)}
+  function initPlanCmp(k){buildBarTrend('perfChartPlanCmp','plan_compliance','Đúng KH','Sai KH','% KH',null,k)}
+  function initTrips(k){buildBarTrend('perfChartTrips','trips_completion','Hoàn Thành','Chưa HT','% HT',null,k)}
+
+  makePills('filterPerfSLA', initSLA);
+  makePills('filterPerfPlan', initPlan);
+  makePills('filterPerfRoute', initRoute);
+  makePills('filterPerfPlanCmp', initPlanCmp);
+  makePills('filterPerfTrips', initTrips);
+
+  initSLA(null); initPlan(null); initRoute(null); initPlanCmp(null); initTrips(null);
+
+  // Date range
+  window.perfApplyDate = function() {
+    const pd = window._perfData;
+    const df = document.getElementById('perfDateFrom').value;
+    const dt = document.getElementById('perfDateTo').value;
+    if (!df||!dt) return;
+    let si = pd.isoDates.findIndex(d=>d>=df); if(si===-1)si=0;
+    let ei = pd.isoDates.length;
+    for(let i=0;i<pd.isoDates.length;i++){if(pd.isoDates[i]>dt){ei=i;break;}}
+    pd.labels.length=0;
+    pd.fullLabels.slice(si,ei).forEach(l=>pd.labels.push(l));
+    for(const ck of Object.keys(pd.fullCharts)){
+      const src=pd.fullCharts[ck],dst=pd.charts[ck];
+      if(!dst||!src)continue;
+      ['on_times','lates','corrects','wrongs','avg'].forEach(k=>{if(src[k])dst[k]=src[k].slice(si,ei);});
+      if(src.kho_bars){for(const k of Object.keys(src.kho_bars)){if(!dst.kho_bars)dst.kho_bars={};if(!dst.kho_bars[k])dst.kho_bars[k]={};dst.kho_bars[k].on=src.kho_bars[k].on.slice(si,ei);dst.kho_bars[k].late=src.kho_bars[k].late.slice(si,ei);}}
+      if(src.trends){for(let i=0;i<src.trends.length;i++){if(dst.trends[i])dst.trends[i].data=src.trends[i].data.slice(si,ei);}}
+    }
+    initSLA(null);initPlan(null);initRoute(null);initPlanCmp(null);initTrips(null);
+    document.getElementById('perfRangeInfo').textContent = pd.labels.length+' ngày';
+  };
+  window.perfResetDate = function() {
+    const pd = window._perfData;
+    document.getElementById('perfDateFrom').value = pd.isoDates[0];
+    document.getElementById('perfDateTo').value = pd.isoDates[pd.isoDates.length-1];
+    pd.labels.length=0;
+    pd.fullLabels.forEach(l=>pd.labels.push(l));
+    pd.charts = JSON.parse(JSON.stringify(pd.fullCharts));
+    initSLA(null);initPlan(null);initRoute(null);initPlanCmp(null);initTrips(null);
+    document.getElementById('perfRangeInfo').textContent = pd.labels.length+' ngày';
+  };
+}
+
+// ═══════════════════════════════════════════════
+// INVENTORY TAB
+// ═══════════════════════════════════════════════
+function renderInventory(data) {
+  document.getElementById('inv-loading').style.display = 'none';
+  const el = document.getElementById('inv-content');
+  el.style.display = 'block';
+
+  const target = data.target_day;
+  const trend = data.trend;
+  const cats = ['ĐÔNG','MÁT','TCNK'];
+  const catLabels = {'ĐÔNG':'Hàng Đông','MÁT':'Hàng Mát','TCNK':'TCNK'};
+  const catColors = {'ĐÔNG':'#60a5fa','MÁT':'#34d399','TCNK':'#fbbf24'};
+
+  // Stats
+  const totalAcc = data.overall_accuracy || {};
+  let html = `<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+    <div class="stat-card"><div class="value" style="color:var(--grn)">${fPct(totalAcc.item)}</div><div class="label">Chính xác Item</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--blu)">${fPct(totalAcc.sku)}</div><div class="label">Chính xác SKU</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--org)">${fPct(totalAcc.kg)}</div><div class="label">Chính xác KG</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--pur)">${fN(target.total_sku||0)}</div><div class="label">Tổng SKU</div></div>
+  </div>`;
+
+  // Summary table
+  html += `<div class="section"><div class="section-header"><span class="icon">📋</span><h2>Tổng Hợp Đối Soát — ${target.date_str}</h2></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Phân Loại</th><th class="tr">SKU</th><th class="tr">Item KFM</th><th class="tr">Item ABA</th><th class="tr">KG KFM</th><th class="tr">KG ABA</th></tr></thead>
+    <tbody>`;
+  let tSKU=0,tIK=0,tIA=0,tKK=0,tKA=0;
+  cats.forEach(cat => {
+    const cs = target.categories[cat]||{};
+    tSKU+=cs.sku||0; tIK+=cs.item_KFM||0; tIA+=cs.item_ABA||0; tKK+=cs.kg_KFM||0; tKA+=cs.kg_ABA||0;
+    html += `<tr>
+      <td class="kho-cell"><span class="dot" style="background:${catColors[cat]}"></span>${catLabels[cat]}</td>
+      <td class="tr number">${(cs.sku||0).toLocaleString()}</td>
+      <td class="tr number">${(cs.item_KFM||0).toLocaleString()}</td>
+      <td class="tr number">${(cs.item_ABA||0).toLocaleString()}</td>
+      <td class="tr number">${(cs.kg_KFM||0).toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+      <td class="tr number">${(cs.kg_ABA||0).toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+    </tr>`;
+  });
+  html += `<tr class="total-row"><td>TỔNG</td><td class="tr number">${tSKU.toLocaleString()}</td><td class="tr number">${tIK.toLocaleString()}</td><td class="tr number">${tIA.toLocaleString()}</td><td class="tr number">${tKK.toLocaleString(undefined,{minimumFractionDigits:2})}</td><td class="tr number">${tKA.toLocaleString(undefined,{minimumFractionDigits:2})}</td></tr>`;
+  html += `</tbody></table></div></div>`;
+
+  // Trend charts
+  if (trend && trend.dates) {
+    html += `<div class="chart-grid">
+      <div class="chart-box"><div class="chart-title">Trend Chính Xác Item</div><div class="chart-wrap"><canvas id="invChartItem"></canvas></div></div>
+      <div class="chart-box"><div class="chart-title">Trend Chính Xác SKU</div><div class="chart-wrap"><canvas id="invChartSKU"></canvas></div></div>
+      <div class="chart-box"><div class="chart-title">Trend Chính Xác KG</div><div class="chart-wrap"><canvas id="invChartKG"></canvas></div></div>
+      <div class="chart-box"><div class="chart-title">Tỷ Trọng KG theo Phân Loại</div><div id="invPie" class="donut-section" style="min-height:200px"></div></div>
+    </div>`;
+  }
+
+  el.innerHTML = html;
+
+  // Render trend charts
+  if (trend && trend.dates) {
+    const tLabels = trend.dates.map(d => d.substring(0,5));
+    const invOpts = {responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{tooltip:{backgroundColor:'rgba(17,24,39,0.95)',titleColor:'#f0c060',bodyColor:'#d8dbe0',borderColor:'rgba(148,163,184,.15)',borderWidth:1,padding:10}},
+      scales:{x:{grid:{display:false}},y:{min:90,max:100,grid:{color:'rgba(148,163,184,.06)'},ticks:{callback:v=>v+'%'}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{precision:0}}}
+    };
+
+    function invCombo(canvasId, kfmData, abaData, accData, label) {
+      new Chart(document.getElementById(canvasId), {
+        data:{labels:tLabels,datasets:[
+          {type:'bar',label:'KFM',data:kfmData,backgroundColor:'rgba(96,165,250,0.6)',borderRadius:3,yAxisID:'y1',order:2},
+          {type:'bar',label:'ABA (khớp)',data:abaData,backgroundColor:'rgba(52,211,153,0.6)',borderRadius:3,yAxisID:'y1',order:2},
+          {type:'line',label:'% Chính xác',data:accData,borderColor:'#f472b6',backgroundColor:'#f472b633',borderWidth:2.5,pointRadius:3,tension:.3,yAxisID:'y',order:1,spanGaps:true}
+        ]},
+        options:JSON.parse(JSON.stringify(invOpts))
+      });
+    }
+
+    invCombo('invChartItem', trend.item_kfm, trend.item_aba, trend.item_acc, 'Item');
+    invCombo('invChartSKU', trend.sku_kfm, trend.sku_aba, trend.sku_acc, 'SKU');
+    invCombo('invChartKG', trend.kg_kfm, trend.kg_aba, trend.kg_acc, 'KG');
+
+    // Pie
+    const pieEl = document.getElementById('invPie');
+    if (pieEl) {
+      const vals = cats.map(c => target.categories[c]?.kg_KFM || 0);
+      const total = vals.reduce((a,b)=>a+b,0);
+      if (total > 0) {
+        let stops=[], legs='', cum=0;
+        cats.forEach((c,i) => {
+          const pct = vals[i]/total*100;
+          stops.push(`${catColors[c]} ${cum.toFixed(1)}% ${(cum+pct).toFixed(1)}%`);
+          legs += `<div class="legend-item"><span class="legend-color" style="background:${catColors[c]}"></span>${catLabels[c]} ${pct.toFixed(1)}%</div>`;
+          cum += pct;
+        });
+        pieEl.innerHTML = `<div class="donut" style="background:conic-gradient(${stops.join(', ')})"><div class="donut-hole"><span class="donut-val">${(total/1000).toFixed(1)}T</span><span class="donut-lbl">Tấn</span></div></div><div class="legend">${legs}</div>`;
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════
+// NSO TAB
+// ═══════════════════════════════════════════════
+function renderNSO(data) {
+  document.getElementById('nso-loading').style.display = 'none';
+  const el = document.getElementById('nso-content');
+  el.style.display = 'block';
+
+  const stats = data.stats || {};
+  const stores = data.stores || [];
+  const calEvents = data.calendar_events || [];
+  const schedules = data.schedules || [];
+  const versionRules = data.version_rules || {};
+
+  // Stats
+  let html = `<div class="stats-grid">
+    <div class="stat-card"><div class="value" style="color:var(--blu)">${stats.total||0}</div><div class="label">Tổng Store Active</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--grn)">${stats.upcoming||0}</div><div class="label">Sắp Khai Trương</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--org)">${stats.opening||0}</div><div class="label">Đang Khai Trương</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--pur)">${stats.reschedule||0}</div><div class="label">Dời Lịch</div></div>
+  </div>`;
+
+  // Calendar
+  html += `<div class="section"><div class="section-header"><span class="icon">📅</span><h2>Lịch Tháng</h2></div>
+  <div class="cal-wrap">
+    <div class="cal-nav">
+      <button onclick="nsoCalPrev()" title="Tháng trước">◀</button>
+      <div class="cal-title" id="nsoCalTitle"></div>
+      <button onclick="nsoCalNext()" title="Tháng sau">▶</button>
+    </div>
+    <div class="cal-grid" id="nsoCalGrid"></div>
+  </div></div>`;
+
+  // Store Table with filter
+  html += `<div class="section"><div class="section-header"><span class="icon">📋</span><h2>Lịch Khai Trương NSO</h2></div>
+  <div class="filter-bar">
+    <label>📅 Từ:</label><input type="date" id="nsoFilterFrom">
+    <label>→ Đến:</label><input type="date" id="nsoFilterTo">
+    <button class="fbtn primary" onclick="nsoApplyFilter()">Lọc</button>
+    <button class="fbtn" onclick="nsoResetFilter()">Reset</button>
+    <span class="filter-info" id="nsoFilterCount">Hiển thị: ${stores.length}/${stores.length} stores</span>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th class="tc" style="width:45px">STT</th><th>Tên Siêu Thị</th><th class="tc" style="width:70px">Code</th><th class="tc" style="width:105px">Ngày KT</th><th class="tc" style="width:250px">Trạng Thái</th></tr></thead>
+    <tbody id="nsoStoreBody">`;
+  stores.forEach((s, i) => {
+    const badgeCls = s.status_type==='upcoming'?'badge-green':s.status_type==='opening'?'badge-orange':'badge-purple';
+    html += `<tr class="nso-store-row" data-date="${s.iso_date}" data-status="${s.status_type}">
+      <td class="tc nso-stt">${i+1}</td><td>${s.name}</td>
+      <td class="tc"><span class="badge badge-blue">${s.code}</span></td>
+      <td class="tc">${s.opening_date}</td>
+      <td class="tc"><span class="badge ${badgeCls}">${s.status_text}</span></td>
+    </tr>`;
+  });
+  html += `</tbody></table></div></div>`;
+
+  // Replenishment
+  if (schedules.length) {
+    html += `<div class="section"><div class="section-header"><span class="icon">📦</span><h2>Lịch Châm Hàng</h2></div>`;
+    schedules.forEach(sched => {
+      let dh='',dn='',kc='',dc='';
+      sched.days.forEach(d => {
+        dh += `<th>${d.date}</th>`;
+        dn += `<td class="tc" style="color:var(--t3);font-style:italic;font-size:.7rem">${d.day_name}</td>`;
+        kc += `<td class="tc" style="color:var(--orgl);font-weight:700">${typeof d.ksl==='number'?d.ksl.toLocaleString():d.ksl}</td>`;
+        dc += `<td class="tc" style="color:var(--cyanl);font-weight:600">${d.dm>0?d.dm:''}</td>`;
+      });
+      html += `<div class="rcard"><div class="rcard-head"><h3>📦 ${sched.label}</h3><span class="vbadge">Version ${sched.version?.toLocaleString()}</span></div>
+      <div class="table-wrap"><table class="weekly-table"><thead><tr><th style="min-width:200px">Chuyển</th>${dh}<th>Total</th></tr></thead>
+      <tbody><tr><td style="font-weight:600;color:var(--t2)">Thứ</td>${dn}<td></td></tr>
+      <tr><td style="font-weight:600;color:var(--t2)">KSL (22:00-24:00PM) items</td>${kc}<td class="tc" style="color:var(--acl);font-weight:800">${sched.total_ksl?.toLocaleString()}</td></tr>
+      <tr><td style="font-weight:600;color:var(--t2)">Đông Mát ITL(13:00-14:00PM) Kg</td>${dc}<td class="tc" style="color:var(--acl);font-weight:800">${sched.total_dm}</td></tr>
+      </tbody></table></div></div>`;
+    });
+    html += '</div>';
+  }
+
+  // Version rules
+  if (Object.keys(versionRules).length) {
+    html += `<div class="section"><div class="section-header"><span class="icon">📊</span><h2>Quy Tắc Châm Hàng Theo Version</h2></div>
+    <div class="table-wrap"><table><thead><tr><th class="tc">Version</th><th class="tc">D</th><th class="tc">D+1</th><th class="tc">D+2</th><th class="tc">D+3</th><th class="tc">TOTAL</th></tr></thead><tbody>`;
+    Object.keys(versionRules).sort((a,b)=>b-a).forEach(v => {
+      const r = versionRules[v];
+      html += `<tr><td class="tc">${Number(v).toLocaleString()}</td><td class="tc">${r.D?.toLocaleString()}</td><td class="tc">${r.D1?.toLocaleString()}</td><td class="tc">${r.D2?.toLocaleString()}</td><td class="tc">${r.D3?.toLocaleString()}</td><td class="tc" style="color:var(--acl);font-weight:700">${r.total?.toLocaleString()}</td></tr>`;
+    });
+    html += '</tbody></table></div></div>';
+  }
+
+  el.innerHTML = html;
+
+  // Calendar JS
+  window._nsoCalEvents = calEvents;
+  window._nsoCalYear = new Date().getFullYear();
+  window._nsoCalMonth = new Date().getMonth();
+
+  function toLocalISO(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
+  const MONTH_NAMES=['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+  const DAY_HEADERS=['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','CN'];
+
+  function renderNSOCal(){
+    const grid=document.getElementById('nsoCalGrid');
+    const title=document.getElementById('nsoCalTitle');
+    if(!grid)return;
+    title.textContent=MONTH_NAMES[window._nsoCalMonth]+' / '+window._nsoCalYear;
+    let h='';
+    DAY_HEADERS.forEach((d,i)=>{h+=`<div class="cal-hd${i===6?' sun':''}">${d}</div>`;});
+    const first=new Date(window._nsoCalYear,window._nsoCalMonth,1);
+    const last=new Date(window._nsoCalYear,window._nsoCalMonth+1,0);
+    let startDay=(first.getDay()+6)%7;
+    const todayStr=toLocalISO(new Date());
+    for(let i=0;i<startDay;i++)h+='<div class="cal-cell empty"></div>';
+    for(let d=1;d<=last.getDate();d++){
+      const dt=new Date(window._nsoCalYear,window._nsoCalMonth,d);
+      const iso=toLocalISO(dt);
+      const isSun=dt.getDay()===0;
+      const isToday=iso===todayStr;
+      h+=`<div class="cal-cell${isToday?' today':''}"><div class="cal-day${isSun?' sun':''}">${d}</div>`;
+      window._nsoCalEvents.forEach(ev=>{if(ev.date===iso)h+=`<div class="cal-ev ${ev.type}" title="${ev.label}">${ev.label}</div>`;});
+      h+='</div>';
+    }
+    grid.innerHTML=h;
+  }
+
+  window.nsoCalPrev=function(){window._nsoCalMonth--;if(window._nsoCalMonth<0){window._nsoCalMonth=11;window._nsoCalYear--;}renderNSOCal();};
+  window.nsoCalNext=function(){window._nsoCalMonth++;if(window._nsoCalMonth>11){window._nsoCalMonth=0;window._nsoCalYear++;}renderNSOCal();};
+  renderNSOCal();
+
+  // Store filter
+  window.nsoApplyFilter = function() {
+    const from=document.getElementById('nsoFilterFrom').value;
+    const to=document.getElementById('nsoFilterTo').value;
+    const rows=document.querySelectorAll('.nso-store-row');
+    let shown=0;
+    rows.forEach(r=>{
+      const d=r.getAttribute('data-date');
+      let show=true;
+      if(from&&d<from)show=false;
+      if(to&&d>to)show=false;
+      r.style.display=show?'':'none';
+      if(show){shown++;r.querySelector('.nso-stt').textContent=shown;}
+    });
+    document.getElementById('nsoFilterCount').textContent=`Hiển thị: ${shown}/${rows.length} stores`;
+  };
+  window.nsoResetFilter = function() {
+    document.getElementById('nsoFilterFrom').value='';
+    document.getElementById('nsoFilterTo').value='';
+    const rows=document.querySelectorAll('.nso-store-row');
+    rows.forEach((r,i)=>{r.style.display='';r.querySelector('.nso-stt').textContent=i+1;});
+    document.getElementById('nsoFilterCount').textContent=`Hiển thị: ${rows.length}/${rows.length} stores`;
+  };
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+loadTab('daily');
+</script>
+</body>
+</html>

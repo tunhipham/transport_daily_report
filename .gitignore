@@ -9,6 +9,7 @@ output/
 
 # Data files (downloaded daily, not source code)
 data/
+!docs/data/
 *.tmp
 
 # Google Drive metadata
