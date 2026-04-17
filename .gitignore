@@ -22,6 +22,8 @@ data/
 .edge_automail/
 credentials.json
 token.json
+config/telegram.json
+config/sent_messages.json
 
 # OS
 Thumbs.db
