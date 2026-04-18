@@ -4,7 +4,7 @@ Usage: python script/generate_report.py [--date DD/MM/YYYY] [--send]
 
 ALL sources fetched online from Google Sheets/Drive (no local data/ files).
 """
-import os, sys, json, re, csv
+import os, sys, json, re, csv, subprocess
 from datetime import datetime, timedelta
 from io import BytesIO
 from openpyxl import load_workbook
@@ -2573,6 +2573,28 @@ def main():
             print(f"   • {sp}")
         print(f"   • {html_path}")
         print(f"   Để gửi Telegram, chạy lại với: python script/generate_report.py --date {date_str} --send")
+
+    # Step 8: Auto-deploy dashboard to GitHub Pages (after --send)
+    if send_telegram:
+        print(f"\n🚀 Auto-deploying dashboard...")
+        deploy_script = os.path.join(BASE, "script", "dashboard", "deploy.py")
+        if os.path.exists(deploy_script):
+            try:
+                deploy_result = subprocess.run(
+                    [sys.executable, deploy_script, "--domain", "daily"],
+                    cwd=BASE, capture_output=True, text=True,
+                    encoding="utf-8", errors="replace", timeout=120
+                )
+                for line in deploy_result.stdout.splitlines():
+                    print(f"  {line}")
+                if deploy_result.returncode != 0:
+                    print(f"  ⚠ Deploy có lỗi (exit {deploy_result.returncode})")
+                    if deploy_result.stderr:
+                        print(f"  {deploy_result.stderr[:200]}")
+            except Exception as e:
+                print(f"  ⚠ Deploy failed: {e}")
+        else:
+            print(f"  ⚠ deploy.py not found at {deploy_script}")
 
     print("\n" + "=" * 60)
     print("  DONE")

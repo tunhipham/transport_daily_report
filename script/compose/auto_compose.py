@@ -17,7 +17,7 @@ Usage:
 Schedule config: config/mail_schedule.json
 State tracking:  output/auto_compose_state.json
 """
-import os, sys, json, hashlib, argparse, subprocess, logging, re, time
+import os, sys, json, hashlib, argparse, subprocess, logging, re, time, atexit
 from datetime import datetime, timedelta
 
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -26,6 +26,7 @@ BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 CONFIG_PATH = os.path.join(BASE, "config", "mail_schedule.json")
 STATE_PATH = os.path.join(BASE, "output", "state", "auto_compose_state.json")
 OUTPUT = os.path.join(BASE, "output")
+LOCK_PATH = os.path.join(BASE, "output", "state", "auto_compose_watch.lock")
 
 # ── Logging ──────────────────────────────────────────────────────────
 LOG_PATH = os.path.join(BASE, "output", "logs", "auto_compose.log")
@@ -1017,6 +1018,55 @@ def main():
 
 
 # ══════════════════════════════════════════════════════════════════════
+#  Instance locking — prevent multiple watch processes
+# ══════════════════════════════════════════════════════════════════════
+
+def _is_pid_alive(pid):
+    """Check if a process with given PID is still running (Windows)."""
+    try:
+        result = subprocess.run(
+            ["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+            capture_output=True, text=True, timeout=5
+        )
+        return str(pid) in result.stdout
+    except Exception:
+        return False
+
+
+def acquire_lock():
+    """Try to acquire the lock file. Returns True if acquired, False if another instance is running."""
+    os.makedirs(os.path.dirname(LOCK_PATH), exist_ok=True)
+    
+    if os.path.exists(LOCK_PATH):
+        try:
+            with open(LOCK_PATH, "r") as f:
+                old_pid = int(f.read().strip())
+            if _is_pid_alive(old_pid):
+                return False  # Another instance is running
+            # Stale lock — process died without cleanup
+            log.info(f"  🧹 Stale lock (PID {old_pid} dead), taking over")
+        except (ValueError, OSError):
+            pass  # Corrupted lock file, overwrite
+
+    # Write our PID
+    with open(LOCK_PATH, "w") as f:
+        f.write(str(os.getpid()))
+    return True
+
+
+def release_lock():
+    """Release the lock file."""
+    try:
+        if os.path.exists(LOCK_PATH):
+            with open(LOCK_PATH, "r") as f:
+                pid = int(f.read().strip())
+            if pid == os.getpid():
+                os.remove(LOCK_PATH)
+    except Exception:
+        pass
+
+
+# ══════════════════════════════════════════════════════════════════════
 #  Watch mode — poll Drive folders and auto-compose
 # ══════════════════════════════════════════════════════════════════════
 
@@ -1025,8 +1075,14 @@ def watch_loop(config, state, poll_interval_min, dry_run=False, no_inject=False)
     When files for D+1 appear → fetch data → compose mail → inject into Haraworks.
     NEVER sends mail — only creates draft in Haraworks.
     """
+    # ── Instance lock — only one watch process at a time ──
+    if not acquire_lock():
+        log.info(f"  ⏭ Another watch instance is already running (lock: {LOCK_PATH}). Exiting.")
+        return
+    atexit.register(release_lock)
+
     log.info(f"\n{'═'*60}")
-    log.info(f"  👁 WATCH MODE — polling every {poll_interval_min} min")
+    log.info(f"  👁 WATCH MODE — polling every {poll_interval_min} min (PID {os.getpid()})")
     if no_inject:
         log.info(f"  ⚠ --no-inject: will NOT auto-inject into Haraworks")
     else:
@@ -1172,6 +1228,7 @@ def watch_loop(config, state, poll_interval_min, dry_run=False, no_inject=False)
         except KeyboardInterrupt:
             log.info(f"\n  🛑 Watch mode stopped by user")
             save_state(state)
+            release_lock()
             break
         except Exception as e:
             log.error(f"  ❌ Watch error: {e}")
