@@ -2405,16 +2405,7 @@
 
           const wb = XLSX.utils.book_new();
           XLSX.utils.book_append_sheet(wb, ws, 'Lịch về hàng');
-          const wbout = XLSX.write(wb, {bookType:'xlsx',type:'array'});
-          const blob = new Blob([wbout], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'Lich_ve_hang_' + currentWeek + '.xlsx';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+          XLSX.writeFile(wb, 'Lich_ve_hang_' + currentWeek + '.xlsx');
         } catch(e) {
           console.error('Export error:', e);
           alert('Lỗi xuất Excel: ' + e.message);
