@@ -1044,9 +1044,12 @@
     .wk-empty { color:var(--t3); font-size:.7rem }
 
     /* Legend */
-    .wk-legend { display:flex; gap:1.2rem; flex-wrap:wrap; margin-bottom:1rem; padding:.6rem 1rem; background:var(--surface); border:1px solid var(--bd); border-radius:10px }
-    .wk-legend-item { display:flex; align-items:center; gap:.35rem; font-size:.75rem; color:var(--t2) }
+    .wk-legend { display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1rem; padding:.6rem 1rem; background:var(--surface); border:1px solid var(--bd); border-radius:10px }
+    .wk-legend-item { display:flex; align-items:center; gap:.35rem; font-size:.75rem; color:var(--t2); cursor:pointer; padding:.3rem .7rem; border-radius:6px; border:1px solid transparent; transition:all .2s }
+    .wk-legend-item:hover { background:rgba(255,255,255,.06); border-color:var(--bd) }
+    .wk-legend-item.active { background:rgba(255,255,255,.1); border-color:var(--ac); color:var(--t1) }
     .wk-legend-dot { width:12px; height:12px; border-radius:4px; flex-shrink:0 }
+    .wk-legend-dot.lg-all { background:rgba(255,255,255,.3); border:1px solid rgba(255,255,255,.5) }
     .wk-legend-dot.lg-ngay { background:rgba(250,204,21,.4); border:1px solid rgba(250,204,21,.6) }
     .wk-legend-dot.lg-dem { background:rgba(99,102,241,.4); border:1px solid rgba(99,102,241,.6) }
     .wk-legend-dot.lg-kk { background:rgba(168,85,247,.4); border:1px solid rgba(168,85,247,.6) }
@@ -2236,12 +2239,13 @@
           <span class="wk-count" id="wkCount">Hiển thị: ${stores.length}/${stores.length} siêu thị</span>
         </div>`;
 
-        // Legend
+        // Legend — clickable filters
         html += `<div class="wk-legend">
-          <div class="wk-legend-item"><div class="wk-legend-dot lg-ngay"></div>Giao hàng ban Ngày</div>
-          <div class="wk-legend-item"><div class="wk-legend-dot lg-dem"></div>Giao hàng ban Đêm</div>
-          <div class="wk-legend-item"><div class="wk-legend-dot lg-kk"></div>Kiểm Kê</div>
-          <div class="wk-legend-item"><div class="wk-legend-dot lg-cham"></div>Châm Hàng (NSO)</div>
+          <div class="wk-legend-item active" data-filter="all" onclick="wkFilterType('all')"><div class="wk-legend-dot lg-all"></div>Tổng hợp</div>
+          <div class="wk-legend-item" data-filter="ngay" onclick="wkFilterType('ngay')"><div class="wk-legend-dot lg-ngay"></div>Giao hàng ban Ngày</div>
+          <div class="wk-legend-item" data-filter="dem" onclick="wkFilterType('dem')"><div class="wk-legend-dot lg-dem"></div>Giao hàng ban Đêm</div>
+          <div class="wk-legend-item" data-filter="kk" onclick="wkFilterType('kk')"><div class="wk-legend-dot lg-kk"></div>Kiểm Kê</div>
+          <div class="wk-legend-item" data-filter="cham" onclick="wkFilterType('cham')"><div class="wk-legend-dot lg-cham"></div>Châm Hàng (NSO)</div>
         </div>`;
 
         // Table
@@ -2256,7 +2260,17 @@
 
         stores.forEach((s, idx) => {
           const searchData = (s.name + ' ' + s.code).toLowerCase();
-          html += `<tr class="wk-row" data-search="${searchData.replace(/"/g, '')}">`;
+          // Compute row types for filtering
+          const rowTypes = new Set();
+          s.days.forEach(d => {
+            if (!d) return;
+            const dl = d.toLowerCase();
+            if (dl === 'ngày') rowTypes.add('ngay');
+            else if (dl === 'đêm') rowTypes.add('dem');
+            else if (dl.includes('kiểm')) rowTypes.add('kk');
+            else if (dl.includes('châm')) rowTypes.add('cham');
+          });
+          html += `<tr class="wk-row" data-search="${searchData.replace(/"/g, '')}" data-types="${[...rowTypes].join(' ')}">`;
           html += `<td style="color:var(--t3)">${idx + 1}</td>`;
           html += `<td>${s.name}</td>`;
           html += `<td><span class="code">${s.code}</span></td>`;
@@ -2282,17 +2296,35 @@
       // Change week
       window.wkChangeWeek = function(wk) { renderWeek(wk); };
 
-      // Filter stores by name/code
-      window.wkFilterStores = function() {
+      // Active type filter state
+      let wkActiveFilter = 'all';
+
+      // Filter stores by name/code + type
+      function wkApplyFilters() {
         const q = (document.getElementById('wkSearch').value || '').toLowerCase().trim();
         const rows = document.querySelectorAll('.wk-row');
         let shown = 0;
-        rows.forEach((r, i) => {
-          const match = !q || r.getAttribute('data-search').includes(q);
-          r.style.display = match ? '' : 'none';
-          if (match) { shown++; r.querySelector('td').textContent = shown; }
+        rows.forEach(r => {
+          const matchText = !q || r.getAttribute('data-search').includes(q);
+          const types = r.getAttribute('data-types') || '';
+          const matchType = wkActiveFilter === 'all' || types.includes(wkActiveFilter);
+          const visible = matchText && matchType;
+          r.style.display = visible ? '' : 'none';
+          if (visible) { shown++; r.querySelector('td').textContent = shown; }
         });
         document.getElementById('wkCount').textContent = `Hiển thị: ${shown}/${rows.length} siêu thị`;
+      }
+
+      window.wkFilterStores = function() { wkApplyFilters(); };
+
+      // Filter by type (legend click)
+      window.wkFilterType = function(type) {
+        wkActiveFilter = type;
+        // Update active legend item
+        document.querySelectorAll('.wk-legend-item').forEach(el => {
+          el.classList.toggle('active', el.getAttribute('data-filter') === type);
+        });
+        wkApplyFilters();
       };
 
       // Export to Excel — format matching original "Lịch về hàng" sheet
