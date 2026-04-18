@@ -187,7 +187,7 @@ flowchart TB
     RAW --> DOMAINS
     SHARED --> DOMAINS
     DOMAINS --> STATE
-    DOMAINS -->|"HTML/PNG"| TG
+    DOMAINS -->|"HTML/PNG + auto-deploy"| TG
     STATE --> EX
     EX --> JSON
     DP -->|"git push"| GP
@@ -223,9 +223,9 @@ BƯỚC 5 ─ Gửi Telegram
   📂 script/lib/telegram.py
   → Gửi 5 PNG + 1 HTML
 
-BƯỚC 6 ─ Update dashboard (optional)
+BƯỚC 6 ─ Auto-deploy dashboard (tự động khi --send)
   📂 script/dashboard/deploy.py --domain daily
-  → Export JSON → git push → GitHub Pages live
+  → Export JSON → git push → GitHub Pages cập nhật (~1-2 phút)
 ```
 
 ---

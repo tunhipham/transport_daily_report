@@ -3,6 +3,10 @@
 > Cập nhật dashboard web sau khi chạy xong report.
 > URL: https://tunhipham.github.io/transport_daily_report/
 
+> [!NOTE]
+> **Daily domain tự động deploy** khi chạy `generate.py --send`.
+> Chỉ cần chạy manual deploy cho các domain khác (performance, inventory, nso) hoặc khi cần re-deploy.
+
 ## Prerequisites
 - Report domain tương ứng đã chạy xong (daily/performance/inventory/nso)
 - Git configured với push access
@@ -62,12 +66,12 @@ Live tại: https://tunhipham.github.io/transport_daily_report/
 
 ## Timing cập nhật
 
-| Domain | Khi nào chạy |
-|--------|-------------|
-| Daily | Sau khi gửi daily report lên Telegram |
-| Performance | Sau khi chạy thêm báo cáo ngày mới |
-| Inventory | Sau khi có report đối soát |
-| NSO | Thứ 3 — sau task quét mail + làm lịch |
+| Domain | Khi nào chạy | Auto? |
+|--------|-------------|-------|
+| Daily | Sau khi gửi daily report lên Telegram | ✅ Auto (via `--send`) |
+| Performance | Sau khi chạy thêm báo cáo ngày mới | ❌ Manual |
+| Inventory | Sau khi có report đối soát | ❌ Manual |
+| NSO | Thứ 3 — sau task quét mail + làm lịch | ❌ Manual |
 
 ## Troubleshooting
 
