@@ -156,6 +156,23 @@ tbody tr:hover td{background:rgba(30,41,59,.5)}
 .wt-metric-cell{text-align:left!important;color:var(--t2);font-weight:500;white-space:nowrap;background:var(--bg3)!important;position:sticky;left:56px;z-index:2}
 .wt-total-cell{background:rgba(99,102,241,.06);font-weight:600}
 
+/* ═══ SORT HEADERS ═══ */
+th.sortable{cursor:pointer;user-select:none;position:relative;padding-right:1.2rem!important}
+th.sortable:hover{color:var(--t1);background:rgba(99,102,241,.18)}
+th.sortable::after{content:'⇅';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:.65rem;opacity:.4}
+th.sortable.asc::after{content:'▲';opacity:.8}
+th.sortable.desc::after{content:'▼';opacity:.8}
+
+/* ═══ PERF SINGLE-COL CHARTS ═══ */
+.chart-grid.perf-1col{grid-template-columns:1fr}
+
+/* ═══ GLOSSARY TABLE ═══ */
+.glossary-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.glossary-table th{background:rgba(99,102,241,.1);color:var(--acl);font-weight:600;padding:.55rem .75rem;text-align:left;border-bottom:2px solid var(--bd)}
+.glossary-table td{padding:.5rem .75rem;border-bottom:1px solid var(--bd);line-height:1.5}
+.glossary-table td:first-child{font-weight:600;color:var(--orgl);white-space:nowrap;width:200px}
+.glossary-table tbody tr:hover td{background:rgba(30,41,59,.5)}
+
 /* ═══ RESPONSIVE ═══ */
 @media(max-width:1024px){.chart-grid{grid-template-columns:1fr}}
 @media(max-width:768px){
@@ -329,39 +346,62 @@ function renderDaily(data) {
   }
   html += `</select></div>`;
 
-  // Table
+  // Table (sortable)
   html += `<div class="section"><div class="section-header"><span class="icon">📊</span><h2>Chi Tiết Theo Kho — <span id="dailyTableDate">${cur.date}</span></h2></div>
-  <div class="table-wrap"><table>
+  <div class="table-wrap"><table id="dailySortTable">
     <thead><tr>
-      <th>Ngày</th><th>Kho</th><th class="tr">Siêu Thị</th><th class="tr">Items</th><th class="tr">Xe</th><th class="tr">Tấn</th>
-      <th class="tr" style="color:var(--blul)">Tấn/Xe</th><th class="tr" style="color:var(--blul)">Items/ST</th>
-      <th class="tr" style="color:var(--blul)">ST/Xe</th><th class="tr" style="color:var(--blul)">KG/ST</th>
+      <th>Ngày</th><th>Kho</th>
+      <th class="tr sortable" data-col="2" data-type="num">Siêu Thị</th>
+      <th class="tr sortable" data-col="3" data-type="num">Items</th>
+      <th class="tr sortable" data-col="4" data-type="num">Xe</th>
+      <th class="tr sortable" data-col="5" data-type="num">Tấn</th>
+      <th class="tr sortable" data-col="6" data-type="num" style="color:var(--blul)">Tấn/Xe</th>
+      <th class="tr sortable" data-col="7" data-type="num" style="color:var(--blul)">Items/ST</th>
+      <th class="tr sortable" data-col="8" data-type="num" style="color:var(--blul)">ST/Xe</th>
+      <th class="tr sortable" data-col="9" data-type="num" style="color:var(--blul)">KG/ST</th>
     </tr></thead>
     <tbody id="dailyTableBody"></tbody>
   </table></div></div>`;
 
-  // Chart controls
+  // Chart controls — date range + quick buttons
   html += `<div class="filter-bar" id="dailyChartCtrl">
-    <label>📈 Khoảng thời gian:</label>
+    <label>📈 Khoảng:</label>
     <button class="fbtn" onclick="dailySetRange(7,this)">7 ngày</button>
     <button class="fbtn active" onclick="dailySetRange(14,this)">14 ngày</button>
     <button class="fbtn" onclick="dailySetRange(30,this)">30 ngày</button>
+    <span style="color:var(--t4);margin:0 6px">|</span>
+    <label>Từ:</label><input type="date" id="dailyDateFrom" onchange="dailyApplyDateRange()">
+    <label>Đến:</label><input type="date" id="dailyDateTo" onchange="dailyApplyDateRange()">
+    <button class="fbtn" onclick="dailyResetDateRange()">↻</button>
   </div>`;
 
-  // Charts
+  // Charts — 2 columns: daily left, weekly right
   html += `<div class="chart-grid">
-    <div class="chart-box"><div class="chart-title">Trend Sản Lượng (Tấn)</div><div class="chart-wrap"><canvas id="dailyChartTon"></canvas></div><div class="chart-note" id="dailyNoteTon"></div></div>
-    <div class="chart-box"><div class="chart-title">% Đóng Góp Sản Lượng</div><div id="dailyDonut" class="donut-section" style="min-height:200px"></div></div>
-    <div class="chart-box"><div class="chart-title">Trend Items</div><div class="chart-wrap"><canvas id="dailyChartItems"></canvas></div><div class="chart-note" id="dailyNoteItems"></div></div>
-    <div class="chart-box"><div class="chart-title">Trend Xe</div><div class="chart-wrap"><canvas id="dailyChartXe"></canvas></div><div class="chart-note" id="dailyNoteXe"></div></div>
+    <div class="chart-box"><div class="chart-title">Trend Sản Lượng Theo Ngày (Tấn)</div><div class="chart-wrap"><canvas id="dailyChartTon"></canvas></div><div class="chart-note" id="dailyNoteTon"></div></div>
+    <div class="chart-box"><div class="chart-title">Trend Sản Lượng Theo Tuần (Tấn)</div><div class="chart-wrap"><canvas id="weeklyChartTon"></canvas></div><div class="chart-note" id="weeklyNoteTon"></div></div>
+    <div class="chart-box"><div class="chart-title">Trend Items Theo Ngày</div><div class="chart-wrap"><canvas id="dailyChartItems"></canvas></div><div class="chart-note" id="dailyNoteItems"></div></div>
+    <div class="chart-box"><div class="chart-title">Trend Items Theo Tuần</div><div class="chart-wrap"><canvas id="weeklyChartItems"></canvas></div><div class="chart-note" id="weeklyNoteItems"></div></div>
+    <div class="chart-box"><div class="chart-title">Trend Xe Theo Ngày</div><div class="chart-wrap"><canvas id="dailyChartXe"></canvas></div><div class="chart-note" id="dailyNoteXe"></div></div>
+    <div class="chart-box"><div class="chart-title">Trend Xe Theo Tuần</div><div class="chart-wrap"><canvas id="weeklyChartXe"></canvas></div><div class="chart-note" id="weeklyNoteXe"></div></div>
+    <div class="chart-box"><div class="chart-title">% Đóng Góp Sản Lượng (Ngày)</div><div id="dailyDonut" class="donut-section" style="min-height:200px"></div></div>
+    <div class="chart-box"><div class="chart-title">% Đóng Góp Sản Lượng (Tuần)</div><div id="weeklyDonut" class="donut-section" style="min-height:200px"></div></div>
   </div>`;
 
   el.innerHTML = html;
 
-  // Render table
+  // Render table + sorting init
   window._dailyData = data;
   dailyRenderTable(cur);
   dailyRenderDonut(cur);
+  dailyInitSortable();
+
+  // Set date range inputs from history
+  const histDates = history.map(h => {
+    const p = h.date.split('/'); return p[2]+'-'+p[1]+'-'+p[0];
+  });
+  document.getElementById('dailyDateFrom').value = histDates[Math.max(0,histDates.length-14)];
+  document.getElementById('dailyDateTo').value = histDates[histDates.length-1];
+
   dailyInitCharts(14);
 }
 
@@ -499,11 +539,194 @@ function dailyInitCharts(days) {
       options:JSON.parse(JSON.stringify(dailyChartOpts))
     });
   });
+  // Weekly charts
+  dailyInitWeeklyCharts(filtered);
 }
+
+// ── Weekly aggregation ──
+function dailyAggregateWeekly(filteredData) {
+  const data = window._dailyData;
+  const KHOS = data.kho_list;
+  const weeks = {};
+  filteredData.forEach(h => {
+    const p = h.date.split('/');
+    const d = new Date(+p[2], +p[1]-1, +p[0]);
+    const iso = d.toISOString().slice(0,10);
+    // ISO week: Mon=start
+    const tmp = new Date(d);
+    tmp.setDate(tmp.getDate() + 3 - (tmp.getDay() + 6) % 7);
+    const wk1 = new Date(tmp.getFullYear(), 0, 4);
+    const wn = 1 + Math.round(((tmp - wk1) / 86400000 - 3 + (wk1.getDay() + 6) % 7) / 7);
+    const wKey = 'W' + wn;
+    if (!weeks[wKey]) {
+      const mon = new Date(d); mon.setDate(mon.getDate() - (mon.getDay()+6)%7);
+      weeks[wKey] = { label: wKey, monday: mon, total_tons:0, total_items:0, total_xe:0, khos:{} };
+      KHOS.forEach(k => weeks[wKey].khos[k] = {san_luong_tan:0, sl_items:0, sl_xe:0});
+    }
+    const w = weeks[wKey];
+    w.total_tons += h.total_tons || 0;
+    w.total_items += h.total_items || 0;
+    w.total_xe += h.total_xe || 0;
+    KHOS.forEach(k => {
+      const kd = h.khos[k] || {};
+      w.khos[k].san_luong_tan += kd.san_luong_tan || 0;
+      w.khos[k].sl_items += kd.sl_items || 0;
+      w.khos[k].sl_xe += kd.sl_xe || 0;
+    });
+  });
+  return Object.values(weeks).sort((a,b) => a.monday - b.monday);
+}
+
+let weeklyCharts = {};
+function dailyInitWeeklyCharts(filteredDailyData) {
+  const data = window._dailyData;
+  const KHOS = data.kho_list;
+  const COLORS = data.kho_colors;
+  const wData = dailyAggregateWeekly(filteredDailyData);
+  const wLabels = wData.map(w => w.label);
+
+  ['weeklyChartTon','weeklyChartItems','weeklyChartXe'].forEach(id => {
+    if (weeklyCharts[id]) weeklyCharts[id].destroy();
+  });
+
+  const configs = [
+    ['weeklyChartTon','san_luong_tan','total_tons'],
+    ['weeklyChartItems','sl_items','total_items'],
+    ['weeklyChartXe','sl_xe','total_xe']
+  ];
+  configs.forEach(([id, mk, tk]) => {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const ds = [];
+    ds.push({type:'bar',label:'TOTAL',data:wData.map(w=>w[tk]),
+      backgroundColor:'rgba(255,255,255,0.15)',borderColor:'rgba(255,255,255,0.3)',
+      borderWidth:1,borderRadius:3,order:2,barPercentage:0.6,categoryPercentage:0.8});
+    KHOS.forEach(kho => {
+      ds.push({type:'line',label:kho,data:wData.map(w=>w.khos[kho][mk]),
+        borderColor:COLORS[kho],backgroundColor:COLORS[kho],
+        borderWidth:2,pointRadius:3,pointHoverRadius:6,tension:0.15,fill:false,order:1});
+    });
+    ds.push({type:'line',label:'TOTAL (avg)',data:wData.map(w=>w[tk]),
+      borderColor:'rgba(255,255,255,0.7)',borderWidth:2,borderDash:[6,3],
+      pointRadius:0,tension:0.15,fill:false,order:0});
+    weeklyCharts[id] = new Chart(canvas, {
+      type:'bar', data:{labels:wLabels, datasets:ds},
+      options:JSON.parse(JSON.stringify(dailyChartOpts))
+    });
+  });
+
+  // Weekly donut (latest week)
+  if (wData.length > 0) {
+    const latestW = wData[wData.length - 1];
+    const wDonut = document.getElementById('weeklyDonut');
+    if (wDonut) {
+      const tot = latestW.total_tons;
+      if (tot > 0) {
+        let stops=[], legs='', cum=0;
+        KHOS.forEach(kho => {
+          const pct = latestW.khos[kho].san_luong_tan / tot * 100;
+          stops.push(`${COLORS[kho]} ${cum.toFixed(1)}% ${(cum+pct).toFixed(1)}%`);
+          legs += `<div class="legend-item"><span class="legend-color" style="background:${COLORS[kho]}"></span>${kho} ${pct.toFixed(1)}%</div>`;
+          cum += pct;
+        });
+        wDonut.innerHTML = `<div class="donut" style="background:conic-gradient(${stops.join(', ')})"><div class="donut-hole"><span class="donut-val">${tot.toFixed(1)}</span><span class="donut-lbl">${latestW.label}</span></div></div><div class="legend">${legs}</div>`;
+      } else {
+        wDonut.innerHTML = '<p style="color:var(--t3)">Không có dữ liệu</p>';
+      }
+    }
+  }
+
+  // Weekly notes
+  if (wData.length >= 2) {
+    const cur = wData[wData.length-1], prev = wData[wData.length-2];
+    const pctCh = (a,b) => b>0 ? ((a-b)/b*100).toFixed(1) : '–';
+    const arrow = v => v>0 ? `<span style="color:var(--grn)">▲ +${v}%</span>` : v<0 ? `<span style="color:var(--red)">▼ ${v}%</span>` : '—';
+    const ids = [['weeklyNoteTon','total_tons','tấn'],['weeklyNoteItems','total_items','items'],['weeklyNoteXe','total_xe','xe']];
+    ids.forEach(([nid,key,unit]) => {
+      const ne = document.getElementById(nid);
+      if (ne) ne.innerHTML = `${cur.label}: <b>${key==='total_items'?fN(cur[key]):key==='total_tons'?cur[key].toFixed(2):cur[key]}</b> ${unit} · vs ${prev.label}: ${arrow(pctCh(cur[key],prev[key]))}`;
+    });
+  }
+}
+
+// ── Table sorting ──
+function dailyInitSortable() {
+  const table = document.getElementById('dailySortTable');
+  if (!table) return;
+  table.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = parseInt(th.dataset.col);
+      const tbody = table.querySelector('tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr:not(.total-row)'));
+      const totalRow = tbody.querySelector('tr.total-row');
+      const isAsc = th.classList.contains('asc');
+      table.querySelectorAll('th.sortable').forEach(h => h.classList.remove('asc','desc'));
+      th.classList.add(isAsc ? 'desc' : 'asc');
+      rows.sort((a,b) => {
+        const av = parseFloat(a.cells[col].textContent.replace(/,/g,'')) || 0;
+        const bv = parseFloat(b.cells[col].textContent.replace(/,/g,'')) || 0;
+        return isAsc ? bv - av : av - bv;
+      });
+      rows.forEach(r => tbody.appendChild(r));
+      if (totalRow) tbody.appendChild(totalRow);
+    });
+  });
+}
+
+// ── Date range filter for daily ──
+window.dailyApplyDateRange = function() {
+  const data = window._dailyData;
+  const df = document.getElementById('dailyDateFrom').value;
+  const dt = document.getElementById('dailyDateTo').value;
+  if (!df || !dt) return;
+  const fromD = new Date(df), toD = new Date(dt);
+  const filtered = data.history.filter(h => {
+    const p = h.date.split('/');
+    const d = new Date(+p[2], +p[1]-1, +p[0]);
+    return d >= fromD && d <= toD;
+  });
+  document.querySelectorAll('#dailyChartCtrl .fbtn').forEach(b => b.classList.remove('active'));
+  if (filtered.length > 0) {
+    const labels = filtered.map(h => h.date.substring(0, 5));
+    const configs = [
+      ['dailyChartTon','san_luong_tan','total_tons'],
+      ['dailyChartItems','sl_items','total_items'],
+      ['dailyChartXe','sl_xe','total_xe']
+    ];
+    configs.forEach(([id,mk,tk]) => {
+      if (dailyCharts[id]) dailyCharts[id].destroy();
+      const canvas = document.getElementById(id);
+      if (!canvas) return;
+      dailyCharts[id] = new Chart(canvas, {
+        type:'bar', data:{labels, datasets:dailyMkDS(filtered,mk,tk)},
+        options:JSON.parse(JSON.stringify(dailyChartOpts))
+      });
+    });
+    dailyInitWeeklyCharts(filtered);
+  }
+};
+window.dailyResetDateRange = function() {
+  const data = window._dailyData;
+  const histDates = data.history.map(h => {
+    const p = h.date.split('/'); return p[2]+'-'+p[1]+'-'+p[0];
+  });
+  document.getElementById('dailyDateFrom').value = histDates[Math.max(0,histDates.length-14)];
+  document.getElementById('dailyDateTo').value = histDates[histDates.length-1];
+  dailyInitCharts(14);
+};
 
 window.dailySetRange = function(days, btn) {
   document.querySelectorAll('#dailyChartCtrl .fbtn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
+  // Also update date inputs
+  const data = window._dailyData;
+  const n = data.history.length;
+  const start = Math.max(0, n - days);
+  const histDates = data.history.map(h => {
+    const p = h.date.split('/'); return p[2]+'-'+p[1]+'-'+p[0];
+  });
+  document.getElementById('dailyDateFrom').value = histDates[start];
+  document.getElementById('dailyDateTo').value = histDates[n-1];
   dailyInitCharts(days);
 };
 
@@ -523,48 +746,42 @@ function renderPerformance(data) {
   const isoDates = data.iso_dates || [];
   const weeklyHtml = data.weekly_tables_html || '';
 
-  // Cards
-  function cardTbl(title, prefix) {
-    let rows = '';
-    khoNames.forEach(kho => {
-      const d = cards[`${prefix}_${kho}`] || {};
-      const pct = d.pct || 0;
-      const total = d.total || 0;
-      const color = pct>=95?'var(--grn)':pct>=90?'var(--org)':'var(--red)';
-      rows += `<tr><td class="kho-cell" style="font-size:.78rem">${kho}</td><td class="tc number" style="font-size:.78rem">${total}</td><td class="tc number" style="color:${color};font-weight:700;font-size:.78rem">${pct.toFixed(1)}%</td></tr>`;
-    });
-    return `<div class="stat-card" style="padding:1rem"><h3 style="font-size:.82rem;font-weight:700;margin-bottom:.6rem;color:var(--t2)">${title}</h3><table style="width:100%"><thead><tr><th style="font-size:.72rem;text-align:left">Kho</th><th class="tc" style="font-size:.72rem">Tổng</th><th class="tc" style="font-size:.72rem">Tỷ lệ</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-  }
-
-  let html = `<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
-    ${cardTbl('📊 Đúng Giờ SLA','sla')}
-    ${cardTbl('📅 On Time Per Dest','plan')}
-    ${cardTbl('🗺 Đúng Tuyến','route')}
-    ${cardTbl('📋 Đúng Kế Hoạch','plancmp')}
-  </div>`;
-
-  // Date filter
-  html += `<div class="filter-bar">
+  // Date filter — above cards
+  let html = `<div class="filter-bar">
     <label>📅 Từ:</label><input type="date" id="perfDateFrom" value="${isoDates[0]||''}" onchange="perfApplyDate()">
     <label>Đến:</label><input type="date" id="perfDateTo" value="${isoDates[isoDates.length-1]||''}" onchange="perfApplyDate()">
     <button class="fbtn" onclick="perfResetDate()">↻ Reset</button>
     <span class="filter-info" id="perfRangeInfo">${isoDates.length} ngày</span>
   </div>`;
 
-  // Chart boxes
+  // Cards — NO route card (removed Đúng Tuyến)
+  html += `<div id="perfCardsContainer"></div>`;
+
+  // Chart boxes — NO route chart, renumbered, single-column layout
   const chartConfigs = [
     ['perfChartSLA','1. Đúng Giờ SLA','filterPerfSLA'],
     ['perfChartPlan','2. On Time Per Dest','filterPerfPlan'],
-    ['perfChartRoute','3. Đúng Tuyến','filterPerfRoute'],
-    ['perfChartPlanCmp','4. Đúng Kế Hoạch','filterPerfPlanCmp'],
-    ['perfChartTrips','5. Số Chuyến & Hoàn Thành','filterPerfTrips'],
+    ['perfChartPlanCmp','3. Đúng Kế Hoạch','filterPerfPlanCmp'],
+    ['perfChartTrips','4. Số Chuyến & Hoàn Thành','filterPerfTrips'],
   ];
 
-  html += '<div class="chart-grid">';
+  html += '<div class="chart-grid perf-1col">';
   chartConfigs.forEach(([id, title, filterId]) => {
     html += `<div class="chart-box"><div style="display:flex;align-items:center;flex-wrap:wrap;margin-bottom:.6rem"><h3 style="font-size:.88rem;font-weight:700;color:var(--t1)">${title}</h3><span class="pill-bar" id="${filterId}"></span></div><div class="chart-wrap"><canvas id="${id}"></canvas></div></div>`;
   });
   html += '</div>';
+
+  // Glossary table
+  html += `<div class="section"><div class="section-header"><span class="icon">📖</span><h2>Chú Thích Chỉ Tiêu</h2></div>
+  <div class="table-wrap"><table class="glossary-table">
+    <thead><tr><th>Chỉ Tiêu</th><th>Ý Nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td>% Đúng Giờ SLA</td><td>Thời gian đến siêu thị thực tế nằm trong khung giờ cam kết (SLA) của từng kho. VD: KRC phải giao trước 05:30, ĐÔNG MÁT phải giao trước 16:00.</td></tr>
+      <tr><td>% On Time Per Dest</td><td>Thời gian giao đến siêu thị thực tế ≤ thời gian dự kiến giao theo kế hoạch (planned time). Đánh giá độ chính xác so với kế hoạch.</td></tr>
+      <tr><td>% Đúng Kế Hoạch</td><td>Tỉ lệ điểm giao được thực hiện đúng thứ tự tuyến kế hoạch — so sánh vị trí thực tế của từng siêu thị trong chuyến với thứ tự kế hoạch.</td></tr>
+      <tr><td>% Hoàn Thành</td><td>Tỉ lệ chuyến xe hoàn thành giao hàng (status = "Hoàn thành") trên tổng số chuyến của mỗi kho.</td></tr>
+    </tbody>
+  </table></div></div>`;
 
   // Weekly tables
   if (weeklyHtml) {
@@ -579,8 +796,11 @@ function renderPerformance(data) {
     fullLabels: [...labels],
     charts: JSON.parse(JSON.stringify(charts)),
     fullCharts: JSON.parse(JSON.stringify(charts)),
-    khoNames, khoColors, isoDates
+    khoNames, khoColors, isoDates, cards: JSON.parse(JSON.stringify(cards))
   };
+
+  // Render cards with initial data
+  perfRenderCards();
 
   // Build filter pills & init charts
   Chart.defaults.color = '#94a3b8';
@@ -654,17 +874,45 @@ function renderPerformance(data) {
 
   function initSLA(k){buildBarTrend('perfChartSLA','sla','Đúng SLA','Trễ SLA','% SLA',95,k)}
   function initPlan(k){buildBarTrend('perfChartPlan','plan','Đúng KH','Trễ KH','% Plan',95,k)}
-  function initRoute(k){buildBarTrend('perfChartRoute','route','Đúng Tuyến','Sai Tuyến','% Route',null,k)}
   function initPlanCmp(k){buildBarTrend('perfChartPlanCmp','plan_compliance','Đúng KH','Sai KH','% KH',null,k)}
   function initTrips(k){buildBarTrend('perfChartTrips','trips_completion','Hoàn Thành','Chưa HT','% HT',null,k)}
 
   makePills('filterPerfSLA', initSLA);
   makePills('filterPerfPlan', initPlan);
-  makePills('filterPerfRoute', initRoute);
   makePills('filterPerfPlanCmp', initPlanCmp);
   makePills('filterPerfTrips', initTrips);
 
-  initSLA(null); initPlan(null); initRoute(null); initPlanCmp(null); initTrips(null);
+  initSLA(null); initPlan(null); initPlanCmp(null); initTrips(null);
+
+  // ── Recalculate cards from kho_bars sliced data ──
+  function perfRecalcCards(si, ei) {
+    const pd = window._perfData;
+    const fc = pd.fullCharts;
+    const khoNames = pd.khoNames;
+    const newCards = {};
+    // For each metric prefix, recalculate from kho_bars
+    const metricMap = [
+      {prefix:'sla', chartKey:'sla'},
+      {prefix:'plan', chartKey:'plan'},
+      {prefix:'plancmp', chartKey:'plan_compliance'},
+    ];
+    metricMap.forEach(({prefix, chartKey}) => {
+      const ch = fc[chartKey];
+      if (!ch || !ch.kho_bars) return;
+      khoNames.forEach(kho => {
+        const kb = ch.kho_bars[kho];
+        if (!kb) return;
+        const onSlice = kb.on.slice(si, ei);
+        const lateSlice = kb.late.slice(si, ei);
+        const totalOn = onSlice.reduce((a,b) => a+b, 0);
+        const totalLate = lateSlice.reduce((a,b) => a+b, 0);
+        const total = totalOn + totalLate;
+        newCards[`${prefix}_${kho}`] = { total, pct: total > 0 ? totalOn/total*100 : 0 };
+      });
+    });
+    pd.cards = newCards;
+    perfRenderCards();
+  }
 
   // Date range
   window.perfApplyDate = function() {
@@ -684,7 +932,8 @@ function renderPerformance(data) {
       if(src.kho_bars){for(const k of Object.keys(src.kho_bars)){if(!dst.kho_bars)dst.kho_bars={};if(!dst.kho_bars[k])dst.kho_bars[k]={};dst.kho_bars[k].on=src.kho_bars[k].on.slice(si,ei);dst.kho_bars[k].late=src.kho_bars[k].late.slice(si,ei);}}
       if(src.trends){for(let i=0;i<src.trends.length;i++){if(dst.trends[i])dst.trends[i].data=src.trends[i].data.slice(si,ei);}}
     }
-    initSLA(null);initPlan(null);initRoute(null);initPlanCmp(null);initTrips(null);
+    perfRecalcCards(si, ei);
+    initSLA(null);initPlan(null);initPlanCmp(null);initTrips(null);
     document.getElementById('perfRangeInfo').textContent = pd.labels.length+' ngày';
   };
   window.perfResetDate = function() {
@@ -694,9 +943,39 @@ function renderPerformance(data) {
     pd.labels.length=0;
     pd.fullLabels.forEach(l=>pd.labels.push(l));
     pd.charts = JSON.parse(JSON.stringify(pd.fullCharts));
-    initSLA(null);initPlan(null);initRoute(null);initPlanCmp(null);initTrips(null);
+    // Restore full cards
+    perfRecalcCards(0, pd.isoDates.length);
+    initSLA(null);initPlan(null);initPlanCmp(null);initTrips(null);
     document.getElementById('perfRangeInfo').textContent = pd.labels.length+' ngày';
   };
+}
+
+// ── Render perf cards (called on init + filter) ──
+function perfRenderCards() {
+  const pd = window._perfData;
+  if (!pd) return;
+  const container = document.getElementById('perfCardsContainer');
+  if (!container) return;
+  const cards = pd.cards;
+  const khoNames = pd.khoNames;
+
+  function cardTbl(title, prefix) {
+    let rows = '';
+    khoNames.forEach(kho => {
+      const d = cards[`${prefix}_${kho}`] || {};
+      const pct = d.pct || 0;
+      const total = d.total || 0;
+      const color = pct>=95?'var(--grn)':pct>=90?'var(--org)':'var(--red)';
+      rows += `<tr><td class="kho-cell" style="font-size:.78rem">${kho}</td><td class="tc number" style="font-size:.78rem">${total}</td><td class="tc number" style="color:${color};font-weight:700;font-size:.78rem">${pct.toFixed(1)}%</td></tr>`;
+    });
+    return `<div class="stat-card" style="padding:1rem"><h3 style="font-size:.82rem;font-weight:700;margin-bottom:.6rem;color:var(--t2)">${title}</h3><table style="width:100%"><thead><tr><th style="font-size:.72rem;text-align:left">Kho</th><th class="tc" style="font-size:.72rem">Tổng</th><th class="tc" style="font-size:.72rem">Tỷ lệ</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+
+  container.innerHTML = `<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+    ${cardTbl('📊 Đúng Giờ SLA','sla')}
+    ${cardTbl('📅 On Time Per Dest','plan')}
+    ${cardTbl('📋 Đúng Kế Hoạch','plancmp')}
+  </div>`;
 }
 
 // ═══════════════════════════════════════════════
