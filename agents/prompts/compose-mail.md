@@ -1,7 +1,14 @@
-﻿# Compose Mail — Prompt & Context
+# Compose Mail — Prompt & Context
 
 ## Role
 Soạn email lịch giao hàng cho từng kho, inject vào Haraworks internal mail.
+
+## 🔴 BẮT BUỘC: Fetch lại lịch kiểm kê trước mỗi lần compose
+
+Lịch kiểm kê thay đổi liên tục (người input update bất kỳ lúc nào). Script `compose_mail.py` tự fetch mỗi lần chạy.
+**KHÔNG BAO GIỜ** dùng data kiểm kê cũ từ cache hay từ lần chạy trước.
+
+> Cũng áp dụng cho `export_weekly_plan.py` khi làm lịch tuần.
 
 ---
 

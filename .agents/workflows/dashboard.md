@@ -5,10 +5,10 @@
 
 > [!NOTE]
 > **Daily domain tự động deploy** khi chạy `generate.py --send`.
-> Chỉ cần chạy manual deploy cho các domain khác (performance, inventory, nso) hoặc khi cần re-deploy.
+> Chỉ cần chạy manual deploy cho các domain khác (performance, inventory, nso, weekly_plan) hoặc khi cần re-deploy.
 
 ## Prerequisites
-- Report domain tương ứng đã chạy xong (daily/performance/inventory/nso)
+- Report domain tương ứng đã chạy xong (daily/performance/inventory/nso/weekly_plan)
 - Git configured với push access
 
 ## Workflow
@@ -26,6 +26,9 @@ python script/dashboard/deploy.py --domain inventory
 
 # Sau NSO task (thứ 3)
 python script/dashboard/deploy.py --domain nso
+
+# Sau weekly transport plan (thứ 5)
+python script/dashboard/deploy.py --domain weekly_plan
 ```
 
 ### Update tất cả domains
@@ -37,6 +40,9 @@ python script/dashboard/deploy.py --domain all
 ```powershell
 python script/dashboard/export_data.py --domain all
 python script/dashboard/export_data.py --domain daily
+
+# Weekly plan export riêng (không qua export_data.py)
+python script/dashboard/export_weekly_plan.py
 ```
 
 ## Luồng xử lý
@@ -45,6 +51,8 @@ python script/dashboard/export_data.py --domain daily
 deploy.py --domain {name}
   ↓
 export_data.py → đọc output/state/ + domain scripts
+  ↓ (nếu domain = all/weekly_plan)
+export_weekly_plan.py → đọc Excel + kiểm kê + NSO
   ↓
 Ghi JSON → docs/data/{name}.json
   ↓
@@ -55,13 +63,24 @@ GitHub Pages tự deploy (~1-2 phút)
 Live tại: https://tunhipham.github.io/transport_daily_report/
 ```
 
+## Dashboard Tabs
+
+| Tab | Data file | Mô tả |
+|-----|-----------|--------|
+| 📦 Daily Report | `docs/data/daily.json` | KPI + chi tiết kho theo ngày |
+| 🚛 Performance | `docs/data/performance.json` | Biểu đồ hiệu suất vận chuyển |
+| 📋 Inventory | `docs/data/inventory.json` | Đối soát tồn kho |
+| 🏪 NSO | `docs/data/nso.json` | Lịch khai trương + châm hàng |
+| 📅 Lịch Tuần | `docs/data/weekly_plan.json` | Lịch về hàng ST theo tuần |
+
 ## Files liên quan
 
 | File | Vai trò |
-|------|---------|
-| `docs/index.html` | Dashboard SPA (4 tabs, Chart.js) |
+|------|---------| 
+| `docs/index.html` | Dashboard SPA (5 tabs, Chart.js, xlsx-js-style) |
 | `docs/data/*.json` | Data files per domain |
-| `script/dashboard/export_data.py` | Export JSON từ state/cache |
+| `script/dashboard/export_data.py` | Export JSON cho daily/performance/inventory/nso |
+| `script/dashboard/export_weekly_plan.py` | Export JSON cho weekly_plan |
 | `script/dashboard/deploy.py` | Export + git commit + push |
 
 ## Timing cập nhật
@@ -72,9 +91,11 @@ Live tại: https://tunhipham.github.io/transport_daily_report/
 | Performance | Sau khi chạy thêm báo cáo ngày mới | ❌ Manual |
 | Inventory | Sau khi có report đối soát | ❌ Manual |
 | NSO | Thứ 3 — sau task quét mail + làm lịch | ❌ Manual |
+| Weekly Plan | Thứ 5 — sau khi tạo lịch W+1 | ❌ Manual |
 
 ## Troubleshooting
 
 - **Push fail**: Kiểm tra `git status`, resolve conflicts nếu có
 - **Data trống**: Chạy report domain trước rồi mới deploy
 - **GitHub Pages chưa update**: Chờ 2-3 phút, check Actions tab trên GitHub
+- **Weekly plan lỗi**: Xem chi tiết tại workflow `/weekly-plan`

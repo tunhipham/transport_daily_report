@@ -79,11 +79,12 @@ def fetch_inventory_schedule():
             kiem_ke = row[7].value  # Col H = Ngày kiểm kê tổng 2026
             if store_id and kiem_ke:
                 if hasattr(kiem_ke, 'date'):
-                    inventory[store_id] = kiem_ke
+                    # Normalize to date (not datetime) for consistent comparisons
+                    inventory[store_id] = kiem_ke.date() if isinstance(kiem_ke, datetime) else kiem_ke
                 elif isinstance(kiem_ke, str):
                     # Try parsing DD/MM/YYYY
                     try:
-                        inventory[store_id] = datetime.strptime(kiem_ke, "%d/%m/%Y")
+                        inventory[store_id] = datetime.strptime(kiem_ke, "%d/%m/%Y").date()
                     except ValueError:
                         pass
         wb.close()
