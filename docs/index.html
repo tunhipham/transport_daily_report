@@ -1,359 +1,1225 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>KFM Logistics — Command Center</title>
-<meta name="description" content="Dashboard theo dõi vận hành logistics KFM — Daily, Performance, Inventory, NSO">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#0b0f1a;--bg2:#111827;--bg3:#1a1f2e;--bg4:#222839;
-  --surface:rgba(17,24,39,.92);--surface2:rgba(26,31,46,.85);
-  --bd:rgba(148,163,184,.08);--bd2:rgba(148,163,184,.15);
-  --t1:#f1f5f9;--t2:#94a3b8;--t3:#64748b;--t4:#475569;
-  --ac:#6366f1;--acl:#818cf8;--acs:#4f46e5;
-  --grn:#10b981;--grnl:#34d399;--org:#f59e0b;--orgl:#fbbf24;
-  --red:#ef4444;--redl:#f87171;--pur:#a855f7;--purl:#c084fc;
-  --blu:#3b82f6;--blul:#60a5fa;--cyan:#06b6d4;--cyanl:#22d3ee;
-  --g1:linear-gradient(135deg,#6366f1,#8b5cf6);
-  --g2:linear-gradient(135deg,#06b6d4,#3b82f6);
-  --g3:linear-gradient(135deg,#10b981,#06b6d4);
-  --shadow:0 4px 24px rgba(0,0,0,.4);
-  --radius:14px;
-}
-html{scroll-behavior:smooth}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--t1);line-height:1.6;min-height:100vh;overflow-x:hidden}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>KFM Logistics — Command Center</title>
+  <meta name="description" content="Dashboard theo dõi vận hành logistics KFM — Daily, Performance, Inventory, NSO">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
 
-/* ═══ TOPBAR ═══ */
-.topbar{position:sticky;top:0;z-index:100;background:rgba(11,15,26,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd);padding:0 2rem}
-.topbar-inner{max-width:1600px;margin:0 auto;display:flex;align-items:center;gap:1.5rem;height:60px}
-.logo{font-size:1.3rem;font-weight:800;background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;letter-spacing:-.02em}
-.tabs{display:flex;gap:2px;margin-left:1rem}
-.tab{padding:.55rem 1.2rem;border-radius:10px;font-size:.82rem;font-weight:600;color:var(--t3);cursor:pointer;transition:all .25s;border:1px solid transparent;white-space:nowrap;user-select:none}
-.tab:hover{color:var(--t2);background:rgba(99,102,241,.06)}
-.tab.active{color:var(--acl);background:rgba(99,102,241,.12);border-color:rgba(99,102,241,.2)}
-.meta{margin-left:auto;display:flex;align-items:center;gap:.8rem;font-size:.75rem;color:var(--t3)}
-.meta .dot{width:8px;height:8px;border-radius:50%;background:var(--grn);animation:pulse-dot 2s infinite}
-@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+    :root {
+      --bg: #0b0f1a;
+      --bg2: #111827;
+      --bg3: #1a1f2e;
+      --bg4: #222839;
+      --surface: rgba(17, 24, 39, .92);
+      --surface2: rgba(26, 31, 46, .85);
+      --bd: rgba(148, 163, 184, .08);
+      --bd2: rgba(148, 163, 184, .15);
+      --t1: #f1f5f9;
+      --t2: #94a3b8;
+      --t3: #64748b;
+      --t4: #475569;
+      --ac: #6366f1;
+      --acl: #818cf8;
+      --acs: #4f46e5;
+      --grn: #10b981;
+      --grnl: #34d399;
+      --org: #f59e0b;
+      --orgl: #fbbf24;
+      --red: #ef4444;
+      --redl: #f87171;
+      --pur: #a855f7;
+      --purl: #c084fc;
+      --blu: #3b82f6;
+      --blul: #60a5fa;
+      --cyan: #06b6d4;
+      --cyanl: #22d3ee;
+      --g1: linear-gradient(135deg, #6366f1, #8b5cf6);
+      --g2: linear-gradient(135deg, #06b6d4, #3b82f6);
+      --g3: linear-gradient(135deg, #10b981, #06b6d4);
+      --shadow: 0 4px 24px rgba(0, 0, 0, .4);
+      --radius: 14px;
+    }
 
-/* ═══ MAIN CONTAINER ═══ */
-.main{max-width:1600px;margin:0 auto;padding:1.5rem 2rem 3rem}
-.tab-content{display:none;animation:fadeIn .4s ease}
-.tab-content.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    html {
+      scroll-behavior: smooth
+    }
 
-/* ═══ LOADING ═══ */
-.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;gap:1rem;color:var(--t3)}
-.spinner{width:40px;height:40px;border:3px solid var(--bd2);border-top-color:var(--ac);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.error-msg{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius);padding:1.5rem;text-align:center;color:var(--redl)}
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden
+    }
 
-/* ═══ SECTION HEADERS ═══ */
-.section{margin-bottom:2rem}
-.section-header{display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid var(--bd)}
-.section-header h2{font-size:1.15rem;font-weight:700}
-.section-header .icon{font-size:1.2rem}
+    /* ═══ TOPBAR ═══ */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(11, 15, 26, .85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--bd);
+      padding: 0 2rem
+    }
 
-/* ═══ STAT CARDS ═══ */
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem}
-.stat-card{background:var(--surface);border:1px solid var(--bd);border-radius:var(--radius);padding:1.2rem 1.5rem;backdrop-filter:blur(10px);transition:all .3s}
-.stat-card:hover{transform:translateY(-3px);border-color:rgba(99,102,241,.25);box-shadow:var(--shadow)}
-.stat-card .value{font-size:2rem;font-weight:800;margin-bottom:.15rem}
-.stat-card .label{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--t3)}
-.stat-card .sub{font-size:.7rem;color:var(--t4);margin-top:.3rem}
-.stat-card .change-row{font-size:.72rem;margin-top:.25rem;font-weight:600;line-height:1.5;display:flex;flex-direction:column;gap:2px}
-.stat-card .change-row .up{color:var(--grn)}
-.stat-card .change-row .down{color:var(--red)}
-.stat-card .change-row .flat{color:var(--t4)}
+    .topbar-inner {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      height: 60px
+    }
 
-/* ═══ CHART CONTAINERS ═══ */
-.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem}
-.chart-box{background:var(--surface);border:1px solid var(--bd);border-radius:var(--radius);padding:1.25rem;backdrop-filter:blur(10px)}
-.chart-box.full{grid-column:1/-1}
-.chart-title{font-size:.88rem;font-weight:700;color:var(--orgl);text-align:center;margin-bottom:.8rem;text-transform:uppercase;letter-spacing:.04em}
-.chart-wrap{position:relative;height:320px}
-.chart-note{font-size:.78rem;color:var(--t2);text-align:center;padding:.5rem 0;font-weight:500}
+    .logo {
+      font-size: 1.3rem;
+      font-weight: 800;
+      background: var(--g1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      white-space: nowrap;
+      letter-spacing: -.02em
+    }
 
-/* ═══ FILTER BAR ═══ */
-.filter-bar{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;padding:.8rem 1rem;background:var(--surface);border:1px solid var(--bd);border-radius:var(--radius);margin-bottom:1.25rem;backdrop-filter:blur(10px)}
-.filter-bar label{color:var(--t2);font-size:.78rem;font-weight:600;white-space:nowrap}
-.filter-bar select,.filter-bar input[type="date"]{background:rgba(30,41,59,.8);border:1px solid var(--bd2);color:var(--t1);padding:.4rem .7rem;border-radius:8px;font-family:inherit;font-size:.8rem;outline:none;transition:border-color .2s}
-.filter-bar select:focus,.filter-bar input:focus{border-color:var(--ac)}
-.filter-bar input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(.7)}
-.fbtn{padding:.4rem .9rem;border-radius:8px;border:1px solid var(--bd2);background:transparent;color:var(--t2);cursor:pointer;font-family:inherit;font-size:.78rem;font-weight:600;transition:all .2s}
-.fbtn:hover{border-color:var(--ac);color:var(--t1)}
-.fbtn.active{background:rgba(99,102,241,.18);color:var(--acl);border-color:rgba(99,102,241,.3)}
-.fbtn.primary{background:var(--g1);color:#fff;border-color:transparent}
-.fbtn.primary:hover{opacity:.85}
-.filter-info{color:var(--t4);font-size:.72rem;margin-left:auto}
+    .tabs {
+      display: flex;
+      gap: 2px;
+      margin-left: 1rem
+    }
 
-/* ═══ TABLES ═══ */
-.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--bd)}
-table{width:100%;border-collapse:collapse;font-size:.82rem}
-thead th{background:rgba(99,102,241,.1);color:var(--acl);font-weight:600;padding:.65rem .75rem;text-align:left;white-space:nowrap;border-bottom:2px solid var(--bd)}
-tbody td{padding:.55rem .75rem;border-bottom:1px solid var(--bd);transition:background .2s}
-tbody tr:hover td{background:rgba(30,41,59,.5)}
-.tc{text-align:center}
-.tr{text-align:right}
-.number{font-variant-numeric:tabular-nums}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.badge{display:inline-block;padding:.2rem .6rem;border-radius:16px;font-size:.72rem;font-weight:600;white-space:nowrap}
-.badge-green{background:rgba(16,185,129,.12);color:var(--grn);border:1px solid rgba(16,185,129,.25)}
-.badge-orange{background:rgba(245,158,11,.12);color:var(--org);border:1px solid rgba(245,158,11,.25)}
-.badge-red{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25)}
-.badge-purple{background:rgba(168,85,247,.12);color:var(--pur);border:1px solid rgba(168,85,247,.25)}
-.badge-blue{background:rgba(59,130,246,.12);color:var(--blu);border:1px solid rgba(59,130,246,.25)}
-.total-row td{background:rgba(99,102,241,.06)!important;font-weight:700;border-top:2px solid var(--bd2)}
-.kho-cell{font-weight:700}
+    .tab {
+      padding: .55rem 1.2rem;
+      border-radius: 10px;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--t3);
+      cursor: pointer;
+      transition: all .25s;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      user-select: none
+    }
 
-/* ═══ DONUT ═══ */
-.donut-section{display:flex;align-items:center;gap:1.5rem;justify-content:center;flex-wrap:wrap}
-.donut{width:160px;height:160px;border-radius:50%;position:relative;box-shadow:0 0 20px rgba(0,0,0,.3);flex-shrink:0}
-.donut-hole{position:absolute;top:34px;left:34px;width:92px;height:92px;border-radius:50%;background:var(--bg3);display:flex;flex-direction:column;align-items:center;justify-content:center}
-.donut-val{font-size:1.5rem;font-weight:800}
-.donut-lbl{font-size:.7rem;color:var(--t3);text-transform:uppercase;font-weight:600}
-.legend{font-size:.82rem;color:var(--t1);font-weight:600}
-.legend-item{margin:.4rem 0;display:flex;align-items:center;gap:.5rem}
-.legend-color{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+    .tab:hover {
+      color: var(--t2);
+      background: rgba(99, 102, 241, .06)
+    }
 
-/* ═══ NSO CALENDAR ═══ */
-.cal-wrap{background:var(--surface);border:1px solid var(--bd);border-radius:var(--radius);padding:1.25rem;backdrop-filter:blur(10px);margin-bottom:1.25rem}
-.cal-nav{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem}
-.cal-nav button{background:transparent;border:1px solid var(--bd2);color:var(--t2);width:34px;height:34px;border-radius:8px;font-size:1rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center}
-.cal-nav button:hover{border-color:var(--ac);color:var(--t1);background:rgba(99,102,241,.1)}
-.cal-title{font-size:1.05rem;font-weight:700;min-width:160px;text-align:center}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-.cal-hd{background:rgba(99,102,241,.12);color:var(--acl);font-weight:600;font-size:.72rem;padding:.4rem .3rem;text-align:center;border-radius:5px}
-.cal-cell{min-height:72px;background:rgba(30,41,59,.35);border-radius:5px;padding:.25rem .3rem;transition:background .2s}
-.cal-cell:hover{background:rgba(30,41,59,.6)}
-.cal-cell.empty{background:transparent;min-height:36px}
-.cal-cell.today{border:2px solid var(--ac)}
-.cal-day{font-size:.7rem;font-weight:600;color:var(--t3);margin-bottom:2px}
-.cal-day.sun{color:var(--red)}
-.cal-ev{font-size:.6rem;line-height:1.2;padding:2px 3px;border-radius:3px;margin-bottom:1px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cal-ev.upcoming{background:rgba(16,185,129,.12);color:var(--grn)}
-.cal-ev.opening{background:rgba(245,158,11,.12);color:var(--org)}
-.cal-ev.reschedule{background:rgba(168,85,247,.12);color:var(--pur)}
+    .tab.active {
+      color: var(--acl);
+      background: rgba(99, 102, 241, .12);
+      border-color: rgba(99, 102, 241, .2)
+    }
 
-/* ═══ INLINE TABLE FILTERS ═══ */
-.tbl-filter{width:100%;padding:4px 6px;background:rgba(30,41,59,.6);border:1px solid var(--bd2);border-radius:5px;color:var(--t2);font-size:.7rem;font-family:inherit;outline:none;transition:border-color .2s}
-.tbl-filter:focus{border-color:var(--ac)}
-.tbl-filter::placeholder{color:var(--t4)}
-select.tbl-filter{cursor:pointer;-webkit-appearance:none;appearance:none;padding-right:18px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center}
+    .meta {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: .8rem;
+      font-size: .75rem;
+      color: var(--t3)
+    }
 
-/* ═══ NSO REPLENISHMENT CARDS ═══ */
-.rcard{background:var(--surface);border:1px solid var(--bd);border-radius:var(--radius);padding:1.2rem;margin-bottom:1rem;backdrop-filter:blur(10px)}
-.rcard-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;flex-wrap:wrap;gap:.4rem}
-.rcard-head h3{font-size:.95rem;font-weight:700}
-.vbadge{background:var(--g2);color:#fff;padding:.2rem .6rem;border-radius:8px;font-size:.72rem;font-weight:600}
+    .meta .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--grn);
+      animation: pulse-dot 2s infinite
+    }
 
-/* ═══ PERF FILTER PILLS ═══ */
-.pill-bar{display:inline-flex;gap:4px;margin-left:12px;vertical-align:middle;flex-wrap:wrap}
-.pill{padding:4px 12px;border-radius:16px;border:1px solid var(--bd2);background:transparent;color:var(--t3);cursor:pointer;font-size:.72rem;font-family:inherit;transition:all .2s}
-.pill:hover{background:rgba(255,255,255,.06);color:var(--t2)}
-.pill.active{background:rgba(99,102,241,.18);color:var(--acl);border-color:rgba(99,102,241,.3);font-weight:600}
+    @keyframes pulse-dot {
 
-/* ═══ WEEKLY TABLE (PERF) ═══ */
-.weekly-table{font-size:.72rem}
-.weekly-table th,.weekly-table td{padding:5px 8px;border:1px solid var(--bd);text-align:center}
-.weekly-table thead th{background:rgba(99,102,241,.1);color:var(--acl);font-weight:600}
-.wt-kho-cell{font-weight:700;text-align:left!important;padding-left:10px!important;background:var(--bg3)!important;position:sticky;left:0;z-index:2}
-.wt-metric-cell{text-align:left!important;color:var(--t2);font-weight:500;white-space:nowrap;background:var(--bg3)!important;position:sticky;left:56px;z-index:2}
-.wt-total-cell{background:rgba(99,102,241,.06);font-weight:600}
+      0%,
+      100% {
+        opacity: 1
+      }
 
-/* ═══ SORT HEADERS ═══ */
-th.sortable{cursor:pointer;user-select:none;position:relative;padding-right:1.2rem!important}
-th.sortable:hover{color:var(--t1);background:rgba(99,102,241,.18)}
-th.sortable::after{content:'⇅';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:.65rem;opacity:.4}
-th.sortable.asc::after{content:'▲';opacity:.8}
-th.sortable.desc::after{content:'▼';opacity:.8}
+      50% {
+        opacity: .4
+      }
+    }
 
-/* ═══ PERF SINGLE-COL CHARTS ═══ */
-.chart-grid.perf-1col{grid-template-columns:1fr}
+    /* ═══ MAIN CONTAINER ═══ */
+    .main {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem 3rem
+    }
 
-/* ═══ GLOSSARY TABLE ═══ */
-.glossary-table{width:100%;border-collapse:collapse;font-size:.8rem}
-.glossary-table th{background:rgba(99,102,241,.1);color:var(--acl);font-weight:600;padding:.55rem .75rem;text-align:left;border-bottom:2px solid var(--bd)}
-.glossary-table td{padding:.5rem .75rem;border-bottom:1px solid var(--bd);line-height:1.5}
-.glossary-table td:first-child{font-weight:600;color:var(--orgl);white-space:nowrap;width:200px}
-.glossary-table tbody tr:hover td{background:rgba(30,41,59,.5)}
+    .tab-content {
+      display: none;
+      animation: fadeIn .4s ease
+    }
 
-/* ═══ RESPONSIVE ═══ */
-@media(max-width:1024px){.chart-grid{grid-template-columns:1fr}}
-@media(max-width:768px){
-  .topbar{padding:0 1rem}
-  .topbar-inner{height:52px;gap:.8rem}
-  .logo{font-size:1.1rem}
-  .tabs{gap:1px}
-  .tab{padding:.4rem .7rem;font-size:.72rem}
-  .main{padding:1rem}
-  .stats-grid{grid-template-columns:repeat(2,1fr);gap:.7rem}
-  .stat-card .value{font-size:1.5rem}
-  .chart-grid{grid-template-columns:1fr}
-  .meta{display:none}
-}
-@media(max-width:480px){
-  .stats-grid{grid-template-columns:1fr}
-  .tab{padding:.35rem .5rem;font-size:.68rem}
-}
+    .tab-content.active {
+      display: block
+    }
 
-/* ═══ FOOTER ═══ */
-.footer{text-align:center;padding:1.5rem 0;color:var(--t4);font-size:.72rem;border-top:1px solid var(--bd);margin-top:2rem}
-</style>
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    /* ═══ LOADING ═══ */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      gap: 1rem;
+      color: var(--t3)
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--bd2);
+      border-top-color: var(--ac);
+      border-radius: 50%;
+      animation: spin .8s linear infinite
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .error-msg {
+      background: rgba(239, 68, 68, .1);
+      border: 1px solid rgba(239, 68, 68, .2);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      text-align: center;
+      color: var(--redl)
+    }
+
+    /* ═══ SECTION HEADERS ═══ */
+    .section {
+      margin-bottom: 2rem
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: 1rem;
+      padding-bottom: .5rem;
+      border-bottom: 2px solid var(--bd)
+    }
+
+    .section-header h2 {
+      font-size: 1.15rem;
+      font-weight: 700
+    }
+
+    .section-header .icon {
+      font-size: 1.2rem
+    }
+
+    /* ═══ STAT CARDS ═══ */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--bd);
+      border-radius: var(--radius);
+      padding: 1.2rem 1.5rem;
+      backdrop-filter: blur(10px);
+      transition: all .3s
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(99, 102, 241, .25);
+      box-shadow: var(--shadow)
+    }
+
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: .15rem
+    }
+
+    .stat-card .label {
+      font-size: .75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--t3)
+    }
+
+    .stat-card .sub {
+      font-size: .7rem;
+      color: var(--t4);
+      margin-top: .3rem
+    }
+
+    .stat-card .change-row {
+      font-size: .72rem;
+      margin-top: .25rem;
+      font-weight: 600;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      gap: 2px
+    }
+
+    .stat-card .change-row .up {
+      color: var(--grn)
+    }
+
+    .stat-card .change-row .down {
+      color: var(--red)
+    }
+
+    .stat-card .change-row .flat {
+      color: var(--t4)
+    }
+
+    /* ═══ CHART CONTAINERS ═══ */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 2rem
+    }
+
+    .chart-box {
+      background: var(--surface);
+      border: 1px solid var(--bd);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      backdrop-filter: blur(10px)
+    }
+
+    .chart-box.full {
+      grid-column: 1/-1
+    }
+
+    .chart-title {
+      font-size: .88rem;
+      font-weight: 700;
+      color: var(--orgl);
+      text-align: center;
+      margin-bottom: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .04em
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 320px
+    }
+
+    .chart-note {
+      font-size: .78rem;
+      color: var(--t2);
+      text-align: center;
+      padding: .5rem 0;
+      font-weight: 500
+    }
+
+    /* ═══ FILTER BAR ═══ */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: .8rem;
+      flex-wrap: wrap;
+      padding: .8rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--bd);
+      border-radius: var(--radius);
+      margin-bottom: 1.25rem;
+      backdrop-filter: blur(10px)
+    }
+
+    .filter-bar label {
+      color: var(--t2);
+      font-size: .78rem;
+      font-weight: 600;
+      white-space: nowrap
+    }
+
+    .filter-bar select,
+    .filter-bar input[type="date"] {
+      background: rgba(30, 41, 59, .8);
+      border: 1px solid var(--bd2);
+      color: var(--t1);
+      padding: .4rem .7rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: .8rem;
+      outline: none;
+      transition: border-color .2s
+    }
+
+    .filter-bar select:focus,
+    .filter-bar input:focus {
+      border-color: var(--ac)
+    }
+
+    .filter-bar input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1) brightness(.7)
+    }
+
+    .fbtn {
+      padding: .4rem .9rem;
+      border-radius: 8px;
+      border: 1px solid var(--bd2);
+      background: transparent;
+      color: var(--t2);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: .78rem;
+      font-weight: 600;
+      transition: all .2s
+    }
+
+    .fbtn:hover {
+      border-color: var(--ac);
+      color: var(--t1)
+    }
+
+    .fbtn.active {
+      background: rgba(99, 102, 241, .18);
+      color: var(--acl);
+      border-color: rgba(99, 102, 241, .3)
+    }
+
+    .fbtn.primary {
+      background: var(--g1);
+      color: #fff;
+      border-color: transparent
+    }
+
+    .fbtn.primary:hover {
+      opacity: .85
+    }
+
+    .filter-info {
+      color: var(--t4);
+      font-size: .72rem;
+      margin-left: auto
+    }
+
+    /* ═══ TABLES ═══ */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--bd)
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .82rem
+    }
+
+    thead th {
+      background: rgba(99, 102, 241, .1);
+      color: var(--acl);
+      font-weight: 600;
+      padding: .65rem .75rem;
+      text-align: left;
+      white-space: nowrap;
+      border-bottom: 2px solid var(--bd)
+    }
+
+    tbody td {
+      padding: .55rem .75rem;
+      border-bottom: 1px solid var(--bd);
+      transition: background .2s
+    }
+
+    tbody tr:hover td {
+      background: rgba(30, 41, 59, .5)
+    }
+
+    .tc {
+      text-align: center
+    }
+
+    .tr {
+      text-align: right
+    }
+
+    .number {
+      font-variant-numeric: tabular-nums
+    }
+
+    .dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle
+    }
+
+    .badge {
+      display: inline-block;
+      padding: .2rem .6rem;
+      border-radius: 16px;
+      font-size: .72rem;
+      font-weight: 600;
+      white-space: nowrap
+    }
+
+    .badge-green {
+      background: rgba(16, 185, 129, .12);
+      color: var(--grn);
+      border: 1px solid rgba(16, 185, 129, .25)
+    }
+
+    .badge-orange {
+      background: rgba(245, 158, 11, .12);
+      color: var(--org);
+      border: 1px solid rgba(245, 158, 11, .25)
+    }
+
+    .badge-red {
+      background: rgba(239, 68, 68, .12);
+      color: var(--red);
+      border: 1px solid rgba(239, 68, 68, .25)
+    }
+
+    .badge-purple {
+      background: rgba(168, 85, 247, .12);
+      color: var(--pur);
+      border: 1px solid rgba(168, 85, 247, .25)
+    }
+
+    .badge-blue {
+      background: rgba(59, 130, 246, .12);
+      color: var(--blu);
+      border: 1px solid rgba(59, 130, 246, .25)
+    }
+
+    .total-row td {
+      background: rgba(99, 102, 241, .06) !important;
+      font-weight: 700;
+      border-top: 2px solid var(--bd2)
+    }
+
+    .kho-cell {
+      font-weight: 700
+    }
+
+    /* ═══ DONUT ═══ */
+    .donut-section {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap
+    }
+
+    .donut {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      position: relative;
+      box-shadow: 0 0 20px rgba(0, 0, 0, .3);
+      flex-shrink: 0
+    }
+
+    .donut-hole {
+      position: absolute;
+      top: 34px;
+      left: 34px;
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      background: var(--bg3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center
+    }
+
+    .donut-val {
+      font-size: 1.5rem;
+      font-weight: 800
+    }
+
+    .donut-lbl {
+      font-size: .7rem;
+      color: var(--t3);
+      text-transform: uppercase;
+      font-weight: 600
+    }
+
+    .legend {
+      font-size: .82rem;
+      color: var(--t1);
+      font-weight: 600
+    }
+
+    .legend-item {
+      margin: .4rem 0;
+      display: flex;
+      align-items: center;
+      gap: .5rem
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0
+    }
+
+    /* ═══ NSO CALENDAR ═══ */
+    .cal-wrap {
+      background: var(--surface);
+      border: 1px solid var(--bd);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      backdrop-filter: blur(10px);
+      margin-bottom: 1.25rem
+    }
+
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1rem
+    }
+
+    .cal-nav button {
+      background: transparent;
+      border: 1px solid var(--bd2);
+      color: var(--t2);
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all .2s;
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .cal-nav button:hover {
+      border-color: var(--ac);
+      color: var(--t1);
+      background: rgba(99, 102, 241, .1)
+    }
+
+    .cal-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      min-width: 160px;
+      text-align: center
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px
+    }
+
+    .cal-hd {
+      background: rgba(99, 102, 241, .12);
+      color: var(--acl);
+      font-weight: 600;
+      font-size: .72rem;
+      padding: .4rem .3rem;
+      text-align: center;
+      border-radius: 5px
+    }
+
+    .cal-cell {
+      min-height: 72px;
+      background: rgba(30, 41, 59, .35);
+      border-radius: 5px;
+      padding: .25rem .3rem;
+      transition: background .2s
+    }
+
+    .cal-cell:hover {
+      background: rgba(30, 41, 59, .6)
+    }
+
+    .cal-cell.empty {
+      background: transparent;
+      min-height: 36px
+    }
+
+    .cal-cell.today {
+      border: 2px solid var(--ac)
+    }
+
+    .cal-day {
+      font-size: .7rem;
+      font-weight: 600;
+      color: var(--t3);
+      margin-bottom: 2px
+    }
+
+    .cal-day.sun {
+      color: var(--red)
+    }
+
+    .cal-ev {
+      font-size: .6rem;
+      line-height: 1.2;
+      padding: 2px 3px;
+      border-radius: 3px;
+      margin-bottom: 1px;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
+    }
+
+    .cal-ev.upcoming {
+      background: rgba(16, 185, 129, .12);
+      color: var(--grn)
+    }
+
+    .cal-ev.opening {
+      background: rgba(245, 158, 11, .12);
+      color: var(--org)
+    }
+
+    .cal-ev.reschedule {
+      background: rgba(168, 85, 247, .12);
+      color: var(--pur)
+    }
+
+    /* ═══ INLINE TABLE FILTERS ═══ */
+    .tbl-filter {
+      width: 100%;
+      padding: 4px 6px;
+      background: rgba(30, 41, 59, .6);
+      border: 1px solid var(--bd2);
+      border-radius: 5px;
+      color: var(--t2);
+      font-size: .7rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .2s
+    }
+
+    .tbl-filter:focus {
+      border-color: var(--ac)
+    }
+
+    .tbl-filter::placeholder {
+      color: var(--t4)
+    }
+
+    select.tbl-filter {
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      padding-right: 18px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 5px center
+    }
+
+    /* ═══ NSO REPLENISHMENT CARDS ═══ */
+    .rcard {
+      background: var(--surface);
+      border: 1px solid var(--bd);
+      border-radius: var(--radius);
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+      backdrop-filter: blur(10px)
+    }
+
+    .rcard-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .7rem;
+      flex-wrap: wrap;
+      gap: .4rem
+    }
+
+    .rcard-head h3 {
+      font-size: .95rem;
+      font-weight: 700
+    }
+
+    .vbadge {
+      background: var(--g2);
+      color: #fff;
+      padding: .2rem .6rem;
+      border-radius: 8px;
+      font-size: .72rem;
+      font-weight: 600
+    }
+
+    /* ═══ PERF FILTER PILLS ═══ */
+    .pill-bar {
+      display: inline-flex;
+      gap: 4px;
+      margin-left: 12px;
+      vertical-align: middle;
+      flex-wrap: wrap
+    }
+
+    .pill {
+      padding: 4px 12px;
+      border-radius: 16px;
+      border: 1px solid var(--bd2);
+      background: transparent;
+      color: var(--t3);
+      cursor: pointer;
+      font-size: .72rem;
+      font-family: inherit;
+      transition: all .2s
+    }
+
+    .pill:hover {
+      background: rgba(255, 255, 255, .06);
+      color: var(--t2)
+    }
+
+    .pill.active {
+      background: rgba(99, 102, 241, .18);
+      color: var(--acl);
+      border-color: rgba(99, 102, 241, .3);
+      font-weight: 600
+    }
+
+    /* ═══ WEEKLY TABLE (PERF) ═══ */
+    .weekly-table {
+      font-size: .72rem
+    }
+
+    .weekly-table th,
+    .weekly-table td {
+      padding: 5px 8px;
+      border: 1px solid var(--bd);
+      text-align: center
+    }
+
+    .weekly-table thead th {
+      background: rgba(99, 102, 241, .1);
+      color: var(--acl);
+      font-weight: 600
+    }
+
+    .wt-kho-cell {
+      font-weight: 700;
+      text-align: left !important;
+      padding-left: 10px !important;
+      background: var(--bg3) !important;
+      position: sticky;
+      left: 0;
+      z-index: 2
+    }
+
+    .wt-metric-cell {
+      text-align: left !important;
+      color: var(--t2);
+      font-weight: 500;
+      white-space: nowrap;
+      background: var(--bg3) !important;
+      position: sticky;
+      left: 56px;
+      z-index: 2
+    }
+
+    .wt-total-cell {
+      background: rgba(99, 102, 241, .06);
+      font-weight: 600
+    }
+
+    /* ═══ SORT HEADERS ═══ */
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      padding-right: 1.2rem !important
+    }
+
+    th.sortable:hover {
+      color: var(--t1);
+      background: rgba(99, 102, 241, .18)
+    }
+
+    th.sortable::after {
+      content: '⇅';
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: .65rem;
+      opacity: .4
+    }
+
+    th.sortable.asc::after {
+      content: '▲';
+      opacity: .8
+    }
+
+    th.sortable.desc::after {
+      content: '▼';
+      opacity: .8
+    }
+
+    /* ═══ PERF SINGLE-COL CHARTS ═══ */
+    .chart-grid.perf-1col {
+      grid-template-columns: 1fr
+    }
+
+    /* ═══ GLOSSARY TABLE ═══ */
+    .glossary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .8rem
+    }
+
+    .glossary-table th {
+      background: rgba(99, 102, 241, .1);
+      color: var(--acl);
+      font-weight: 600;
+      padding: .55rem .75rem;
+      text-align: left;
+      border-bottom: 2px solid var(--bd)
+    }
+
+    .glossary-table td {
+      padding: .5rem .75rem;
+      border-bottom: 1px solid var(--bd);
+      line-height: 1.5
+    }
+
+    .glossary-table td:first-child {
+      font-weight: 600;
+      color: var(--orgl);
+      white-space: nowrap;
+      width: 200px
+    }
+
+    .glossary-table tbody tr:hover td {
+      background: rgba(30, 41, 59, .5)
+    }
+
+    /* ═══ RESPONSIVE ═══ */
+    @media(max-width:1024px) {
+      .chart-grid {
+        grid-template-columns: 1fr
+      }
+    }
+
+    @media(max-width:768px) {
+      .topbar {
+        padding: 0 1rem
+      }
+
+      .topbar-inner {
+        height: 52px;
+        gap: .8rem
+      }
+
+      .logo {
+        font-size: 1.1rem
+      }
+
+      .tabs {
+        gap: 1px
+      }
+
+      .tab {
+        padding: .4rem .7rem;
+        font-size: .72rem
+      }
+
+      .main {
+        padding: 1rem
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: .7rem
+      }
+
+      .stat-card .value {
+        font-size: 1.5rem
+      }
+
+      .chart-grid {
+        grid-template-columns: 1fr
+      }
+
+      .meta {
+        display: none
+      }
+    }
+
+    @media(max-width:480px) {
+      .stats-grid {
+        grid-template-columns: 1fr
+      }
+
+      .tab {
+        padding: .35rem .5rem;
+        font-size: .68rem
+      }
+    }
+
+    /* ═══ FOOTER ═══ */
+    .footer {
+      text-align: center;
+      padding: 1.5rem 0;
+      color: var(--t4);
+      font-size: .72rem;
+      border-top: 1px solid var(--bd);
+      margin-top: 2rem
+    }
+
+    /* ═══ WEEKLY TRANSPORT PLAN TAB ═══ */
+    .wk-filter-bar { display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; padding:1rem 1.25rem; background:var(--surface); border:1px solid var(--bd); border-radius:14px; backdrop-filter:blur(12px) }
+    .wk-filter-bar label { color:var(--t2); font-size:.82rem; font-weight:600; white-space:nowrap }
+    .wk-filter-bar select { background:rgba(30,41,59,.8); border:1px solid var(--bd2); color:var(--t1); padding:.45rem .75rem; border-radius:8px; font-family:inherit; font-size:.85rem; outline:none; transition:border-color .2s; cursor:pointer }
+    .wk-filter-bar select:focus { border-color:var(--ac) }
+    .wk-filter-bar .wk-search { background:rgba(30,41,59,.8); border:1px solid var(--bd2); color:var(--t1); padding:.45rem .75rem; border-radius:8px; font-family:inherit; font-size:.85rem; outline:none; flex:1; min-width:200px; transition:border-color .2s }
+    .wk-filter-bar .wk-search:focus { border-color:var(--ac) }
+    .wk-filter-bar .wk-search::placeholder { color:var(--t3) }
+    .wk-export-btn { background:linear-gradient(135deg,#10b981,#059669); color:#fff; border:none; padding:.5rem 1.2rem; border-radius:8px; font-family:inherit; font-size:.82rem; font-weight:600; cursor:pointer; transition:opacity .2s,transform .2s; display:flex; align-items:center; gap:.4rem }
+    .wk-export-btn:hover { opacity:.9; transform:translateY(-1px) }
+    .wk-count { color:var(--t3); font-size:.78rem; margin-left:auto }
+    .wk-title-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:.6rem; padding:.5rem 0 }
+    .wk-title-row h3 { font-size:1.15rem; font-weight:700; color:var(--t1) }
+    .wk-title-row .wk-week-label { color:var(--ac-light); font-size:.9rem; font-weight:500 }
+
+    /* Weekly Schedule Table */
+    .wk-table-wrap { overflow-x:auto; border-radius:12px; border:1px solid var(--bd) }
+    .wk-table { width:100%; border-collapse:collapse; font-size:.82rem; min-width:900px }
+    .wk-table thead th { background:rgba(99,102,241,.15); color:var(--ac-light); font-weight:600; padding:.6rem .5rem; text-align:center; white-space:nowrap; border-bottom:2px solid var(--bd); position:sticky; top:0; z-index:2 }
+    .wk-table thead th:nth-child(1) { width:40px }
+    .wk-table thead th:nth-child(2) { text-align:left; min-width:280px }
+    .wk-table thead th:nth-child(3) { width:65px }
+    .wk-table thead th:nth-child(4) { width:60px }
+    .wk-table tbody td { padding:.45rem .4rem; border-bottom:1px solid var(--bd); text-align:center; transition:background .2s; vertical-align:middle }
+    .wk-table tbody td:nth-child(2) { text-align:left; font-size:.8rem }
+    .wk-table tbody tr:hover td { background:rgba(99,102,241,.06) }
+
+    /* Cell status pills */
+    .wk-cell { display:inline-block; padding:.2rem .5rem; border-radius:6px; font-size:.73rem; font-weight:600; white-space:nowrap; min-width:52px }
+    .wk-cell.wk-ngay { background:rgba(250,204,21,.15); color:#fbbf24; border:1px solid rgba(250,204,21,.25) }
+    .wk-cell.wk-dem { background:rgba(99,102,241,.15); color:#818cf8; border:1px solid rgba(99,102,241,.25) }
+    .wk-cell.wk-kk { background:rgba(168,85,247,.18); color:#c084fc; border:1px solid rgba(168,85,247,.3) }
+    .wk-cell.wk-cham { background:rgba(251,146,60,.18); color:#fb923c; border:1px solid rgba(251,146,60,.3); animation:pulse 2s infinite }
+    .wk-empty { color:var(--t3); font-size:.7rem }
+
+    /* Legend */
+    .wk-legend { display:flex; gap:1.2rem; flex-wrap:wrap; margin-bottom:1rem; padding:.6rem 1rem; background:var(--surface); border:1px solid var(--bd); border-radius:10px }
+    .wk-legend-item { display:flex; align-items:center; gap:.35rem; font-size:.75rem; color:var(--t2) }
+    .wk-legend-dot { width:12px; height:12px; border-radius:4px; flex-shrink:0 }
+    .wk-legend-dot.lg-ngay { background:rgba(250,204,21,.4); border:1px solid rgba(250,204,21,.6) }
+    .wk-legend-dot.lg-dem { background:rgba(99,102,241,.4); border:1px solid rgba(99,102,241,.6) }
+    .wk-legend-dot.lg-kk { background:rgba(168,85,247,.4); border:1px solid rgba(168,85,247,.6) }
+    .wk-legend-dot.lg-cham { background:rgba(251,146,60,.4); border:1px solid rgba(251,146,60,.6) }
+  </style>
 </head>
+
 <body>
 
-<!-- TOPBAR -->
-<div class="topbar">
-  <div class="topbar-inner">
-    <div class="logo">📊 KFM Command Center</div>
-    <div class="tabs" id="tabNav">
-      <div class="tab active" data-tab="daily" id="tab-daily">📦 Daily Report</div>
-      <div class="tab" data-tab="performance" id="tab-performance">🚛 Performance</div>
-      <div class="tab" data-tab="inventory" id="tab-inventory">📋 Inventory</div>
-      <div class="tab" data-tab="nso" id="tab-nso">🏪 NSO</div>
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="logo">📊 KFM Command Center</div>
+      <div class="tabs" id="tabNav">
+        <div class="tab active" data-tab="daily" id="tab-daily">📦 Daily Report</div>
+        <div class="tab" data-tab="performance" id="tab-performance">🚛 Performance</div>
+        <div class="tab" data-tab="inventory" id="tab-inventory">📋 Inventory</div>
+        <div class="tab" data-tab="nso" id="tab-nso">🏪 NSO</div>
+        <div class="tab" data-tab="weekly_plan" id="tab-weekly_plan">📅 Lịch Tuần</div>
+      </div>
+      <div class="meta">
+        <span class="dot"></span>
+        <span id="lastUpdated">Loading...</span>
+      </div>
     </div>
-    <div class="meta">
-      <span class="dot"></span>
-      <span id="lastUpdated">Loading...</span>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- ═══ DAILY TAB ═══ -->
+    <div class="tab-content active" id="content-daily">
+      <div class="loading" id="daily-loading">
+        <div class="spinner"></div><span>Đang tải dữ liệu Daily...</span>
+      </div>
+      <div id="daily-content" style="display:none"></div>
+    </div>
+
+    <!-- ═══ PERFORMANCE TAB ═══ -->
+    <div class="tab-content" id="content-performance">
+      <div class="loading" id="perf-loading">
+        <div class="spinner"></div><span>Đang tải dữ liệu Performance...</span>
+      </div>
+      <div id="perf-content" style="display:none"></div>
+    </div>
+
+    <!-- ═══ INVENTORY TAB ═══ -->
+    <div class="tab-content" id="content-inventory">
+      <div class="loading" id="inv-loading">
+        <div class="spinner"></div><span>Đang tải dữ liệu Inventory...</span>
+      </div>
+      <div id="inv-content" style="display:none"></div>
+    </div>
+
+    <!-- ═══ NSO TAB ═══ -->
+    <div class="tab-content" id="content-nso">
+      <div class="loading" id="nso-loading">
+        <div class="spinner"></div><span>Đang tải dữ liệu NSO...</span>
+      </div>
+      <div id="nso-content" style="display:none"></div>
+    </div>
+
+    <!-- ═══ WEEKLY PLAN TAB ═══ -->
+    <div class="tab-content" id="content-weekly_plan">
+      <div class="loading" id="weekly_plan-loading">
+        <div class="spinner"></div><span>Đang tải dữ liệu Lịch Tuần...</span>
+      </div>
+      <div id="weekly_plan-content" style="display:none"></div>
     </div>
   </div>
-</div>
 
-<!-- MAIN -->
-<div class="main">
-  <!-- ═══ DAILY TAB ═══ -->
-  <div class="tab-content active" id="content-daily">
-    <div class="loading" id="daily-loading"><div class="spinner"></div><span>Đang tải dữ liệu Daily...</span></div>
-    <div id="daily-content" style="display:none"></div>
+  <div class="footer">
+    <p>KFM Logistics Command Center — Powered by GitHub Pages</p>
+    <p>Data updates after each report generation. Bookmark this page for latest data.</p>
   </div>
 
-  <!-- ═══ PERFORMANCE TAB ═══ -->
-  <div class="tab-content" id="content-performance">
-    <div class="loading" id="perf-loading"><div class="spinner"></div><span>Đang tải dữ liệu Performance...</span></div>
-    <div id="perf-content" style="display:none"></div>
-  </div>
+  <script>
+    // ═══════════════════════════════════════════════
+    // TAB NAVIGATION
+    // ═══════════════════════════════════════════════
+    const tabs = document.querySelectorAll('.tab');
+    const contents = document.querySelectorAll('.tab-content');
+    const loaded = {};
 
-  <!-- ═══ INVENTORY TAB ═══ -->
-  <div class="tab-content" id="content-inventory">
-    <div class="loading" id="inv-loading"><div class="spinner"></div><span>Đang tải dữ liệu Inventory...</span></div>
-    <div id="inv-content" style="display:none"></div>
-  </div>
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.tab;
+        tabs.forEach(t => t.classList.remove('active'));
+        contents.forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('content-' + target).classList.add('active');
+        if (!loaded[target]) loadTab(target);
+      });
+    });
 
-  <!-- ═══ NSO TAB ═══ -->
-  <div class="tab-content" id="content-nso">
-    <div class="loading" id="nso-loading"><div class="spinner"></div><span>Đang tải dữ liệu NSO...</span></div>
-    <div id="nso-content" style="display:none"></div>
-  </div>
-</div>
-
-<div class="footer">
-  <p>KFM Logistics Command Center — Powered by GitHub Pages</p>
-  <p>Data updates after each report generation. Bookmark this page for latest data.</p>
-</div>
-
-<script>
-// ═══════════════════════════════════════════════
-// TAB NAVIGATION
-// ═══════════════════════════════════════════════
-const tabs = document.querySelectorAll('.tab');
-const contents = document.querySelectorAll('.tab-content');
-const loaded = {};
-
-tabs.forEach(tab => {
-  tab.addEventListener('click', () => {
-    const target = tab.dataset.tab;
-    tabs.forEach(t => t.classList.remove('active'));
-    contents.forEach(c => c.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById('content-' + target).classList.add('active');
-    if (!loaded[target]) loadTab(target);
-  });
-});
-
-// ═══════════════════════════════════════════════
-// DATA FETCHING
-// ═══════════════════════════════════════════════
-async function fetchJSON(url) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  return r.json();
-}
-
-function fN(v) { return Math.round(v).toLocaleString(); }
-function fNd(v,d=1) { return v != null ? v.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d}) : '—'; }
-function fD(v) { return v != null ? v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) : '—'; }
-function fPct(v) { return v != null ? v.toFixed(1) + '%' : '—'; }
-
-const updateTimes = {};
-function updateMeta() {
-  const times = Object.values(updateTimes).filter(Boolean);
-  if (times.length) {
-    const latest = times.sort().pop();
-    document.getElementById('lastUpdated').textContent = 'Cập nhật: ' + latest;
-  }
-}
-
-// ═══════════════════════════════════════════════
-// LOAD TAB
-// ═══════════════════════════════════════════════
-async function loadTab(name) {
-  try {
-    const data = await fetchJSON('data/' + name + '.json');
-    loaded[name] = data;
-    updateTimes[name] = data._updated || '';
-    updateMeta();
-    switch(name) {
-      case 'daily': renderDaily(data); break;
-      case 'performance': renderPerformance(data); break;
-      case 'inventory': renderInventory(data); break;
-      case 'nso': renderNSO(data); break;
+    // ═══════════════════════════════════════════════
+    // DATA FETCHING
+    // ═══════════════════════════════════════════════
+    async function fetchJSON(url) {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
     }
-  } catch(e) {
-    document.getElementById(name === 'performance' ? 'perf' : name + '-loading' ? name : name)
-    const loadEl = document.getElementById(
-      name === 'performance' ? 'perf-loading' :
-      name === 'inventory' ? 'inv-loading' :
-      name + '-loading'
-    );
-    if (loadEl) loadEl.innerHTML = `<div class="error-msg">⚠️ Chưa có dữ liệu ${name}.<br><small>${e.message}</small><br><small>Chạy report để tạo data.</small></div>`;
-  }
-}
 
-// ═══════════════════════════════════════════════
-// DAILY TAB
-// ═══════════════════════════════════════════════
-function renderDaily(data) {
-  document.getElementById('daily-loading').style.display = 'none';
-  const el = document.getElementById('daily-content');
-  el.style.display = 'block';
+    function fN(v) { return Math.round(v).toLocaleString(); }
+    function fNd(v, d = 1) { return v != null ? v.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d }) : '—'; }
+    function fD(v) { return v != null ? v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'; }
+    function fPct(v) { return v != null ? v.toFixed(1) + '%' : '—'; }
 
-  const cur = data.current;
-  const history = data.history || [];
-  const KHOS = data.kho_list || [];
-  const COLORS = data.kho_colors || {};
+    const updateTimes = {};
+    function updateMeta() {
+      const times = Object.values(updateTimes).filter(Boolean);
+      if (times.length) {
+        const latest = times.sort().pop();
+        document.getElementById('lastUpdated').textContent = 'Cập nhật: ' + latest;
+      }
+    }
 
-  // Cards — dynamic container, filled by dailyRenderCards()
-  let html = `<div class="stats-grid" id="dailyCards"></div>`;
+    // ═══════════════════════════════════════════════
+    // LOAD TAB
+    // ═══════════════════════════════════════════════
+    async function loadTab(name) {
+      try {
+        const data = await fetchJSON('data/' + name + '.json');
+        loaded[name] = data;
+        updateTimes[name] = data._updated || '';
+        updateMeta();
+        switch (name) {
+          case 'daily': renderDaily(data); break;
+          case 'performance': renderPerformance(data); break;
+          case 'inventory': renderInventory(data); break;
+          case 'nso': renderNSO(data); break;
+          case 'weekly_plan': renderWeeklyPlan(data); break;
+        }
+      } catch (e) {
+        document.getElementById(name === 'performance' ? 'perf' : name + '-loading' ? name : name)
+        const loadEl = document.getElementById(
+          name === 'performance' ? 'perf-loading' :
+            name === 'inventory' ? 'inv-loading' :
+              name + '-loading'
+        );
+        if (loadEl) loadEl.innerHTML = `<div class="error-msg">⚠️ Chưa có dữ liệu ${name}.<br><small>${e.message}</small><br><small>Chạy report để tạo data.</small></div>`;
+      }
+    }
 
-  // Date picker
-  html += `<div class="filter-bar">
+    // ═══════════════════════════════════════════════
+    // DAILY TAB
+    // ═══════════════════════════════════════════════
+    function renderDaily(data) {
+      document.getElementById('daily-loading').style.display = 'none';
+      const el = document.getElementById('daily-content');
+      el.style.display = 'block';
+
+      const cur = data.current;
+      const history = data.history || [];
+      const KHOS = data.kho_list || [];
+      const COLORS = data.kho_colors || {};
+
+      // Cards — dynamic container, filled by dailyRenderCards()
+      let html = `<div class="stats-grid" id="dailyCards"></div>`;
+
+      // Date picker
+      html += `<div class="filter-bar">
     <label>📅 Chọn ngày:</label>
     <select id="dailyDP" onchange="dailyOnDP(this.value)">`;
-  for (let i = history.length - 1; i >= 0; i--) {
-    const h = history[i];
-    const isCur = h.date === cur.date;
-    html += `<option value="${h.date}"${isCur ? ' selected' : ''}>${h.date}${isCur ? ' (Hôm nay)' : ''}</option>`;
-  }
-  html += `</select></div>`;
+      for (let i = history.length - 1; i >= 0; i--) {
+        const h = history[i];
+        const isCur = h.date === cur.date;
+        html += `<option value="${h.date}"${isCur ? ' selected' : ''}>${h.date}${isCur ? ' (Hôm nay)' : ''}</option>`;
+      }
+      html += `</select></div>`;
 
-  // Table (sortable)
-  html += `<div class="section"><div class="section-header"><span class="icon">📊</span><h2>Chi Tiết Theo Kho — <span id="dailyTableDate">${cur.date}</span></h2></div>
+      // Table (sortable)
+      html += `<div class="section"><div class="section-header"><span class="icon">📊</span><h2>Chi Tiết Theo Kho — <span id="dailyTableDate">${cur.date}</span></h2></div>
   <div class="table-wrap"><table id="dailySortTable">
     <thead><tr>
       <th>Ngày</th><th>Kho</th>
@@ -369,8 +1235,8 @@ function renderDaily(data) {
     <tbody id="dailyTableBody"></tbody>
   </table></div></div>`;
 
-  // Chart controls — date range + quick buttons
-  html += `<div class="filter-bar" id="dailyChartCtrl">
+      // Chart controls — date range + quick buttons
+      html += `<div class="filter-bar" id="dailyChartCtrl">
     <label>📈 Khoảng:</label>
     <button class="fbtn" onclick="dailySetRange(7,this)">7 ngày</button>
     <button class="fbtn active" onclick="dailySetRange(14,this)">14 ngày</button>
@@ -381,8 +1247,8 @@ function renderDaily(data) {
     <button class="fbtn" onclick="dailyResetDateRange()">↻</button>
   </div>`;
 
-  // Charts — 2 columns: daily left, weekly right
-  html += `<div class="chart-grid">
+      // Charts — 2 columns: daily left, weekly right
+      html += `<div class="chart-grid">
     <div class="chart-box"><div class="chart-title">Trend Sản Lượng Theo Ngày (Tấn)</div><div class="chart-wrap"><canvas id="dailyChartTon"></canvas></div><div class="chart-note" id="dailyNoteTon"></div></div>
     <div class="chart-box"><div class="chart-title">Trend Sản Lượng Theo Tuần (Tấn)</div><div class="chart-wrap"><canvas id="weeklyChartTon"></canvas></div><div class="chart-note" id="weeklyNoteTon"></div></div>
     <div class="chart-box"><div class="chart-title">Trend Items Theo Ngày</div><div class="chart-wrap"><canvas id="dailyChartItems"></canvas></div><div class="chart-note" id="dailyNoteItems"></div></div>
@@ -393,49 +1259,49 @@ function renderDaily(data) {
     <div class="chart-box"><div class="chart-title">% Đóng Góp Sản Lượng (Tuần)</div><div id="weeklyDonut" class="donut-section" style="min-height:200px"></div></div>
   </div>`;
 
-  el.innerHTML = html;
+      el.innerHTML = html;
 
-  // Render cards + table + sorting init
-  window._dailyData = data;
-  dailyRenderCards(cur);
-  dailyRenderTable(cur);
-  dailyRenderDonut(cur);
-  dailyInitSortable();
+      // Render cards + table + sorting init
+      window._dailyData = data;
+      dailyRenderCards(cur);
+      dailyRenderTable(cur);
+      dailyRenderDonut(cur);
+      dailyInitSortable();
 
-  // Set date range inputs from history
-  const histDates = history.map(h => {
-    const p = h.date.split('/'); return p[2]+'-'+p[1]+'-'+p[0];
-  });
-  document.getElementById('dailyDateFrom').value = histDates[Math.max(0,histDates.length-14)];
-  document.getElementById('dailyDateTo').value = histDates[histDates.length-1];
+      // Set date range inputs from history
+      const histDates = history.map(h => {
+        const p = h.date.split('/'); return p[2] + '-' + p[1] + '-' + p[0];
+      });
+      document.getElementById('dailyDateFrom').value = histDates[Math.max(0, histDates.length - 14)];
+      document.getElementById('dailyDateTo').value = histDates[histDates.length - 1];
 
-  dailyInitCharts(14);
-}
+      dailyInitCharts(14);
+    }
 
-function dailyRenderTable(entry) {
-  const data = window._dailyData;
-  const KHOS = data.kho_list;
-  const COLORS = data.kho_colors;
-  const full = data.current;
-  const tbody = document.getElementById('dailyTableBody');
-  if (!tbody) return;
-  document.getElementById('dailyTableDate').textContent = entry.date;
+    function dailyRenderTable(entry) {
+      const data = window._dailyData;
+      const KHOS = data.kho_list;
+      const COLORS = data.kho_colors;
+      const full = data.current;
+      const tbody = document.getElementById('dailyTableBody');
+      if (!tbody) return;
+      document.getElementById('dailyTableDate').textContent = entry.date;
 
-  let html = '';
-  let tST=0,tIT=0,tXE=0,tTN=0;
-  KHOS.forEach(kho => {
-    const kd = entry.khos[kho] || {};
-    const fd = (entry.date === full.date) ? (full.khos[kho] || {}) : {};
-    const st=fd.sl_sthi||kd.sl_sthi||0, it=kd.sl_items||0, xe=kd.sl_xe||0, tn=kd.san_luong_tan||0;
-    const col=COLORS[kho]||'#666';
-    const txe=xe>0?fNd(tn/xe,2):'—';
-    const ist=st>0?fN(it/st):'—';
-    const stxe=(st>0&&xe>0)?fNd(st/xe,1):'—';
-    const kgst=st>0?fNd(tn*1000/st,1):'—';
-    html += `<tr>
+      let html = '';
+      let tST = 0, tIT = 0, tXE = 0, tTN = 0;
+      KHOS.forEach(kho => {
+        const kd = entry.khos[kho] || {};
+        const fd = (entry.date === full.date) ? (full.khos[kho] || {}) : {};
+        const st = fd.sl_sthi || kd.sl_sthi || 0, it = kd.sl_items || 0, xe = kd.sl_xe || 0, tn = kd.san_luong_tan || 0;
+        const col = COLORS[kho] || '#666';
+        const txe = xe > 0 ? fNd(tn / xe, 2) : '—';
+        const ist = st > 0 ? fN(it / st) : '—';
+        const stxe = (st > 0 && xe > 0) ? fNd(st / xe, 1) : '—';
+        const kgst = st > 0 ? fNd(tn * 1000 / st, 1) : '—';
+        html += `<tr>
       <td>${entry.date}</td>
       <td class="kho-cell"><span class="dot" style="background:${col}"></span>${kho}</td>
-      <td class="tr number">${st>0?st.toLocaleString():'—'}</td>
+      <td class="tr number">${st > 0 ? st.toLocaleString() : '—'}</td>
       <td class="tr number">${fN(it)}</td>
       <td class="tr number">${xe.toLocaleString()}</td>
       <td class="tr number">${fD(tn)}</td>
@@ -444,392 +1310,410 @@ function dailyRenderTable(entry) {
       <td class="tr number" style="color:var(--blul)">${stxe}</td>
       <td class="tr number" style="color:var(--blul)">${kgst}</td>
     </tr>`;
-    tST+=st; tIT+=it; tXE+=xe; tTN+=tn;
-  });
-  if(tST===0&&entry.total_sthi>0) tST=entry.total_sthi;
-  html += `<tr class="total-row">
+        tST += st; tIT += it; tXE += xe; tTN += tn;
+      });
+      if (tST === 0 && entry.total_sthi > 0) tST = entry.total_sthi;
+      html += `<tr class="total-row">
     <td colspan="2">TOTAL</td>
-    <td class="tr number">${tST>0?tST.toLocaleString():'—'}</td>
+    <td class="tr number">${tST > 0 ? tST.toLocaleString() : '—'}</td>
     <td class="tr number">${fN(tIT)}</td>
     <td class="tr number">${tXE.toLocaleString()}</td>
     <td class="tr number">${fD(tTN)}</td>
-    <td class="tr number" style="color:var(--blul)">${tXE>0?fNd(tTN/tXE,2):'—'}</td>
-    <td class="tr number" style="color:var(--blul)">${tST>0?fN(tIT/tST):'—'}</td>
-    <td class="tr number" style="color:var(--blul)">${(tST>0&&tXE>0)?fNd(tST/tXE,1):'—'}</td>
-    <td class="tr number" style="color:var(--blul)">${tST>0?fNd(tTN*1000/tST,1):'—'}</td>
+    <td class="tr number" style="color:var(--blul)">${tXE > 0 ? fNd(tTN / tXE, 2) : '—'}</td>
+    <td class="tr number" style="color:var(--blul)">${tST > 0 ? fN(tIT / tST) : '—'}</td>
+    <td class="tr number" style="color:var(--blul)">${(tST > 0 && tXE > 0) ? fNd(tST / tXE, 1) : '—'}</td>
+    <td class="tr number" style="color:var(--blul)">${tST > 0 ? fNd(tTN * 1000 / tST, 1) : '—'}</td>
   </tr>`;
-  tbody.innerHTML = html;
-}
-
-function dailyRenderDonut(entry) {
-  const data = window._dailyData;
-  const KHOS = data.kho_list;
-  const COLORS = data.kho_colors;
-  const el = document.getElementById('dailyDonut');
-  if (!el) return;
-  const tot = entry.total_tons;
-  if (tot <= 0) { el.innerHTML = '<p style="color:var(--t3)">Không có dữ liệu</p>'; return; }
-  let stops=[], legs='', cum=0;
-  KHOS.forEach(kho => {
-    const pct = ((entry.khos[kho]||{}).san_luong_tan||0)/tot*100;
-    const cl = COLORS[kho];
-    stops.push(`${cl} ${cum.toFixed(1)}% ${(cum+pct).toFixed(1)}%`);
-    legs += `<div class="legend-item"><span class="legend-color" style="background:${cl}"></span>${kho} ${pct.toFixed(1)}%</div>`;
-    cum += pct;
-  });
-  el.innerHTML = `<div class="donut" style="background:conic-gradient(${stops.join(', ')})"><div class="donut-hole"><span class="donut-val">${tot.toFixed(1)}</span><span class="donut-lbl">Tấn</span></div></div><div class="legend">${legs}</div>`;
-}
-
-window.dailyOnDP = function(d) {
-  const data = window._dailyData;
-  const entry = data.history.find(h => h.date === d);
-  if (entry) { dailyRenderCards(entry); dailyRenderTable(entry); dailyRenderDonut(entry); }
-};
-
-// ── Dynamic KPI Cards with comparisons ──
-function _parseDate(ds) {
-  const p = ds.split('/'); return new Date(+p[2], +p[1]-1, +p[0]);
-}
-function _fmtDD(d) {
-  return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
-}
-function dailyRenderCards(entry) {
-  const data = window._dailyData;
-  const history = data.history;
-  const el = document.getElementById('dailyCards');
-  if (!el) return;
-
-  const idx = history.findIndex(h => h.date === entry.date);
-  const prev = idx > 0 ? history[idx - 1] : null;
-
-  // LFL: same weekday, 7 days ago
-  const entryDate = _parseDate(entry.date);
-  const lflDate = new Date(entryDate);
-  lflDate.setDate(lflDate.getDate() - 7);
-  const lflDateStr = String(lflDate.getDate()).padStart(2,'0') + '/' +
-    String(lflDate.getMonth()+1).padStart(2,'0') + '/' + lflDate.getFullYear();
-  const lfl = history.find(h => h.date === lflDateStr) || null;
-  const lflLabel = _fmtDD(lflDate);
-
-  function cmpHtml(cur, ref, refLabel) {
-    if (ref == null || ref === 0) return `<span class="flat">— vs ${refLabel}</span>`;
-    const pct = ((cur - ref) / ref * 100);
-    if (Math.abs(pct) < 0.1) return `<span class="flat">~ 0% vs ${refLabel}</span>`;
-    const cls = pct > 0 ? 'up' : 'down';
-    const arrow = pct > 0 ? '▲' : '▼';
-    return `<span class="${cls}">${arrow} ${pct > 0 ? '+' : ''}${pct.toFixed(1)}% vs ${refLabel}</span>`;
-  }
-
-  function card(value, label, color, curVal, prevEntry, lflEntry, key) {
-    const prevVal = prevEntry ? prevEntry[key] : null;
-    const lflVal = lflEntry ? lflEntry[key] : null;
-    const prevLabel = prevEntry ? prevEntry.date.substring(0,5) : '—';
-    const cmp1 = cmpHtml(curVal, prevVal, prevLabel);
-    const cmp2 = cmpHtml(curVal, lflVal, 'LFL ' + lflLabel);
-    return `<div class="stat-card"><div class="value" style="color:${color}">${value}</div><div class="label">${label}</div><div class="change-row">${cmp1}${cmp2}</div></div>`;
-  }
-
-  el.innerHTML =
-    card(fD(entry.total_tons), 'Tổng Tấn', 'var(--grn)', entry.total_tons, prev, lfl, 'total_tons') +
-    card(entry.total_xe, 'Tổng Xe', 'var(--blu)', entry.total_xe, prev, lfl, 'total_xe') +
-    card(entry.total_sthi || '—', 'Tổng Siêu Thị', 'var(--org)', entry.total_sthi || 0, prev, lfl, 'total_sthi') +
-    card(fN(entry.total_items), 'Tổng Items', 'var(--pur)', entry.total_items, prev, lfl, 'total_items');
-}
-
-// Daily charts
-let dailyCharts = {};
-function dailyMkDS(filteredData, metricKey, totalKey) {
-  const data = window._dailyData;
-  const KHOS = data.kho_list;
-  const COLORS = data.kho_colors;
-  const ds = [];
-  ds.push({type:'bar',label:'TOTAL',data:filteredData.map(h=>h[totalKey]),
-    backgroundColor:'rgba(255,255,255,0.15)',borderColor:'rgba(255,255,255,0.3)',
-    borderWidth:1,borderRadius:3,order:2,barPercentage:0.6,categoryPercentage:0.8});
-  KHOS.forEach(kho => {
-    ds.push({type:'line',label:kho,data:filteredData.map(h=>(h.khos[kho]||{})[metricKey]||0),
-      borderColor:COLORS[kho],backgroundColor:COLORS[kho],
-      borderWidth:2,pointRadius:2.5,pointHoverRadius:5,tension:0.15,fill:false,order:1});
-  });
-  ds.push({type:'line',label:'TOTAL (avg)',data:filteredData.map(h=>h[totalKey]),
-    borderColor:'rgba(255,255,255,0.7)',borderWidth:2,borderDash:[6,3],
-    pointRadius:0,tension:0.15,fill:false,order:0});
-  return ds;
-}
-const dailyChartOpts = {
-  responsive:true,maintainAspectRatio:false,
-  interaction:{mode:'index',intersect:false},
-  plugins:{
-    legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:11,weight:'600'},usePointStyle:true,padding:12,
-      filter:item=>item.text!=='TOTAL (avg)'}},
-    tooltip:{backgroundColor:'rgba(17,24,39,0.95)',titleColor:'#f0c060',bodyColor:'#d8dbe0',
-      borderColor:'rgba(148,163,184,.15)',borderWidth:1,padding:10}
-  },
-  scales:{
-    x:{ticks:{color:'#94a3b8',font:{size:11,weight:'600'},maxRotation:45,autoSkip:true,maxTicksLimit:20},grid:{color:'rgba(148,163,184,.06)'}},
-    y:{ticks:{color:'#94a3b8',font:{size:11,weight:'600'}},grid:{color:'rgba(148,163,184,.06)'},beginAtZero:true}
-  }
-};
-
-function dailyInitCharts(days) {
-  const data = window._dailyData;
-  const history = data.history;
-  const n = history.length;
-  const start = Math.max(0, n - days);
-  const filtered = history.slice(start);
-  const labels = filtered.map(h => h.date.substring(0, 5));
-
-  ['dailyChartTon','dailyChartItems','dailyChartXe'].forEach(id => {
-    if (dailyCharts[id]) dailyCharts[id].destroy();
-  });
-
-  const configs = [
-    ['dailyChartTon','san_luong_tan','total_tons'],
-    ['dailyChartItems','sl_items','total_items'],
-    ['dailyChartXe','sl_xe','total_xe']
-  ];
-  configs.forEach(([id,mk,tk]) => {
-    const canvas = document.getElementById(id);
-    if (!canvas) return;
-    dailyCharts[id] = new Chart(canvas, {
-      type:'bar', data:{labels, datasets:dailyMkDS(filtered,mk,tk)},
-      options:JSON.parse(JSON.stringify(dailyChartOpts))
-    });
-  });
-  // Weekly charts
-  dailyInitWeeklyCharts(filtered);
-}
-
-// ── Weekly aggregation ──
-function dailyAggregateWeekly(filteredData) {
-  const data = window._dailyData;
-  const KHOS = data.kho_list;
-  const weeks = {};
-  filteredData.forEach(h => {
-    const p = h.date.split('/');
-    const d = new Date(+p[2], +p[1]-1, +p[0]);
-    const iso = d.toISOString().slice(0,10);
-    // ISO week: Mon=start
-    const tmp = new Date(d);
-    tmp.setDate(tmp.getDate() + 3 - (tmp.getDay() + 6) % 7);
-    const wk1 = new Date(tmp.getFullYear(), 0, 4);
-    const wn = 1 + Math.round(((tmp - wk1) / 86400000 - 3 + (wk1.getDay() + 6) % 7) / 7);
-    const wKey = 'W' + wn;
-    if (!weeks[wKey]) {
-      const mon = new Date(d); mon.setDate(mon.getDate() - (mon.getDay()+6)%7);
-      weeks[wKey] = { label: wKey, monday: mon, total_tons:0, total_items:0, total_xe:0, khos:{} };
-      KHOS.forEach(k => weeks[wKey].khos[k] = {san_luong_tan:0, sl_items:0, sl_xe:0});
+      tbody.innerHTML = html;
     }
-    const w = weeks[wKey];
-    w.total_tons += h.total_tons || 0;
-    w.total_items += h.total_items || 0;
-    w.total_xe += h.total_xe || 0;
-    KHOS.forEach(k => {
-      const kd = h.khos[k] || {};
-      w.khos[k].san_luong_tan += kd.san_luong_tan || 0;
-      w.khos[k].sl_items += kd.sl_items || 0;
-      w.khos[k].sl_xe += kd.sl_xe || 0;
-    });
-  });
-  return Object.values(weeks).sort((a,b) => a.monday - b.monday);
-}
 
-let weeklyCharts = {};
-function dailyInitWeeklyCharts(filteredDailyData) {
-  const data = window._dailyData;
-  const KHOS = data.kho_list;
-  const COLORS = data.kho_colors;
-  const wData = dailyAggregateWeekly(filteredDailyData);
-  const wLabels = wData.map(w => w.label);
+    function dailyRenderDonut(entry) {
+      const data = window._dailyData;
+      const KHOS = data.kho_list;
+      const COLORS = data.kho_colors;
+      const el = document.getElementById('dailyDonut');
+      if (!el) return;
+      const tot = entry.total_tons;
+      if (tot <= 0) { el.innerHTML = '<p style="color:var(--t3)">Không có dữ liệu</p>'; return; }
+      let stops = [], legs = '', cum = 0;
+      KHOS.forEach(kho => {
+        const pct = ((entry.khos[kho] || {}).san_luong_tan || 0) / tot * 100;
+        const cl = COLORS[kho];
+        stops.push(`${cl} ${cum.toFixed(1)}% ${(cum + pct).toFixed(1)}%`);
+        legs += `<div class="legend-item"><span class="legend-color" style="background:${cl}"></span>${kho} ${pct.toFixed(1)}%</div>`;
+        cum += pct;
+      });
+      el.innerHTML = `<div class="donut" style="background:conic-gradient(${stops.join(', ')})"><div class="donut-hole"><span class="donut-val">${tot.toFixed(1)}</span><span class="donut-lbl">Tấn</span></div></div><div class="legend">${legs}</div>`;
+    }
 
-  ['weeklyChartTon','weeklyChartItems','weeklyChartXe'].forEach(id => {
-    if (weeklyCharts[id]) weeklyCharts[id].destroy();
-  });
+    window.dailyOnDP = function (d) {
+      const data = window._dailyData;
+      const entry = data.history.find(h => h.date === d);
+      if (entry) { dailyRenderCards(entry); dailyRenderTable(entry); dailyRenderDonut(entry); }
+    };
 
-  const configs = [
-    ['weeklyChartTon','san_luong_tan','total_tons'],
-    ['weeklyChartItems','sl_items','total_items'],
-    ['weeklyChartXe','sl_xe','total_xe']
-  ];
-  configs.forEach(([id, mk, tk]) => {
-    const canvas = document.getElementById(id);
-    if (!canvas) return;
-    const ds = [];
-    ds.push({type:'bar',label:'TOTAL',data:wData.map(w=>w[tk]),
-      backgroundColor:'rgba(255,255,255,0.15)',borderColor:'rgba(255,255,255,0.3)',
-      borderWidth:1,borderRadius:3,order:2,barPercentage:0.6,categoryPercentage:0.8});
-    KHOS.forEach(kho => {
-      ds.push({type:'line',label:kho,data:wData.map(w=>w.khos[kho][mk]),
-        borderColor:COLORS[kho],backgroundColor:COLORS[kho],
-        borderWidth:2,pointRadius:3,pointHoverRadius:6,tension:0.15,fill:false,order:1});
-    });
-    ds.push({type:'line',label:'TOTAL (avg)',data:wData.map(w=>w[tk]),
-      borderColor:'rgba(255,255,255,0.7)',borderWidth:2,borderDash:[6,3],
-      pointRadius:0,tension:0.15,fill:false,order:0});
-    weeklyCharts[id] = new Chart(canvas, {
-      type:'bar', data:{labels:wLabels, datasets:ds},
-      options:JSON.parse(JSON.stringify(dailyChartOpts))
-    });
-  });
+    // ── Dynamic KPI Cards with comparisons ──
+    function _parseDate(ds) {
+      const p = ds.split('/'); return new Date(+p[2], +p[1] - 1, +p[0]);
+    }
+    function _fmtDD(d) {
+      return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+    function dailyRenderCards(entry) {
+      const data = window._dailyData;
+      const history = data.history;
+      const el = document.getElementById('dailyCards');
+      if (!el) return;
 
-  // Weekly donut (latest week)
-  if (wData.length > 0) {
-    const latestW = wData[wData.length - 1];
-    const wDonut = document.getElementById('weeklyDonut');
-    if (wDonut) {
-      const tot = latestW.total_tons;
-      if (tot > 0) {
-        let stops=[], legs='', cum=0;
-        KHOS.forEach(kho => {
-          const pct = latestW.khos[kho].san_luong_tan / tot * 100;
-          stops.push(`${COLORS[kho]} ${cum.toFixed(1)}% ${(cum+pct).toFixed(1)}%`);
-          legs += `<div class="legend-item"><span class="legend-color" style="background:${COLORS[kho]}"></span>${kho} ${pct.toFixed(1)}%</div>`;
-          cum += pct;
+      const idx = history.findIndex(h => h.date === entry.date);
+      const prev = idx > 0 ? history[idx - 1] : null;
+
+      // LFL: same weekday, 7 days ago
+      const entryDate = _parseDate(entry.date);
+      const lflDate = new Date(entryDate);
+      lflDate.setDate(lflDate.getDate() - 7);
+      const lflDateStr = String(lflDate.getDate()).padStart(2, '0') + '/' +
+        String(lflDate.getMonth() + 1).padStart(2, '0') + '/' + lflDate.getFullYear();
+      const lfl = history.find(h => h.date === lflDateStr) || null;
+      const lflLabel = _fmtDD(lflDate);
+
+      function cmpHtml(cur, ref, refLabel) {
+        if (ref == null || ref === 0) return `<span class="flat">— vs ${refLabel}</span>`;
+        const pct = ((cur - ref) / ref * 100);
+        if (Math.abs(pct) < 0.1) return `<span class="flat">~ 0% vs ${refLabel}</span>`;
+        const cls = pct > 0 ? 'up' : 'down';
+        const arrow = pct > 0 ? '▲' : '▼';
+        return `<span class="${cls}">${arrow} ${pct > 0 ? '+' : ''}${pct.toFixed(1)}% vs ${refLabel}</span>`;
+      }
+
+      function card(value, label, color, curVal, prevEntry, lflEntry, key) {
+        const prevVal = prevEntry ? prevEntry[key] : null;
+        const lflVal = lflEntry ? lflEntry[key] : null;
+        const prevLabel = prevEntry ? prevEntry.date.substring(0, 5) : '—';
+        const cmp1 = cmpHtml(curVal, prevVal, prevLabel);
+        const cmp2 = cmpHtml(curVal, lflVal, 'LFL ' + lflLabel);
+        return `<div class="stat-card"><div class="value" style="color:${color}">${value}</div><div class="label">${label}</div><div class="change-row">${cmp1}${cmp2}</div></div>`;
+      }
+
+      el.innerHTML =
+        card(fD(entry.total_tons), 'Tổng Tấn', 'var(--grn)', entry.total_tons, prev, lfl, 'total_tons') +
+        card(entry.total_xe, 'Tổng Xe', 'var(--blu)', entry.total_xe, prev, lfl, 'total_xe') +
+        card(entry.total_sthi || '—', 'Tổng Siêu Thị', 'var(--org)', entry.total_sthi || 0, prev, lfl, 'total_sthi') +
+        card(fN(entry.total_items), 'Tổng Items', 'var(--pur)', entry.total_items, prev, lfl, 'total_items');
+    }
+
+    // Daily charts
+    let dailyCharts = {};
+    function dailyMkDS(filteredData, metricKey, totalKey) {
+      const data = window._dailyData;
+      const KHOS = data.kho_list;
+      const COLORS = data.kho_colors;
+      const ds = [];
+      ds.push({
+        type: 'bar', label: 'TOTAL', data: filteredData.map(h => h[totalKey]),
+        backgroundColor: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.3)',
+        borderWidth: 1, borderRadius: 3, order: 2, barPercentage: 0.6, categoryPercentage: 0.8
+      });
+      KHOS.forEach(kho => {
+        ds.push({
+          type: 'line', label: kho, data: filteredData.map(h => (h.khos[kho] || {})[metricKey] || 0),
+          borderColor: COLORS[kho], backgroundColor: COLORS[kho],
+          borderWidth: 2, pointRadius: 2.5, pointHoverRadius: 5, tension: 0.15, fill: false, order: 1
         });
-        wDonut.innerHTML = `<div class="donut" style="background:conic-gradient(${stops.join(', ')})"><div class="donut-hole"><span class="donut-val">${tot.toFixed(1)}</span><span class="donut-lbl">${latestW.label}</span></div></div><div class="legend">${legs}</div>`;
-      } else {
-        wDonut.innerHTML = '<p style="color:var(--t3)">Không có dữ liệu</p>';
+      });
+      ds.push({
+        type: 'line', label: 'TOTAL (avg)', data: filteredData.map(h => h[totalKey]),
+        borderColor: 'rgba(255,255,255,0.7)', borderWidth: 2, borderDash: [6, 3],
+        pointRadius: 0, tension: 0.15, fill: false, order: 0
+      });
+      return ds;
+    }
+    const dailyChartOpts = {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'bottom', labels: {
+            color: '#94a3b8', font: { size: 11, weight: '600' }, usePointStyle: true, padding: 12,
+            filter: item => item.text !== 'TOTAL (avg)'
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(17,24,39,0.95)', titleColor: '#f0c060', bodyColor: '#d8dbe0',
+          borderColor: 'rgba(148,163,184,.15)', borderWidth: 1, padding: 10
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#94a3b8', font: { size: 11, weight: '600' }, maxRotation: 45, autoSkip: true, maxTicksLimit: 20 }, grid: { color: 'rgba(148,163,184,.06)' } },
+        y: { ticks: { color: '#94a3b8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(148,163,184,.06)' }, beginAtZero: true }
+      }
+    };
+
+    function dailyInitCharts(days) {
+      const data = window._dailyData;
+      const history = data.history;
+      const n = history.length;
+      const start = Math.max(0, n - days);
+      const filtered = history.slice(start);
+      const labels = filtered.map(h => h.date.substring(0, 5));
+
+      ['dailyChartTon', 'dailyChartItems', 'dailyChartXe'].forEach(id => {
+        if (dailyCharts[id]) dailyCharts[id].destroy();
+      });
+
+      const configs = [
+        ['dailyChartTon', 'san_luong_tan', 'total_tons'],
+        ['dailyChartItems', 'sl_items', 'total_items'],
+        ['dailyChartXe', 'sl_xe', 'total_xe']
+      ];
+      configs.forEach(([id, mk, tk]) => {
+        const canvas = document.getElementById(id);
+        if (!canvas) return;
+        dailyCharts[id] = new Chart(canvas, {
+          type: 'bar', data: { labels, datasets: dailyMkDS(filtered, mk, tk) },
+          options: JSON.parse(JSON.stringify(dailyChartOpts))
+        });
+      });
+      // Weekly charts
+      dailyInitWeeklyCharts(filtered);
+    }
+
+    // ── Weekly aggregation ──
+    function dailyAggregateWeekly(filteredData) {
+      const data = window._dailyData;
+      const KHOS = data.kho_list;
+      const weeks = {};
+      filteredData.forEach(h => {
+        const p = h.date.split('/');
+        const d = new Date(+p[2], +p[1] - 1, +p[0]);
+        const iso = d.toISOString().slice(0, 10);
+        // ISO week: Mon=start
+        const tmp = new Date(d);
+        tmp.setDate(tmp.getDate() + 3 - (tmp.getDay() + 6) % 7);
+        const wk1 = new Date(tmp.getFullYear(), 0, 4);
+        const wn = 1 + Math.round(((tmp - wk1) / 86400000 - 3 + (wk1.getDay() + 6) % 7) / 7);
+        const wKey = 'W' + wn;
+        if (!weeks[wKey]) {
+          const mon = new Date(d); mon.setDate(mon.getDate() - (mon.getDay() + 6) % 7);
+          weeks[wKey] = { label: wKey, monday: mon, total_tons: 0, total_items: 0, total_xe: 0, khos: {} };
+          KHOS.forEach(k => weeks[wKey].khos[k] = { san_luong_tan: 0, sl_items: 0, sl_xe: 0 });
+        }
+        const w = weeks[wKey];
+        w.total_tons += h.total_tons || 0;
+        w.total_items += h.total_items || 0;
+        w.total_xe += h.total_xe || 0;
+        KHOS.forEach(k => {
+          const kd = h.khos[k] || {};
+          w.khos[k].san_luong_tan += kd.san_luong_tan || 0;
+          w.khos[k].sl_items += kd.sl_items || 0;
+          w.khos[k].sl_xe += kd.sl_xe || 0;
+        });
+      });
+      return Object.values(weeks).sort((a, b) => a.monday - b.monday);
+    }
+
+    let weeklyCharts = {};
+    function dailyInitWeeklyCharts(filteredDailyData) {
+      const data = window._dailyData;
+      const KHOS = data.kho_list;
+      const COLORS = data.kho_colors;
+      const wData = dailyAggregateWeekly(filteredDailyData);
+      const wLabels = wData.map(w => w.label);
+
+      ['weeklyChartTon', 'weeklyChartItems', 'weeklyChartXe'].forEach(id => {
+        if (weeklyCharts[id]) weeklyCharts[id].destroy();
+      });
+
+      const configs = [
+        ['weeklyChartTon', 'san_luong_tan', 'total_tons'],
+        ['weeklyChartItems', 'sl_items', 'total_items'],
+        ['weeklyChartXe', 'sl_xe', 'total_xe']
+      ];
+      configs.forEach(([id, mk, tk]) => {
+        const canvas = document.getElementById(id);
+        if (!canvas) return;
+        const ds = [];
+        ds.push({
+          type: 'bar', label: 'TOTAL', data: wData.map(w => w[tk]),
+          backgroundColor: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.3)',
+          borderWidth: 1, borderRadius: 3, order: 2, barPercentage: 0.6, categoryPercentage: 0.8
+        });
+        KHOS.forEach(kho => {
+          ds.push({
+            type: 'line', label: kho, data: wData.map(w => w.khos[kho][mk]),
+            borderColor: COLORS[kho], backgroundColor: COLORS[kho],
+            borderWidth: 2, pointRadius: 3, pointHoverRadius: 6, tension: 0.15, fill: false, order: 1
+          });
+        });
+        ds.push({
+          type: 'line', label: 'TOTAL (avg)', data: wData.map(w => w[tk]),
+          borderColor: 'rgba(255,255,255,0.7)', borderWidth: 2, borderDash: [6, 3],
+          pointRadius: 0, tension: 0.15, fill: false, order: 0
+        });
+        weeklyCharts[id] = new Chart(canvas, {
+          type: 'bar', data: { labels: wLabels, datasets: ds },
+          options: JSON.parse(JSON.stringify(dailyChartOpts))
+        });
+      });
+
+      // Weekly donut (latest week)
+      if (wData.length > 0) {
+        const latestW = wData[wData.length - 1];
+        const wDonut = document.getElementById('weeklyDonut');
+        if (wDonut) {
+          const tot = latestW.total_tons;
+          if (tot > 0) {
+            let stops = [], legs = '', cum = 0;
+            KHOS.forEach(kho => {
+              const pct = latestW.khos[kho].san_luong_tan / tot * 100;
+              stops.push(`${COLORS[kho]} ${cum.toFixed(1)}% ${(cum + pct).toFixed(1)}%`);
+              legs += `<div class="legend-item"><span class="legend-color" style="background:${COLORS[kho]}"></span>${kho} ${pct.toFixed(1)}%</div>`;
+              cum += pct;
+            });
+            wDonut.innerHTML = `<div class="donut" style="background:conic-gradient(${stops.join(', ')})"><div class="donut-hole"><span class="donut-val">${tot.toFixed(1)}</span><span class="donut-lbl">${latestW.label}</span></div></div><div class="legend">${legs}</div>`;
+          } else {
+            wDonut.innerHTML = '<p style="color:var(--t3)">Không có dữ liệu</p>';
+          }
+        }
+      }
+
+      // Weekly notes
+      if (wData.length >= 2) {
+        const cur = wData[wData.length - 1], prev = wData[wData.length - 2];
+        const pctCh = (a, b) => b > 0 ? ((a - b) / b * 100).toFixed(1) : '–';
+        const arrow = v => v > 0 ? `<span style="color:var(--grn)">▲ +${v}%</span>` : v < 0 ? `<span style="color:var(--red)">▼ ${v}%</span>` : '—';
+        const ids = [['weeklyNoteTon', 'total_tons', 'tấn'], ['weeklyNoteItems', 'total_items', 'items'], ['weeklyNoteXe', 'total_xe', 'xe']];
+        ids.forEach(([nid, key, unit]) => {
+          const ne = document.getElementById(nid);
+          if (ne) ne.innerHTML = `${cur.label}: <b>${key === 'total_items' ? fN(cur[key]) : key === 'total_tons' ? cur[key].toFixed(2) : cur[key]}</b> ${unit} · vs ${prev.label}: ${arrow(pctCh(cur[key], prev[key]))}`;
+        });
       }
     }
-  }
 
-  // Weekly notes
-  if (wData.length >= 2) {
-    const cur = wData[wData.length-1], prev = wData[wData.length-2];
-    const pctCh = (a,b) => b>0 ? ((a-b)/b*100).toFixed(1) : '–';
-    const arrow = v => v>0 ? `<span style="color:var(--grn)">▲ +${v}%</span>` : v<0 ? `<span style="color:var(--red)">▼ ${v}%</span>` : '—';
-    const ids = [['weeklyNoteTon','total_tons','tấn'],['weeklyNoteItems','total_items','items'],['weeklyNoteXe','total_xe','xe']];
-    ids.forEach(([nid,key,unit]) => {
-      const ne = document.getElementById(nid);
-      if (ne) ne.innerHTML = `${cur.label}: <b>${key==='total_items'?fN(cur[key]):key==='total_tons'?cur[key].toFixed(2):cur[key]}</b> ${unit} · vs ${prev.label}: ${arrow(pctCh(cur[key],prev[key]))}`;
-    });
-  }
-}
-
-// ── Table sorting ──
-function dailyInitSortable() {
-  const table = document.getElementById('dailySortTable');
-  if (!table) return;
-  table.querySelectorAll('th.sortable').forEach(th => {
-    th.addEventListener('click', () => {
-      const col = parseInt(th.dataset.col);
-      const tbody = table.querySelector('tbody');
-      const rows = Array.from(tbody.querySelectorAll('tr:not(.total-row)'));
-      const totalRow = tbody.querySelector('tr.total-row');
-      const isAsc = th.classList.contains('asc');
-      table.querySelectorAll('th.sortable').forEach(h => h.classList.remove('asc','desc'));
-      th.classList.add(isAsc ? 'desc' : 'asc');
-      rows.sort((a,b) => {
-        const av = parseFloat(a.cells[col].textContent.replace(/,/g,'')) || 0;
-        const bv = parseFloat(b.cells[col].textContent.replace(/,/g,'')) || 0;
-        return isAsc ? bv - av : av - bv;
+    // ── Table sorting ──
+    function dailyInitSortable() {
+      const table = document.getElementById('dailySortTable');
+      if (!table) return;
+      table.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+          const col = parseInt(th.dataset.col);
+          const tbody = table.querySelector('tbody');
+          const rows = Array.from(tbody.querySelectorAll('tr:not(.total-row)'));
+          const totalRow = tbody.querySelector('tr.total-row');
+          const isAsc = th.classList.contains('asc');
+          table.querySelectorAll('th.sortable').forEach(h => h.classList.remove('asc', 'desc'));
+          th.classList.add(isAsc ? 'desc' : 'asc');
+          rows.sort((a, b) => {
+            const av = parseFloat(a.cells[col].textContent.replace(/,/g, '')) || 0;
+            const bv = parseFloat(b.cells[col].textContent.replace(/,/g, '')) || 0;
+            return isAsc ? bv - av : av - bv;
+          });
+          rows.forEach(r => tbody.appendChild(r));
+          if (totalRow) tbody.appendChild(totalRow);
+        });
       });
-      rows.forEach(r => tbody.appendChild(r));
-      if (totalRow) tbody.appendChild(totalRow);
-    });
-  });
-}
+    }
 
-// ── Date range filter for daily ──
-window.dailyApplyDateRange = function() {
-  const data = window._dailyData;
-  const df = document.getElementById('dailyDateFrom').value;
-  const dt = document.getElementById('dailyDateTo').value;
-  if (!df || !dt) return;
-  const fromD = new Date(df), toD = new Date(dt);
-  const filtered = data.history.filter(h => {
-    const p = h.date.split('/');
-    const d = new Date(+p[2], +p[1]-1, +p[0]);
-    return d >= fromD && d <= toD;
-  });
-  document.querySelectorAll('#dailyChartCtrl .fbtn').forEach(b => b.classList.remove('active'));
-  if (filtered.length > 0) {
-    const labels = filtered.map(h => h.date.substring(0, 5));
-    const configs = [
-      ['dailyChartTon','san_luong_tan','total_tons'],
-      ['dailyChartItems','sl_items','total_items'],
-      ['dailyChartXe','sl_xe','total_xe']
-    ];
-    configs.forEach(([id,mk,tk]) => {
-      if (dailyCharts[id]) dailyCharts[id].destroy();
-      const canvas = document.getElementById(id);
-      if (!canvas) return;
-      dailyCharts[id] = new Chart(canvas, {
-        type:'bar', data:{labels, datasets:dailyMkDS(filtered,mk,tk)},
-        options:JSON.parse(JSON.stringify(dailyChartOpts))
+    // ── Date range filter for daily ──
+    window.dailyApplyDateRange = function () {
+      const data = window._dailyData;
+      const df = document.getElementById('dailyDateFrom').value;
+      const dt = document.getElementById('dailyDateTo').value;
+      if (!df || !dt) return;
+      const fromD = new Date(df), toD = new Date(dt);
+      const filtered = data.history.filter(h => {
+        const p = h.date.split('/');
+        const d = new Date(+p[2], +p[1] - 1, +p[0]);
+        return d >= fromD && d <= toD;
       });
-    });
-    dailyInitWeeklyCharts(filtered);
-  }
-};
-window.dailyResetDateRange = function() {
-  const data = window._dailyData;
-  const histDates = data.history.map(h => {
-    const p = h.date.split('/'); return p[2]+'-'+p[1]+'-'+p[0];
-  });
-  document.getElementById('dailyDateFrom').value = histDates[Math.max(0,histDates.length-14)];
-  document.getElementById('dailyDateTo').value = histDates[histDates.length-1];
-  dailyInitCharts(14);
-};
+      document.querySelectorAll('#dailyChartCtrl .fbtn').forEach(b => b.classList.remove('active'));
+      if (filtered.length > 0) {
+        const labels = filtered.map(h => h.date.substring(0, 5));
+        const configs = [
+          ['dailyChartTon', 'san_luong_tan', 'total_tons'],
+          ['dailyChartItems', 'sl_items', 'total_items'],
+          ['dailyChartXe', 'sl_xe', 'total_xe']
+        ];
+        configs.forEach(([id, mk, tk]) => {
+          if (dailyCharts[id]) dailyCharts[id].destroy();
+          const canvas = document.getElementById(id);
+          if (!canvas) return;
+          dailyCharts[id] = new Chart(canvas, {
+            type: 'bar', data: { labels, datasets: dailyMkDS(filtered, mk, tk) },
+            options: JSON.parse(JSON.stringify(dailyChartOpts))
+          });
+        });
+        dailyInitWeeklyCharts(filtered);
+      }
+    };
+    window.dailyResetDateRange = function () {
+      const data = window._dailyData;
+      const histDates = data.history.map(h => {
+        const p = h.date.split('/'); return p[2] + '-' + p[1] + '-' + p[0];
+      });
+      document.getElementById('dailyDateFrom').value = histDates[Math.max(0, histDates.length - 14)];
+      document.getElementById('dailyDateTo').value = histDates[histDates.length - 1];
+      dailyInitCharts(14);
+    };
 
-window.dailySetRange = function(days, btn) {
-  document.querySelectorAll('#dailyChartCtrl .fbtn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  // Also update date inputs
-  const data = window._dailyData;
-  const n = data.history.length;
-  const start = Math.max(0, n - days);
-  const histDates = data.history.map(h => {
-    const p = h.date.split('/'); return p[2]+'-'+p[1]+'-'+p[0];
-  });
-  document.getElementById('dailyDateFrom').value = histDates[start];
-  document.getElementById('dailyDateTo').value = histDates[n-1];
-  dailyInitCharts(days);
-};
+    window.dailySetRange = function (days, btn) {
+      document.querySelectorAll('#dailyChartCtrl .fbtn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      // Also update date inputs
+      const data = window._dailyData;
+      const n = data.history.length;
+      const start = Math.max(0, n - days);
+      const histDates = data.history.map(h => {
+        const p = h.date.split('/'); return p[2] + '-' + p[1] + '-' + p[0];
+      });
+      document.getElementById('dailyDateFrom').value = histDates[start];
+      document.getElementById('dailyDateTo').value = histDates[n - 1];
+      dailyInitCharts(days);
+    };
 
-// ═══════════════════════════════════════════════
-// PERFORMANCE TAB
-// ═══════════════════════════════════════════════
-function renderPerformance(data) {
-  document.getElementById('perf-loading').style.display = 'none';
-  const el = document.getElementById('perf-content');
-  el.style.display = 'block';
+    // ═══════════════════════════════════════════════
+    // PERFORMANCE TAB
+    // ═══════════════════════════════════════════════
+    function renderPerformance(data) {
+      document.getElementById('perf-loading').style.display = 'none';
+      const el = document.getElementById('perf-content');
+      el.style.display = 'block';
 
-  const labels = data.labels;
-  const charts = data.charts;
-  const cards = data.cards;
-  const khoNames = data.kho_names;
-  const khoColors = data.kho_colors;
-  const isoDates = data.iso_dates || [];
-  const weeklyHtml = data.weekly_tables_html || '';
+      const labels = data.labels;
+      const charts = data.charts;
+      const cards = data.cards;
+      const khoNames = data.kho_names;
+      const khoColors = data.kho_colors;
+      const isoDates = data.iso_dates || [];
+      const weeklyHtml = data.weekly_tables_html || '';
 
-  // Date filter — above cards
-  let html = `<div class="filter-bar">
-    <label>📅 Từ:</label><input type="date" id="perfDateFrom" value="${isoDates[0]||''}" onchange="perfApplyDate()">
-    <label>Đến:</label><input type="date" id="perfDateTo" value="${isoDates[isoDates.length-1]||''}" onchange="perfApplyDate()">
+      // Date filter — above cards
+      let html = `<div class="filter-bar">
+    <label>📅 Từ:</label><input type="date" id="perfDateFrom" value="${isoDates[0] || ''}" onchange="perfApplyDate()">
+    <label>Đến:</label><input type="date" id="perfDateTo" value="${isoDates[isoDates.length - 1] || ''}" onchange="perfApplyDate()">
     <button class="fbtn" onclick="perfResetDate()">↻ Reset</button>
     <span class="filter-info" id="perfRangeInfo">${isoDates.length} ngày</span>
   </div>`;
 
-  // Cards — NO route card (removed Đúng Tuyến)
-  html += `<div id="perfCardsContainer"></div>`;
+      // Cards — NO route card (removed Đúng Tuyến)
+      html += `<div id="perfCardsContainer"></div>`;
 
-  // Chart boxes — NO route chart, renumbered, single-column layout
-  const chartConfigs = [
-    ['perfChartSLA','1. Đúng Giờ SLA','filterPerfSLA'],
-    ['perfChartPlan','2. On Time Per Dest','filterPerfPlan'],
-    ['perfChartPlanCmp','3. Đúng Kế Hoạch','filterPerfPlanCmp'],
-    ['perfChartTrips','4. Số Chuyến & Hoàn Thành','filterPerfTrips'],
-  ];
+      // Chart boxes — NO route chart, renumbered, single-column layout
+      const chartConfigs = [
+        ['perfChartSLA', '1. Đúng Giờ SLA', 'filterPerfSLA'],
+        ['perfChartPlan', '2. On Time Per Dest', 'filterPerfPlan'],
+        ['perfChartPlanCmp', '3. Đúng Kế Hoạch', 'filterPerfPlanCmp'],
+        ['perfChartTrips', '4. Số Chuyến & Hoàn Thành', 'filterPerfTrips'],
+      ];
 
-  html += '<div class="chart-grid perf-1col">';
-  chartConfigs.forEach(([id, title, filterId]) => {
-    html += `<div class="chart-box"><div style="display:flex;align-items:center;flex-wrap:wrap;margin-bottom:.6rem"><h3 style="font-size:.88rem;font-weight:700;color:var(--t1)">${title}</h3><span class="pill-bar" id="${filterId}"></span></div><div class="chart-wrap"><canvas id="${id}"></canvas></div></div>`;
-  });
-  html += '</div>';
+      html += '<div class="chart-grid perf-1col">';
+      chartConfigs.forEach(([id, title, filterId]) => {
+        html += `<div class="chart-box"><div style="display:flex;align-items:center;flex-wrap:wrap;margin-bottom:.6rem"><h3 style="font-size:.88rem;font-weight:700;color:var(--t1)">${title}</h3><span class="pill-bar" id="${filterId}"></span></div><div class="chart-wrap"><canvas id="${id}"></canvas></div></div>`;
+      });
+      html += '</div>';
 
-  // Glossary table
-  html += `<div class="section"><div class="section-header"><span class="icon">📖</span><h2>Chú Thích Chỉ Tiêu</h2></div>
+      // Glossary table
+      html += `<div class="section"><div class="section-header"><span class="icon">📖</span><h2>Chú Thích Chỉ Tiêu</h2></div>
   <div class="table-wrap"><table class="glossary-table">
     <thead><tr><th>Chỉ Tiêu</th><th>Ý Nghĩa</th></tr></thead>
     <tbody>
@@ -840,323 +1724,326 @@ function renderPerformance(data) {
     </tbody>
   </table></div></div>`;
 
-  // Weekly tables
-  if (weeklyHtml) {
-    html += `<div class="section"><div class="section-header"><span class="icon">📋</span><h2>Bảng Tổng Hợp Tuần</h2></div><div class="table-wrap" style="overflow-x:auto">${weeklyHtml}</div></div>`;
-  }
-
-  el.innerHTML = html;
-
-  // Store perf data globally
-  window._perfData = {
-    labels: [...labels],
-    fullLabels: [...labels],
-    charts: JSON.parse(JSON.stringify(charts)),
-    fullCharts: JSON.parse(JSON.stringify(charts)),
-    khoNames, khoColors, isoDates, cards: JSON.parse(JSON.stringify(cards))
-  };
-
-  // Render cards with initial data
-  perfRenderCards();
-
-  // Build filter pills & init charts
-  Chart.defaults.color = '#94a3b8';
-  Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
-
-  const TT = {backgroundColor:'rgba(17,24,39,0.95)',titleColor:'#E0E0E0',bodyColor:'#CCC',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:8,padding:10};
-  window._perfTT = TT;
-  window._perfChartInstances = {};
-
-  function makePills(containerId, initFn) {
-    const bar = document.getElementById(containerId);
-    if (!bar) return;
-    const btns = ['Tổng', ...khoNames];
-    btns.forEach(name => {
-      const b = document.createElement('button');
-      b.className = 'pill' + (name==='Tổng'?' active':'');
-      b.textContent = name;
-      b.onclick = () => {
-        bar.querySelectorAll('.pill').forEach(x=>x.classList.remove('active'));
-        b.classList.add('active');
-        initFn(name==='Tổng'?null:name);
-      };
-      bar.appendChild(b);
-    });
-  }
-
-  function buildBarTrend(canvasId, chartData, lbl1, lbl2, yLabel, refLine, filterKho) {
-    if (window._perfChartInstances[canvasId]) window._perfChartInstances[canvasId].destroy();
-    const pd = window._perfData;
-    const data = pd.charts;
-    const d = data[chartData];
-    if (!d) return;
-
-    let barOn, barLate;
-    if (filterKho && d.kho_bars && d.kho_bars[filterKho]) {
-      barOn = d.kho_bars[filterKho].on;
-      barLate = d.kho_bars[filterKho].late;
-    } else {
-      barOn = d.on_times || d.corrects;
-      barLate = d.lates || d.wrongs;
-    }
-
-    const datasets = [
-      {label:lbl1,data:barOn,backgroundColor:'rgba(46,204,113,0.7)',borderRadius:4,type:'bar',order:2,yAxisID:'y'},
-      {label:lbl2,data:barLate,backgroundColor:'rgba(231,76,60,0.7)',borderRadius:4,type:'bar',order:2,yAxisID:'y'},
-    ];
-
-    if (filterKho) {
-      const t = d.trends.find(t=>t.label===filterKho);
-      if (t) datasets.push({label:t.label,data:t.data,borderColor:t.color,backgroundColor:t.color+'33',type:'line',order:1,yAxisID:'y1',tension:.3,pointRadius:3,pointHoverRadius:6,borderWidth:2.5,spanGaps:true,clip:false});
-    } else {
-      datasets.push({label:'Trung bình',data:d.avg,borderColor:'#818cf8',backgroundColor:'#818cf833',type:'line',order:1,yAxisID:'y1',tension:.3,pointRadius:3,pointHoverRadius:6,borderWidth:3,spanGaps:true,clip:false});
-    }
-
-    const ann = refLine ? {annotation:{annotations:{ref:{type:'line',yMin:refLine,yMax:refLine,yScaleID:'y1',borderColor:'#FF6B6B',borderWidth:1.5,borderDash:[6,4],label:{content:refLine+'%',display:true,position:'end',backgroundColor:'rgba(255,107,107,0.85)',color:'#fff',font:{size:10},padding:3}}}}} : {};
-
-    window._perfChartInstances[canvasId] = new Chart(document.getElementById(canvasId), {
-      data:{labels:pd.labels,datasets},
-      options:{
-        responsive:true,maintainAspectRatio:false,
-        interaction:{mode:'index',intersect:false},
-        plugins:{tooltip:window._perfTT,...ann},
-        scales:{
-          x:{stacked:true,grid:{display:false}},
-          y:{stacked:true,grid:{color:'rgba(255,255,255,0.04)'},ticks:{precision:0}},
-          y1:{position:'right',min:0,max:100,grid:{drawOnChartArea:false},ticks:{stepSize:20}},
-        }
+      // Weekly tables
+      if (weeklyHtml) {
+        html += `<div class="section"><div class="section-header"><span class="icon">📋</span><h2>Bảng Tổng Hợp Tuần</h2></div><div class="table-wrap" style="overflow-x:auto">${weeklyHtml}</div></div>`;
       }
-    });
-  }
 
-  function initSLA(k){buildBarTrend('perfChartSLA','sla','Đúng SLA','Trễ SLA','% SLA',95,k)}
-  function initPlan(k){buildBarTrend('perfChartPlan','plan','Đúng Kế Hoạch','Trễ Kế Hoạch','% Kế Hoạch',95,k)}
-  function initPlanCmp(k){buildBarTrend('perfChartPlanCmp','plan_compliance','Đúng Kế Hoạch','Sai Kế Hoạch','% Kế Hoạch',null,k)}
-  function initTrips(k){buildBarTrend('perfChartTrips','trips_completion','Hoàn Thành','Chưa Hoàn Thành','% Hoàn Thành',null,k)}
+      el.innerHTML = html;
 
-  makePills('filterPerfSLA', initSLA);
-  makePills('filterPerfPlan', initPlan);
-  makePills('filterPerfPlanCmp', initPlanCmp);
-  makePills('filterPerfTrips', initTrips);
+      // Store perf data globally
+      window._perfData = {
+        labels: [...labels],
+        fullLabels: [...labels],
+        charts: JSON.parse(JSON.stringify(charts)),
+        fullCharts: JSON.parse(JSON.stringify(charts)),
+        khoNames, khoColors, isoDates, cards: JSON.parse(JSON.stringify(cards))
+      };
 
-  initSLA(null); initPlan(null); initPlanCmp(null); initTrips(null);
+      // Render cards with initial data
+      perfRenderCards();
 
-  // ── Recalculate cards from kho_bars sliced data ──
-  function perfRecalcCards(si, ei) {
-    const pd = window._perfData;
-    const fc = pd.fullCharts;
-    const khoNames = pd.khoNames;
-    const newCards = {};
-    // For each metric prefix, recalculate from kho_bars
-    const metricMap = [
-      {prefix:'sla', chartKey:'sla'},
-      {prefix:'plan', chartKey:'plan'},
-      {prefix:'plancmp', chartKey:'plan_compliance'},
-    ];
-    metricMap.forEach(({prefix, chartKey}) => {
-      const ch = fc[chartKey];
-      if (!ch || !ch.kho_bars) return;
-      khoNames.forEach(kho => {
-        const kb = ch.kho_bars[kho];
-        if (!kb) return;
-        const onSlice = kb.on.slice(si, ei);
-        const lateSlice = kb.late.slice(si, ei);
-        const totalOn = onSlice.reduce((a,b) => a+b, 0);
-        const totalLate = lateSlice.reduce((a,b) => a+b, 0);
-        const total = totalOn + totalLate;
-        newCards[`${prefix}_${kho}`] = { total, pct: total > 0 ? totalOn/total*100 : 0 };
-      });
-    });
-    pd.cards = newCards;
-    perfRenderCards();
-  }
+      // Build filter pills & init charts
+      Chart.defaults.color = '#94a3b8';
+      Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
 
-  // Date range
-  window.perfApplyDate = function() {
-    const pd = window._perfData;
-    const df = document.getElementById('perfDateFrom').value;
-    const dt = document.getElementById('perfDateTo').value;
-    if (!df||!dt) return;
-    let si = pd.isoDates.findIndex(d=>d>=df); if(si===-1)si=0;
-    let ei = pd.isoDates.length;
-    for(let i=0;i<pd.isoDates.length;i++){if(pd.isoDates[i]>dt){ei=i;break;}}
-    pd.labels.length=0;
-    pd.fullLabels.slice(si,ei).forEach(l=>pd.labels.push(l));
-    for(const ck of Object.keys(pd.fullCharts)){
-      const src=pd.fullCharts[ck],dst=pd.charts[ck];
-      if(!dst||!src)continue;
-      ['on_times','lates','corrects','wrongs','avg'].forEach(k=>{if(src[k])dst[k]=src[k].slice(si,ei);});
-      if(src.kho_bars){for(const k of Object.keys(src.kho_bars)){if(!dst.kho_bars)dst.kho_bars={};if(!dst.kho_bars[k])dst.kho_bars[k]={};dst.kho_bars[k].on=src.kho_bars[k].on.slice(si,ei);dst.kho_bars[k].late=src.kho_bars[k].late.slice(si,ei);}}
-      if(src.trends){for(let i=0;i<src.trends.length;i++){if(dst.trends[i])dst.trends[i].data=src.trends[i].data.slice(si,ei);}}
+      const TT = { backgroundColor: 'rgba(17,24,39,0.95)', titleColor: '#E0E0E0', bodyColor: '#CCC', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, cornerRadius: 8, padding: 10 };
+      window._perfTT = TT;
+      window._perfChartInstances = {};
+
+      function makePills(containerId, initFn) {
+        const bar = document.getElementById(containerId);
+        if (!bar) return;
+        const btns = ['Tổng', ...khoNames];
+        btns.forEach(name => {
+          const b = document.createElement('button');
+          b.className = 'pill' + (name === 'Tổng' ? ' active' : '');
+          b.textContent = name;
+          b.onclick = () => {
+            bar.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+            b.classList.add('active');
+            initFn(name === 'Tổng' ? null : name);
+          };
+          bar.appendChild(b);
+        });
+      }
+
+      function buildBarTrend(canvasId, chartData, lbl1, lbl2, yLabel, refLine, filterKho) {
+        if (window._perfChartInstances[canvasId]) window._perfChartInstances[canvasId].destroy();
+        const pd = window._perfData;
+        const data = pd.charts;
+        const d = data[chartData];
+        if (!d) return;
+
+        let barOn, barLate;
+        if (filterKho && d.kho_bars && d.kho_bars[filterKho]) {
+          barOn = d.kho_bars[filterKho].on;
+          barLate = d.kho_bars[filterKho].late;
+        } else {
+          barOn = d.on_times || d.corrects;
+          barLate = d.lates || d.wrongs;
+        }
+
+        const datasets = [
+          { label: lbl1, data: barOn, backgroundColor: 'rgba(46,204,113,0.7)', borderRadius: 4, type: 'bar', order: 2, yAxisID: 'y' },
+          { label: lbl2, data: barLate, backgroundColor: 'rgba(231,76,60,0.7)', borderRadius: 4, type: 'bar', order: 2, yAxisID: 'y' },
+        ];
+
+        if (filterKho) {
+          const t = d.trends.find(t => t.label === filterKho);
+          if (t) datasets.push({ label: t.label, data: t.data, borderColor: t.color, backgroundColor: t.color + '33', type: 'line', order: 1, yAxisID: 'y1', tension: .3, pointRadius: 3, pointHoverRadius: 6, borderWidth: 2.5, spanGaps: true, clip: false });
+        } else {
+          datasets.push({ label: 'Trung bình', data: d.avg, borderColor: '#818cf8', backgroundColor: '#818cf833', type: 'line', order: 1, yAxisID: 'y1', tension: .3, pointRadius: 3, pointHoverRadius: 6, borderWidth: 3, spanGaps: true, clip: false });
+        }
+
+        const ann = refLine ? { annotation: { annotations: { ref: { type: 'line', yMin: refLine, yMax: refLine, yScaleID: 'y1', borderColor: '#FF6B6B', borderWidth: 1.5, borderDash: [6, 4], label: { content: refLine + '%', display: true, position: 'end', backgroundColor: 'rgba(255,107,107,0.85)', color: '#fff', font: { size: 10 }, padding: 3 } } } } } : {};
+
+        window._perfChartInstances[canvasId] = new Chart(document.getElementById(canvasId), {
+          data: { labels: pd.labels, datasets },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { tooltip: window._perfTT, ...ann },
+            scales: {
+              x: { stacked: true, grid: { display: false } },
+              y: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { precision: 0 } },
+              y1: { position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false }, ticks: { stepSize: 20 } },
+            }
+          }
+        });
+      }
+
+      function initSLA(k) { buildBarTrend('perfChartSLA', 'sla', 'Đúng SLA', 'Trễ SLA', '% SLA', 95, k) }
+      function initPlan(k) { buildBarTrend('perfChartPlan', 'plan', 'Đúng Kế Hoạch', 'Trễ Kế Hoạch', '% Kế Hoạch', 95, k) }
+      function initPlanCmp(k) { buildBarTrend('perfChartPlanCmp', 'plan_compliance', 'Đúng Kế Hoạch', 'Sai Kế Hoạch', '% Kế Hoạch', null, k) }
+      function initTrips(k) { buildBarTrend('perfChartTrips', 'trips_completion', 'Hoàn Thành', 'Chưa Hoàn Thành', '% Hoàn Thành', null, k) }
+
+      makePills('filterPerfSLA', initSLA);
+      makePills('filterPerfPlan', initPlan);
+      makePills('filterPerfPlanCmp', initPlanCmp);
+      makePills('filterPerfTrips', initTrips);
+
+      initSLA(null); initPlan(null); initPlanCmp(null); initTrips(null);
+
+      // ── Recalculate cards from kho_bars sliced data ──
+      function perfRecalcCards(si, ei) {
+        const pd = window._perfData;
+        const fc = pd.fullCharts;
+        const khoNames = pd.khoNames;
+        const newCards = {};
+        // For each metric prefix, recalculate from kho_bars
+        const metricMap = [
+          { prefix: 'sla', chartKey: 'sla' },
+          { prefix: 'plan', chartKey: 'plan' },
+          { prefix: 'plancmp', chartKey: 'plan_compliance' },
+        ];
+        metricMap.forEach(({ prefix, chartKey }) => {
+          const ch = fc[chartKey];
+          if (!ch || !ch.kho_bars) return;
+          khoNames.forEach(kho => {
+            const kb = ch.kho_bars[kho];
+            if (!kb) return;
+            const onSlice = kb.on.slice(si, ei);
+            const lateSlice = kb.late.slice(si, ei);
+            const totalOn = onSlice.reduce((a, b) => a + b, 0);
+            const totalLate = lateSlice.reduce((a, b) => a + b, 0);
+            const total = totalOn + totalLate;
+            newCards[`${prefix}_${kho}`] = { total, pct: total > 0 ? totalOn / total * 100 : 0 };
+          });
+        });
+        pd.cards = newCards;
+        perfRenderCards();
+      }
+
+      // Date range
+      window.perfApplyDate = function () {
+        const pd = window._perfData;
+        const df = document.getElementById('perfDateFrom').value;
+        const dt = document.getElementById('perfDateTo').value;
+        if (!df || !dt) return;
+        let si = pd.isoDates.findIndex(d => d >= df); if (si === -1) si = 0;
+        let ei = pd.isoDates.length;
+        for (let i = 0; i < pd.isoDates.length; i++) { if (pd.isoDates[i] > dt) { ei = i; break; } }
+        pd.labels.length = 0;
+        pd.fullLabels.slice(si, ei).forEach(l => pd.labels.push(l));
+        for (const ck of Object.keys(pd.fullCharts)) {
+          const src = pd.fullCharts[ck], dst = pd.charts[ck];
+          if (!dst || !src) continue;
+          ['on_times', 'lates', 'corrects', 'wrongs', 'avg'].forEach(k => { if (src[k]) dst[k] = src[k].slice(si, ei); });
+          if (src.kho_bars) { for (const k of Object.keys(src.kho_bars)) { if (!dst.kho_bars) dst.kho_bars = {}; if (!dst.kho_bars[k]) dst.kho_bars[k] = {}; dst.kho_bars[k].on = src.kho_bars[k].on.slice(si, ei); dst.kho_bars[k].late = src.kho_bars[k].late.slice(si, ei); } }
+          if (src.trends) { for (let i = 0; i < src.trends.length; i++) { if (dst.trends[i]) dst.trends[i].data = src.trends[i].data.slice(si, ei); } }
+        }
+        perfRecalcCards(si, ei);
+        initSLA(null); initPlan(null); initPlanCmp(null); initTrips(null);
+        document.getElementById('perfRangeInfo').textContent = pd.labels.length + ' ngày';
+      };
+      window.perfResetDate = function () {
+        const pd = window._perfData;
+        document.getElementById('perfDateFrom').value = pd.isoDates[0];
+        document.getElementById('perfDateTo').value = pd.isoDates[pd.isoDates.length - 1];
+        pd.labels.length = 0;
+        pd.fullLabels.forEach(l => pd.labels.push(l));
+        pd.charts = JSON.parse(JSON.stringify(pd.fullCharts));
+        // Restore full cards
+        perfRecalcCards(0, pd.isoDates.length);
+        initSLA(null); initPlan(null); initPlanCmp(null); initTrips(null);
+        document.getElementById('perfRangeInfo').textContent = pd.labels.length + ' ngày';
+      };
     }
-    perfRecalcCards(si, ei);
-    initSLA(null);initPlan(null);initPlanCmp(null);initTrips(null);
-    document.getElementById('perfRangeInfo').textContent = pd.labels.length+' ngày';
-  };
-  window.perfResetDate = function() {
-    const pd = window._perfData;
-    document.getElementById('perfDateFrom').value = pd.isoDates[0];
-    document.getElementById('perfDateTo').value = pd.isoDates[pd.isoDates.length-1];
-    pd.labels.length=0;
-    pd.fullLabels.forEach(l=>pd.labels.push(l));
-    pd.charts = JSON.parse(JSON.stringify(pd.fullCharts));
-    // Restore full cards
-    perfRecalcCards(0, pd.isoDates.length);
-    initSLA(null);initPlan(null);initPlanCmp(null);initTrips(null);
-    document.getElementById('perfRangeInfo').textContent = pd.labels.length+' ngày';
-  };
-}
 
-// ── Render perf cards (called on init + filter) ──
-function perfRenderCards() {
-  const pd = window._perfData;
-  if (!pd) return;
-  const container = document.getElementById('perfCardsContainer');
-  if (!container) return;
-  const cards = pd.cards;
-  const khoNames = pd.khoNames;
+    // ── Render perf cards (called on init + filter) ──
+    function perfRenderCards() {
+      const pd = window._perfData;
+      if (!pd) return;
+      const container = document.getElementById('perfCardsContainer');
+      if (!container) return;
+      const cards = pd.cards;
+      const khoNames = pd.khoNames;
 
-  function cardTbl(title, prefix) {
-    let rows = '';
-    khoNames.forEach(kho => {
-      const d = cards[`${prefix}_${kho}`] || {};
-      const pct = d.pct || 0;
-      const total = d.total || 0;
-      const color = pct>=95?'var(--grn)':pct>=90?'var(--org)':'var(--red)';
-      rows += `<tr><td class="kho-cell" style="font-size:.78rem">${kho}</td><td class="tc number" style="font-size:.78rem">${total.toLocaleString()}</td><td class="tc number" style="color:${color};font-weight:700;font-size:.78rem">${pct.toFixed(1)}%</td></tr>`;
-    });
-    return `<div class="stat-card" style="padding:1rem"><h3 style="font-size:.82rem;font-weight:700;margin-bottom:.6rem;color:var(--t2)">${title}</h3><table style="width:100%"><thead><tr><th style="font-size:.72rem;text-align:left">Kho</th><th class="tc" style="font-size:.72rem">Tổng</th><th class="tc" style="font-size:.72rem">Tỷ lệ</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-  }
+      function cardTbl(title, prefix) {
+        let rows = '';
+        khoNames.forEach(kho => {
+          const d = cards[`${prefix}_${kho}`] || {};
+          const pct = d.pct || 0;
+          const total = d.total || 0;
+          const color = pct >= 95 ? 'var(--grn)' : pct >= 90 ? 'var(--org)' : 'var(--red)';
+          rows += `<tr><td class="kho-cell" style="font-size:.78rem">${kho}</td><td class="tc number" style="font-size:.78rem">${total.toLocaleString()}</td><td class="tc number" style="color:${color};font-weight:700;font-size:.78rem">${pct.toFixed(1)}%</td></tr>`;
+        });
+        return `<div class="stat-card" style="padding:1rem"><h3 style="font-size:.82rem;font-weight:700;margin-bottom:.6rem;color:var(--t2)">${title}</h3><table style="width:100%"><thead><tr><th style="font-size:.72rem;text-align:left">Kho</th><th class="tc" style="font-size:.72rem">Tổng</th><th class="tc" style="font-size:.72rem">Tỷ lệ</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      }
 
-  container.innerHTML = `<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
-    ${cardTbl('📊 Đúng Giờ SLA','sla')}
-    ${cardTbl('📅 On Time Per Dest','plan')}
-    ${cardTbl('📋 Đúng Kế Hoạch','plancmp')}
+      container.innerHTML = `<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+    ${cardTbl('📊 Đúng Giờ SLA', 'sla')}
+    ${cardTbl('📅 On Time Per Dest', 'plan')}
+    ${cardTbl('📋 Đúng Kế Hoạch', 'plancmp')}
   </div>`;
-}
+    }
 
-// ═══════════════════════════════════════════════
-// INVENTORY TAB
-// ═══════════════════════════════════════════════
-function renderInventory(data) {
-  document.getElementById('inv-loading').style.display = 'none';
-  const el = document.getElementById('inv-content');
-  el.style.display = 'block';
+    // ═══════════════════════════════════════════════
+    // INVENTORY TAB
+    // ═══════════════════════════════════════════════
+    function renderInventory(data) {
+      document.getElementById('inv-loading').style.display = 'none';
+      const el = document.getElementById('inv-content');
+      el.style.display = 'block';
 
-  const target = data.target_day;
-  const trend = data.trend;
-  const cats = ['ĐÔNG','MÁT','TCNK'];
-  const catLabels = {'ĐÔNG':'Hàng Đông','MÁT':'Hàng Mát','TCNK':'TCNK'};
-  const catColors = {'ĐÔNG':'#60a5fa','MÁT':'#34d399','TCNK':'#fbbf24'};
+      const target = data.target_day;
+      const trend = data.trend;
+      const cats = ['ĐÔNG', 'MÁT', 'TCNK'];
+      const catLabels = { 'ĐÔNG': 'Hàng Đông', 'MÁT': 'Hàng Mát', 'TCNK': 'TCNK' };
+      const catColors = { 'ĐÔNG': '#60a5fa', 'MÁT': '#34d399', 'TCNK': '#fbbf24' };
 
-  // Stats
-  const totalAcc = data.overall_accuracy || {};
-  let html = `<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+      // Stats
+      const totalAcc = data.overall_accuracy || {};
+      let html = `<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
     <div class="stat-card"><div class="value" style="color:var(--grn)">${fPct(totalAcc.item)}</div><div class="label">Chính xác Item</div></div>
     <div class="stat-card"><div class="value" style="color:var(--blu)">${fPct(totalAcc.sku)}</div><div class="label">Chính xác SKU</div></div>
     <div class="stat-card"><div class="value" style="color:var(--org)">${fPct(totalAcc.kg)}</div><div class="label">Chính xác KG</div></div>
-    <div class="stat-card"><div class="value" style="color:var(--pur)">${fN(target.total_sku||0)}</div><div class="label">Tổng SKU</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--pur)">${fN(target.total_sku || 0)}</div><div class="label">Tổng SKU</div></div>
   </div>`;
 
-  // Summary table
-  html += `<div class="section"><div class="section-header"><span class="icon">📋</span><h2>Tổng Hợp Đối Soát — ${target.date_str}</h2></div>
+      // Summary table
+      html += `<div class="section"><div class="section-header"><span class="icon">📋</span><h2>Tổng Hợp Đối Soát — ${target.date_str}</h2></div>
   <div class="table-wrap"><table>
     <thead><tr><th>Phân Loại</th><th class="tr">SKU</th><th class="tr">Item KFM</th><th class="tr">Item ABA</th><th class="tr">KG KFM</th><th class="tr">KG ABA</th></tr></thead>
     <tbody>`;
-  let tSKU=0,tIK=0,tIA=0,tKK=0,tKA=0;
-  cats.forEach(cat => {
-    const cs = target.categories[cat]||{};
-    tSKU+=cs.sku||0; tIK+=cs.item_KFM||0; tIA+=cs.item_ABA||0; tKK+=cs.kg_KFM||0; tKA+=cs.kg_ABA||0;
-    html += `<tr>
+      let tSKU = 0, tIK = 0, tIA = 0, tKK = 0, tKA = 0;
+      cats.forEach(cat => {
+        const cs = target.categories[cat] || {};
+        tSKU += cs.sku || 0; tIK += cs.item_KFM || 0; tIA += cs.item_ABA || 0; tKK += cs.kg_KFM || 0; tKA += cs.kg_ABA || 0;
+        html += `<tr>
       <td class="kho-cell"><span class="dot" style="background:${catColors[cat]}"></span>${catLabels[cat]}</td>
-      <td class="tr number">${(cs.sku||0).toLocaleString()}</td>
-      <td class="tr number">${(cs.item_KFM||0).toLocaleString()}</td>
-      <td class="tr number">${(cs.item_ABA||0).toLocaleString()}</td>
-      <td class="tr number">${(cs.kg_KFM||0).toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-      <td class="tr number">${(cs.kg_ABA||0).toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+      <td class="tr number">${(cs.sku || 0).toLocaleString()}</td>
+      <td class="tr number">${(cs.item_KFM || 0).toLocaleString()}</td>
+      <td class="tr number">${(cs.item_ABA || 0).toLocaleString()}</td>
+      <td class="tr number">${(cs.kg_KFM || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+      <td class="tr number">${(cs.kg_ABA || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
     </tr>`;
-  });
-  html += `<tr class="total-row"><td>TỔNG</td><td class="tr number">${tSKU.toLocaleString()}</td><td class="tr number">${tIK.toLocaleString()}</td><td class="tr number">${tIA.toLocaleString()}</td><td class="tr number">${tKK.toLocaleString(undefined,{minimumFractionDigits:2})}</td><td class="tr number">${tKA.toLocaleString(undefined,{minimumFractionDigits:2})}</td></tr>`;
-  html += `</tbody></table></div></div>`;
+      });
+      html += `<tr class="total-row"><td>TỔNG</td><td class="tr number">${tSKU.toLocaleString()}</td><td class="tr number">${tIK.toLocaleString()}</td><td class="tr number">${tIA.toLocaleString()}</td><td class="tr number">${tKK.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td><td class="tr number">${tKA.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td></tr>`;
+      html += `</tbody></table></div></div>`;
 
-  // Trend charts
-  if (trend && trend.dates) {
-    html += `<div class="chart-grid">
+      // Trend charts
+      if (trend && trend.dates) {
+        html += `<div class="chart-grid">
       <div class="chart-box"><div class="chart-title">Trend Chính Xác Item</div><div class="chart-wrap"><canvas id="invChartItem"></canvas></div></div>
       <div class="chart-box"><div class="chart-title">Trend Chính Xác SKU</div><div class="chart-wrap"><canvas id="invChartSKU"></canvas></div></div>
       <div class="chart-box"><div class="chart-title">Trend Chính Xác KG</div><div class="chart-wrap"><canvas id="invChartKG"></canvas></div></div>
       <div class="chart-box"><div class="chart-title">Tỷ Trọng KG theo Phân Loại</div><div id="invPie" class="donut-section" style="min-height:200px"></div></div>
     </div>`;
-  }
+      }
 
-  el.innerHTML = html;
+      el.innerHTML = html;
 
-  // Render trend charts
-  if (trend && trend.dates) {
-    const tLabels = trend.dates.map(d => d.substring(0,5));
-    const invOpts = {responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{tooltip:{backgroundColor:'rgba(17,24,39,0.95)',titleColor:'#f0c060',bodyColor:'#d8dbe0',borderColor:'rgba(148,163,184,.15)',borderWidth:1,padding:10}},
-      scales:{x:{grid:{display:false}},y:{min:90,max:100,grid:{color:'rgba(148,163,184,.06)'},ticks:{callback:v=>v+'%'}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{precision:0}}}
-    };
+      // Render trend charts
+      if (trend && trend.dates) {
+        const tLabels = trend.dates.map(d => d.substring(0, 5));
+        const invOpts = {
+          responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+          plugins: { tooltip: { backgroundColor: 'rgba(17,24,39,0.95)', titleColor: '#f0c060', bodyColor: '#d8dbe0', borderColor: 'rgba(148,163,184,.15)', borderWidth: 1, padding: 10 } },
+          scales: { x: { grid: { display: false } }, y: { min: 90, max: 100, grid: { color: 'rgba(148,163,184,.06)' }, ticks: { callback: v => v + '%' } }, y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0 } } }
+        };
 
-    function invCombo(canvasId, kfmData, abaData, accData, label) {
-      new Chart(document.getElementById(canvasId), {
-        data:{labels:tLabels,datasets:[
-          {type:'bar',label:'KFM',data:kfmData,backgroundColor:'rgba(96,165,250,0.6)',borderRadius:3,yAxisID:'y1',order:2},
-          {type:'bar',label:'ABA (khớp)',data:abaData,backgroundColor:'rgba(52,211,153,0.6)',borderRadius:3,yAxisID:'y1',order:2},
-          {type:'line',label:'% Chính xác',data:accData,borderColor:'#f472b6',backgroundColor:'#f472b633',borderWidth:2.5,pointRadius:3,tension:.3,yAxisID:'y',order:1,spanGaps:true}
-        ]},
-        options:JSON.parse(JSON.stringify(invOpts))
-      });
-    }
+        function invCombo(canvasId, kfmData, abaData, accData, label) {
+          new Chart(document.getElementById(canvasId), {
+            data: {
+              labels: tLabels, datasets: [
+                { type: 'bar', label: 'KFM', data: kfmData, backgroundColor: 'rgba(96,165,250,0.6)', borderRadius: 3, yAxisID: 'y1', order: 2 },
+                { type: 'bar', label: 'ABA (khớp)', data: abaData, backgroundColor: 'rgba(52,211,153,0.6)', borderRadius: 3, yAxisID: 'y1', order: 2 },
+                { type: 'line', label: '% Chính xác', data: accData, borderColor: '#f472b6', backgroundColor: '#f472b633', borderWidth: 2.5, pointRadius: 3, tension: .3, yAxisID: 'y', order: 1, spanGaps: true }
+              ]
+            },
+            options: JSON.parse(JSON.stringify(invOpts))
+          });
+        }
 
-    invCombo('invChartItem', trend.item_kfm, trend.item_aba, trend.item_acc, 'Item');
-    invCombo('invChartSKU', trend.sku_kfm, trend.sku_aba, trend.sku_acc, 'SKU');
-    invCombo('invChartKG', trend.kg_kfm, trend.kg_aba, trend.kg_acc, 'KG');
+        invCombo('invChartItem', trend.item_kfm, trend.item_aba, trend.item_acc, 'Item');
+        invCombo('invChartSKU', trend.sku_kfm, trend.sku_aba, trend.sku_acc, 'SKU');
+        invCombo('invChartKG', trend.kg_kfm, trend.kg_aba, trend.kg_acc, 'KG');
 
-    // Pie
-    const pieEl = document.getElementById('invPie');
-    if (pieEl) {
-      const vals = cats.map(c => target.categories[c]?.kg_KFM || 0);
-      const total = vals.reduce((a,b)=>a+b,0);
-      if (total > 0) {
-        let stops=[], legs='', cum=0;
-        cats.forEach((c,i) => {
-          const pct = vals[i]/total*100;
-          stops.push(`${catColors[c]} ${cum.toFixed(1)}% ${(cum+pct).toFixed(1)}%`);
-          legs += `<div class="legend-item"><span class="legend-color" style="background:${catColors[c]}"></span>${catLabels[c]} ${pct.toFixed(1)}%</div>`;
-          cum += pct;
-        });
-        pieEl.innerHTML = `<div class="donut" style="background:conic-gradient(${stops.join(', ')})"><div class="donut-hole"><span class="donut-val">${(total/1000).toFixed(1)}T</span><span class="donut-lbl">Tấn</span></div></div><div class="legend">${legs}</div>`;
+        // Pie
+        const pieEl = document.getElementById('invPie');
+        if (pieEl) {
+          const vals = cats.map(c => target.categories[c]?.kg_KFM || 0);
+          const total = vals.reduce((a, b) => a + b, 0);
+          if (total > 0) {
+            let stops = [], legs = '', cum = 0;
+            cats.forEach((c, i) => {
+              const pct = vals[i] / total * 100;
+              stops.push(`${catColors[c]} ${cum.toFixed(1)}% ${(cum + pct).toFixed(1)}%`);
+              legs += `<div class="legend-item"><span class="legend-color" style="background:${catColors[c]}"></span>${catLabels[c]} ${pct.toFixed(1)}%</div>`;
+              cum += pct;
+            });
+            pieEl.innerHTML = `<div class="donut" style="background:conic-gradient(${stops.join(', ')})"><div class="donut-hole"><span class="donut-val">${(total / 1000).toFixed(1)}T</span><span class="donut-lbl">Tấn</span></div></div><div class="legend">${legs}</div>`;
+          }
+        }
       }
     }
-  }
-}
 
-// ═══════════════════════════════════════════════
-// NSO TAB
-// ═══════════════════════════════════════════════
-function renderNSO(data) {
-  document.getElementById('nso-loading').style.display = 'none';
-  const el = document.getElementById('nso-content');
-  el.style.display = 'block';
+    // ═══════════════════════════════════════════════
+    // NSO TAB
+    // ═══════════════════════════════════════════════
+    function renderNSO(data) {
+      document.getElementById('nso-loading').style.display = 'none';
+      const el = document.getElementById('nso-content');
+      el.style.display = 'block';
 
-  const stats = data.stats || {};
-  const stores = data.stores || [];
-  const calEvents = data.calendar_events || [];
-  const schedules = data.schedules || [];
-  const versionRules = data.version_rules || {};
+      const stats = data.stats || {};
+      const stores = data.stores || [];
+      const calEvents = data.calendar_events || [];
+      const schedules = data.schedules || [];
+      const versionRules = data.version_rules || {};
 
-  // Stats
-  let html = `<div class="stats-grid">
-    <div class="stat-card"><div class="value" style="color:var(--blu)">${stats.total||0}</div><div class="label">Tổng Store Active</div></div>
-    <div class="stat-card"><div class="value" style="color:var(--grn)">${stats.upcoming||0}</div><div class="label">Sắp Khai Trương</div></div>
-    <div class="stat-card"><div class="value" style="color:var(--org)">${stats.opening||0}</div><div class="label">Đang Khai Trương</div></div>
-    <div class="stat-card"><div class="value" style="color:var(--pur)">${stats.reschedule||0}</div><div class="label">Dời Lịch</div></div>
+      // Stats
+      let html = `<div class="stats-grid">
+    <div class="stat-card"><div class="value" style="color:var(--blu)">${stats.total || 0}</div><div class="label">Tổng Store Active</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--grn)">${stats.upcoming || 0}</div><div class="label">Sắp Khai Trương</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--org)">${stats.opening || 0}</div><div class="label">Đang Khai Trương</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--pur)">${stats.reschedule || 0}</div><div class="label">Dời Lịch</div></div>
   </div>`;
 
-  // Calendar
-  html += `<div class="section"><div class="section-header"><span class="icon">📅</span><h2>Lịch Tháng</h2></div>
+      // Calendar
+      html += `<div class="section"><div class="section-header"><span class="icon">📅</span><h2>Lịch Tháng</h2></div>
   <div class="cal-wrap">
     <div class="cal-nav">
       <button onclick="nsoCalPrev()" title="Tháng trước">◀</button>
@@ -1171,8 +2058,8 @@ function renderNSO(data) {
     <div class="cal-grid" id="nsoCalGrid"></div>
   </div></div>`;
 
-  // Store Table with inline column filters
-  html += `<div class="section"><div class="section-header"><span class="icon">📋</span><h2>Lịch Khai Trương NSO</h2></div>
+      // Store Table with inline column filters
+      html += `<div class="section"><div class="section-header"><span class="icon">📋</span><h2>Lịch Khai Trương NSO</h2></div>
   <div style="margin-bottom:.5rem"><span class="filter-info" id="nsoFilterCount">Hiển thị: ${stores.length}/${stores.length} stores</span></div>
   <div class="table-wrap"><table>
     <thead>
@@ -1191,113 +2078,291 @@ function renderNSO(data) {
       </tr>
     </thead>
     <tbody id="nsoStoreBody">`;
-  stores.forEach((s, i) => {
-    const badgeCls = s.status_type==='upcoming'?'badge-green':s.status_type==='opening'?'badge-orange':'badge-purple';
-    html += `<tr class="nso-store-row" data-date="${s.iso_date}" data-status="${s.status_type}" data-name="${s.name.toLowerCase()}" data-code="${s.code.toLowerCase()}" data-datestr="${s.opening_date}">
-      <td class="tc nso-stt">${i+1}</td><td>${s.name}</td>
+      stores.forEach((s, i) => {
+        const badgeCls = s.status_type === 'upcoming' ? 'badge-green' : s.status_type === 'opening' ? 'badge-orange' : 'badge-purple';
+        html += `<tr class="nso-store-row" data-date="${s.iso_date}" data-status="${s.status_type}" data-name="${s.name.toLowerCase()}" data-code="${s.code.toLowerCase()}" data-datestr="${s.opening_date}">
+      <td class="tc nso-stt">${i + 1}</td><td>${s.name}</td>
       <td class="tc"><span class="badge badge-blue">${s.code}</span></td>
       <td class="tc">${s.opening_date}</td>
       <td class="tc"><span class="badge ${badgeCls}">${s.status_text}</span></td>
     </tr>`;
-  });
-  html += `</tbody></table></div></div>`;
-
-  // Replenishment
-  if (schedules.length) {
-    html += `<div class="section"><div class="section-header"><span class="icon">📦</span><h2>Lịch Châm Hàng</h2></div>`;
-    schedules.forEach(sched => {
-      let dh='',dn='',kc='',dc='';
-      sched.days.forEach(d => {
-        dh += `<th>${d.date}</th>`;
-        dn += `<td class="tc" style="color:var(--t3);font-style:italic;font-size:.7rem">${d.day_name}</td>`;
-        kc += `<td class="tc" style="color:var(--orgl);font-weight:700">${typeof d.ksl==='number'?d.ksl.toLocaleString():d.ksl}</td>`;
-        dc += `<td class="tc" style="color:var(--cyanl);font-weight:600">${d.dm>0?d.dm:''}</td>`;
       });
-      html += `<div class="rcard"><div class="rcard-head"><h3>📦 ${sched.label}</h3><span class="vbadge">Version ${sched.version?.toLocaleString()}</span></div>
+      html += `</tbody></table></div></div>`;
+
+      // Replenishment
+      if (schedules.length) {
+        html += `<div class="section"><div class="section-header"><span class="icon">📦</span><h2>Lịch Châm Hàng</h2></div>`;
+        schedules.forEach(sched => {
+          let dh = '', dn = '', kc = '', dc = '';
+          sched.days.forEach(d => {
+            dh += `<th>${d.date}</th>`;
+            dn += `<td class="tc" style="color:var(--t3);font-style:italic;font-size:.7rem">${d.day_name}</td>`;
+            kc += `<td class="tc" style="color:var(--orgl);font-weight:700">${typeof d.ksl === 'number' ? d.ksl.toLocaleString() : d.ksl}</td>`;
+            dc += `<td class="tc" style="color:var(--cyanl);font-weight:600">${d.dm > 0 ? d.dm : ''}</td>`;
+          });
+          html += `<div class="rcard"><div class="rcard-head"><h3>📦 ${sched.label}</h3><span class="vbadge">Version ${sched.version?.toLocaleString()}</span></div>
       <div class="table-wrap"><table class="weekly-table"><thead><tr><th style="min-width:200px">Chuyển</th>${dh}<th>Total</th></tr></thead>
       <tbody><tr><td style="font-weight:600;color:var(--t2)">Thứ</td>${dn}<td></td></tr>
       <tr><td style="font-weight:600;color:var(--t2)">KSL (22:00-24:00PM) items</td>${kc}<td class="tc" style="color:var(--acl);font-weight:800">${sched.total_ksl?.toLocaleString()}</td></tr>
       <tr><td style="font-weight:600;color:var(--t2)">Đông Mát ITL(13:00-14:00PM) Kg</td>${dc}<td class="tc" style="color:var(--acl);font-weight:800">${sched.total_dm}</td></tr>
       </tbody></table></div></div>`;
-    });
-    html += '</div>';
-  }
+        });
+        html += '</div>';
+      }
 
-  // Version rules
-  if (Object.keys(versionRules).length) {
-    html += `<div class="section"><div class="section-header"><span class="icon">📊</span><h2>Quy Tắc Châm Hàng Theo Version</h2></div>
+      // Version rules
+      if (Object.keys(versionRules).length) {
+        html += `<div class="section"><div class="section-header"><span class="icon">📊</span><h2>Quy Tắc Châm Hàng Theo Version</h2></div>
     <div class="table-wrap"><table><thead><tr><th class="tc">Version</th><th class="tc">D</th><th class="tc">D+1</th><th class="tc">D+2</th><th class="tc">D+3</th><th class="tc">TOTAL</th></tr></thead><tbody>`;
-    Object.keys(versionRules).sort((a,b)=>b-a).forEach(v => {
-      const r = versionRules[v];
-      html += `<tr><td class="tc">${Number(v).toLocaleString()}</td><td class="tc">${r.D?.toLocaleString()}</td><td class="tc">${r.D1?.toLocaleString()}</td><td class="tc">${r.D2?.toLocaleString()}</td><td class="tc">${r.D3?.toLocaleString()}</td><td class="tc" style="color:var(--acl);font-weight:700">${r.total?.toLocaleString()}</td></tr>`;
-    });
-    html += '</tbody></table></div></div>';
-  }
+        Object.keys(versionRules).sort((a, b) => b - a).forEach(v => {
+          const r = versionRules[v];
+          html += `<tr><td class="tc">${Number(v).toLocaleString()}</td><td class="tc">${r.D?.toLocaleString()}</td><td class="tc">${r.D1?.toLocaleString()}</td><td class="tc">${r.D2?.toLocaleString()}</td><td class="tc">${r.D3?.toLocaleString()}</td><td class="tc" style="color:var(--acl);font-weight:700">${r.total?.toLocaleString()}</td></tr>`;
+        });
+        html += '</tbody></table></div></div>';
+      }
 
-  el.innerHTML = html;
+      el.innerHTML = html;
 
-  // Calendar JS
-  window._nsoCalEvents = calEvents;
-  window._nsoCalYear = new Date().getFullYear();
-  window._nsoCalMonth = new Date().getMonth();
+      // Calendar JS
+      window._nsoCalEvents = calEvents;
+      window._nsoCalYear = new Date().getFullYear();
+      window._nsoCalMonth = new Date().getMonth();
 
-  function toLocalISO(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
-  const MONTH_NAMES=['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
-  const DAY_HEADERS=['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','CN'];
+      function toLocalISO(dt) { return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); }
+      const MONTH_NAMES = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+      const DAY_HEADERS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
 
-  function renderNSOCal(){
-    const grid=document.getElementById('nsoCalGrid');
-    const title=document.getElementById('nsoCalTitle');
-    if(!grid)return;
-    title.textContent=MONTH_NAMES[window._nsoCalMonth]+' / '+window._nsoCalYear;
-    let h='';
-    DAY_HEADERS.forEach((d,i)=>{h+=`<div class="cal-hd${i===6?' sun':''}">${d}</div>`;});
-    const first=new Date(window._nsoCalYear,window._nsoCalMonth,1);
-    const last=new Date(window._nsoCalYear,window._nsoCalMonth+1,0);
-    let startDay=(first.getDay()+6)%7;
-    const todayStr=toLocalISO(new Date());
-    for(let i=0;i<startDay;i++)h+='<div class="cal-cell empty"></div>';
-    for(let d=1;d<=last.getDate();d++){
-      const dt=new Date(window._nsoCalYear,window._nsoCalMonth,d);
-      const iso=toLocalISO(dt);
-      const isSun=dt.getDay()===0;
-      const isToday=iso===todayStr;
-      h+=`<div class="cal-cell${isToday?' today':''}"><div class="cal-day${isSun?' sun':''}">${d}</div>`;
-      window._nsoCalEvents.forEach(ev=>{if(ev.date===iso)h+=`<div class="cal-ev ${ev.type}" title="${ev.label}">${ev.label}</div>`;});
-      h+='</div>';
+      function renderNSOCal() {
+        const grid = document.getElementById('nsoCalGrid');
+        const title = document.getElementById('nsoCalTitle');
+        if (!grid) return;
+        title.textContent = MONTH_NAMES[window._nsoCalMonth] + ' / ' + window._nsoCalYear;
+        let h = '';
+        DAY_HEADERS.forEach((d, i) => { h += `<div class="cal-hd${i === 6 ? ' sun' : ''}">${d}</div>`; });
+        const first = new Date(window._nsoCalYear, window._nsoCalMonth, 1);
+        const last = new Date(window._nsoCalYear, window._nsoCalMonth + 1, 0);
+        let startDay = (first.getDay() + 6) % 7;
+        const todayStr = toLocalISO(new Date());
+        for (let i = 0; i < startDay; i++)h += '<div class="cal-cell empty"></div>';
+        for (let d = 1; d <= last.getDate(); d++) {
+          const dt = new Date(window._nsoCalYear, window._nsoCalMonth, d);
+          const iso = toLocalISO(dt);
+          const isSun = dt.getDay() === 0;
+          const isToday = iso === todayStr;
+          h += `<div class="cal-cell${isToday ? ' today' : ''}"><div class="cal-day${isSun ? ' sun' : ''}">${d}</div>`;
+          window._nsoCalEvents.forEach(ev => { if (ev.date === iso) h += `<div class="cal-ev ${ev.type}" title="${ev.label}">${ev.label}</div>`; });
+          h += '</div>';
+        }
+        grid.innerHTML = h;
+      }
+
+      window.nsoCalPrev = function () { window._nsoCalMonth--; if (window._nsoCalMonth < 0) { window._nsoCalMonth = 11; window._nsoCalYear--; } renderNSOCal(); };
+      window.nsoCalNext = function () { window._nsoCalMonth++; if (window._nsoCalMonth > 11) { window._nsoCalMonth = 0; window._nsoCalYear++; } renderNSOCal(); };
+      renderNSOCal();
+
+      // Inline column filter
+      window.nsoInlineFilter = function () {
+        const fName = (document.getElementById('nsoFltName').value || '').toLowerCase();
+        const fCode = (document.getElementById('nsoFltCode').value || '').toLowerCase();
+        const fDate = (document.getElementById('nsoFltDate').value || '').toLowerCase();
+        const fStatus = document.getElementById('nsoFltStatus').value;
+        const rows = document.querySelectorAll('.nso-store-row');
+        let shown = 0;
+        rows.forEach(r => {
+          let show = true;
+          if (fName && !r.getAttribute('data-name').includes(fName)) show = false;
+          if (fCode && !r.getAttribute('data-code').includes(fCode)) show = false;
+          if (fDate && !r.getAttribute('data-datestr').toLowerCase().includes(fDate)) show = false;
+          if (fStatus && r.getAttribute('data-status') !== fStatus) show = false;
+          r.style.display = show ? '' : 'none';
+          if (show) { shown++; r.querySelector('.nso-stt').textContent = shown; }
+        });
+        document.getElementById('nsoFilterCount').textContent = `Hiển thị: ${shown}/${rows.length} stores`;
+      };
     }
-    grid.innerHTML=h;
-  }
 
-  window.nsoCalPrev=function(){window._nsoCalMonth--;if(window._nsoCalMonth<0){window._nsoCalMonth=11;window._nsoCalYear--;}renderNSOCal();};
-  window.nsoCalNext=function(){window._nsoCalMonth++;if(window._nsoCalMonth>11){window._nsoCalMonth=0;window._nsoCalYear++;}renderNSOCal();};
-  renderNSOCal();
+    // ═══════════════════════════════════════════════
+    // WEEKLY TRANSPORT PLAN
+    // ═══════════════════════════════════════════════
+    function renderWeeklyPlan(data) {
+      const loadEl = document.getElementById('weekly_plan-loading');
+      if (loadEl) loadEl.style.display = 'none';
+      const el = document.getElementById('weekly_plan-content');
+      el.style.display = 'block';
 
-  // Inline column filter
-  window.nsoInlineFilter = function() {
-    const fName = (document.getElementById('nsoFltName').value || '').toLowerCase();
-    const fCode = (document.getElementById('nsoFltCode').value || '').toLowerCase();
-    const fDate = (document.getElementById('nsoFltDate').value || '').toLowerCase();
-    const fStatus = document.getElementById('nsoFltStatus').value;
-    const rows = document.querySelectorAll('.nso-store-row');
-    let shown = 0;
-    rows.forEach(r => {
-      let show = true;
-      if (fName && !r.getAttribute('data-name').includes(fName)) show = false;
-      if (fCode && !r.getAttribute('data-code').includes(fCode)) show = false;
-      if (fDate && !r.getAttribute('data-datestr').toLowerCase().includes(fDate)) show = false;
-      if (fStatus && r.getAttribute('data-status') !== fStatus) show = false;
-      r.style.display = show ? '' : 'none';
-      if (show) { shown++; r.querySelector('.nso-stt').textContent = shown; }
-    });
-    document.getElementById('nsoFilterCount').textContent = `Hiển thị: ${shown}/${rows.length} stores`;
-  };
-}
+      const weeks = data.weeks || {};
+      const availWeeks = data.available_weeks || [];
+      if (!availWeeks.length) {
+        el.innerHTML = '<div class="error-msg">⚠️ Chưa có dữ liệu lịch tuần.</div>';
+        return;
+      }
 
-// ═══════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════
-loadTab('daily');
-</script>
+      // Default: latest week
+      let currentWeek = availWeeks[availWeeks.length - 1];
+
+      function renderWeek(wk) {
+        const w = weeks[wk];
+        if (!w) return;
+        currentWeek = wk;
+
+        const stats = w.stats || {};
+        const stores = w.stores || [];
+        const dates = w.dates || [];
+        const dayNames = w.day_names || [];
+
+        let html = '';
+
+        // Stats cards
+        html += `<div class="stats-grid">
+          <div class="stat-card"><div class="stat-value" style="color:var(--ac-light)">${stores.length}</div><div class="stat-label">Tổng Siêu Thị</div></div>
+          <div class="stat-card"><div class="stat-value" style="color:#fbbf24">${stats.ngay || 0}</div><div class="stat-label">Lượt Giao Ngày</div></div>
+          <div class="stat-card"><div class="stat-value" style="color:#818cf8">${stats.dem || 0}</div><div class="stat-label">Lượt Giao Đêm</div></div>
+          <div class="stat-card"><div class="stat-value" style="color:#fb923c">${stats.cham_hang || 0}</div><div class="stat-label">Châm Hàng</div></div>
+          <div class="stat-card"><div class="stat-value" style="color:#c084fc">${stats.kiem_ke || 0}</div><div class="stat-label">Kiểm Kê</div></div>
+        </div>`;
+
+        // Filter bar
+        html += `<div class="wk-filter-bar">
+          <label>📅 Tuần:</label>
+          <select id="wkWeekSel" onchange="wkChangeWeek(this.value)">`;
+        for (const aw of availWeeks) {
+          const lbl = weeks[aw] ? weeks[aw].label : aw;
+          html += `<option value="${aw}"${aw === wk ? ' selected' : ''}>${aw} — ${lbl}</option>`;
+        }
+        html += `</select>
+          <input type="text" class="wk-search" id="wkSearch" placeholder="🔍 Tìm siêu thị (tên, code)..." oninput="wkFilterStores()">
+          <button class="wk-export-btn" onclick="wkExportExcel()" title="Xuất Excel">📥 Xuất Excel</button>
+          <span class="wk-count" id="wkCount">Hiển thị: ${stores.length}/${stores.length} siêu thị</span>
+        </div>`;
+
+        // Legend
+        html += `<div class="wk-legend">
+          <div class="wk-legend-item"><div class="wk-legend-dot lg-ngay"></div>Giao hàng ban Ngày</div>
+          <div class="wk-legend-item"><div class="wk-legend-dot lg-dem"></div>Giao hàng ban Đêm</div>
+          <div class="wk-legend-item"><div class="wk-legend-dot lg-kk"></div>Kiểm Kê</div>
+          <div class="wk-legend-item"><div class="wk-legend-dot lg-cham"></div>Châm Hàng (NSO)</div>
+        </div>`;
+
+        // Table
+        html += `<div class="section"><div class="section-header"><span class="icon">📋</span><h2>Lịch Về Hàng Siêu Thị</h2></div>
+        <div class="wk-table-wrap"><table class="wk-table" id="wkTable">
+        <thead><tr>
+          <th>STT</th><th>Siêu Thị</th><th>Code</th><th>Giờ</th>`;
+        for (let i = 0; i < 7; i++) {
+          html += `<th>${dayNames[i] || ''}<br><small style="font-weight:400;color:var(--t3)">${dates[i] || ''}</small></th>`;
+        }
+        html += `</tr></thead><tbody>`;
+
+        stores.forEach((s, idx) => {
+          const searchData = (s.name + ' ' + s.code).toLowerCase();
+          html += `<tr class="wk-row" data-search="${searchData.replace(/"/g, '')}">`;
+          html += `<td style="color:var(--t3)">${idx + 1}</td>`;
+          html += `<td>${s.name}</td>`;
+          html += `<td><span class="code">${s.code}</span></td>`;
+          html += `<td style="font-size:.75rem">${s.shift || ''}</td>`;
+          for (let i = 0; i < 7; i++) {
+            const v = (s.days[i] || '').trim();
+            let cell = '';
+            const vl = v.toLowerCase();
+            if (vl === 'ngày') cell = '<span class="wk-cell wk-ngay">Ngày</span>';
+            else if (vl === 'đêm') cell = '<span class="wk-cell wk-dem">Đêm</span>';
+            else if (vl.includes('kiểm') || vl.includes('kiem')) cell = '<span class="wk-cell wk-kk">Kiểm kê</span>';
+            else if (vl.includes('châm') || vl.includes('cham')) cell = '<span class="wk-cell wk-cham">Châm hàng</span>';
+            else cell = '<span class="wk-empty">—</span>';
+            html += `<td>${cell}</td>`;
+          }
+          html += '</tr>';
+        });
+
+        html += '</tbody></table></div></div>';
+        el.innerHTML = html;
+      }
+
+      // Change week
+      window.wkChangeWeek = function(wk) { renderWeek(wk); };
+
+      // Filter stores by name/code
+      window.wkFilterStores = function() {
+        const q = (document.getElementById('wkSearch').value || '').toLowerCase().trim();
+        const rows = document.querySelectorAll('.wk-row');
+        let shown = 0;
+        rows.forEach((r, i) => {
+          const match = !q || r.getAttribute('data-search').includes(q);
+          r.style.display = match ? '' : 'none';
+          if (match) { shown++; r.querySelector('td').textContent = shown; }
+        });
+        document.getElementById('wkCount').textContent = `Hiển thị: ${shown}/${rows.length} siêu thị`;
+      };
+
+      // Export to Excel
+      window.wkExportExcel = function() {
+        try {
+          const w = weeks[currentWeek];
+          if (!w) { alert('Không có dữ liệu để xuất'); return; }
+
+          const dates = w.dates || [];
+          const dayNames = w.day_names || [];
+
+          // Build header row matching sheet "Lịch về hàng"
+          const headers = ['Siêu Thị', 'Viết tắt', 'Lịch chia hàng Siêu Thị', 'Lịch về hàng Siêu Thị', 'Khai trương', 'Kiểm kê', 'Giờ nhận'];
+          for (let i = 0; i < 7; i++) headers.push(dayNames[i] + '\n' + dates[i]);
+
+          // Build data rows
+          const dataRows = [headers];
+          (w.stores || []).forEach(s => {
+            const row = [s.name, s.code, s.schedule_chia, s.schedule_ve, s.opening_date, s.inventory_date, s.shift];
+            for (let i = 0; i < 7; i++) row.push(s.days[i] || '');
+            dataRows.push(row);
+          });
+
+          // Check if SheetJS is available
+          if (typeof XLSX === 'undefined') {
+            // Fallback: download as CSV
+            let csv = dataRows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'Lich_ve_hang_' + currentWeek + '.csv';
+            link.click();
+            URL.revokeObjectURL(link.href);
+            return;
+          }
+
+          // Create workbook with SheetJS
+          const ws = XLSX.utils.aoa_to_sheet(dataRows);
+          ws['!cols'] = [
+            { wch: 45 }, { wch: 8 }, { wch: 16 }, { wch: 16 },
+            { wch: 12 }, { wch: 12 }, { wch: 8 },
+            { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+            { wch: 12 }, { wch: 12 }, { wch: 12 }
+          ];
+
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, 'Lịch về hàng');
+          const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+          const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'Lich_ve_hang_' + currentWeek + '.xlsx';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          console.error('Export error:', e);
+          alert('Lỗi xuất Excel: ' + e.message);
+        }
+      };
+
+      renderWeek(currentWeek);
+    }
+
+    // ═══════════════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════════════
+    loadTab('daily');
+  </script>
 </body>
+
 </html>
