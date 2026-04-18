@@ -2064,7 +2064,13 @@
 
       // Store Table with inline column filters
       html += `<div class="section"><div class="section-header"><span class="icon">📋</span><h2>Lịch Khai Trương NSO</h2></div>
-  <div style="margin-bottom:.5rem"><span class="filter-info" id="nsoFilterCount">Hiển thị: ${stores.length}/${stores.length} stores</span></div>
+  <div style="display:flex; align-items:center; gap:1rem; margin-bottom:.5rem; flex-wrap:wrap">
+    <div class="filter-bar" style="display:flex; align-items:center; gap:.5rem; padding:0; border:none; background:none">
+      <label style="color:var(--t2);font-size:.8rem">Từ:</label><input type="date" id="nsoDateFrom" onchange="nsoInlineFilter()" style="font-size:.75rem;padding:.3rem .5rem">
+      <label style="color:var(--t2);font-size:.8rem">Đến:</label><input type="date" id="nsoDateTo" onchange="nsoInlineFilter()" style="font-size:.75rem;padding:.3rem .5rem">
+    </div>
+    <span class="filter-info" id="nsoFilterCount">Hiển thị: ${stores.length}/${stores.length} stores</span>
+  </div>
   <div class="table-wrap"><table>
     <thead>
       <tr><th class="tc" style="width:45px">STT</th><th>Tên Siêu Thị</th><th class="tc" style="width:70px">Code</th><th class="tc" style="width:105px">Ngày KT</th><th class="tc" style="width:250px">Trạng Thái</th></tr>
@@ -2170,6 +2176,8 @@
         const fCode = (document.getElementById('nsoFltCode').value || '').toLowerCase();
         const fDate = (document.getElementById('nsoFltDate').value || '').toLowerCase();
         const fStatus = document.getElementById('nsoFltStatus').value;
+        const fFrom = document.getElementById('nsoDateFrom').value || '';
+        const fTo = document.getElementById('nsoDateTo').value || '';
         const rows = document.querySelectorAll('.nso-store-row');
         let shown = 0;
         rows.forEach(r => {
@@ -2178,6 +2186,11 @@
           if (fCode && !r.getAttribute('data-code').includes(fCode)) show = false;
           if (fDate && !r.getAttribute('data-datestr').toLowerCase().includes(fDate)) show = false;
           if (fStatus && r.getAttribute('data-status') !== fStatus) show = false;
+          if (show && (fFrom || fTo)) {
+            const isoDate = r.getAttribute('data-date');
+            if (fFrom && isoDate < fFrom) show = false;
+            if (fTo && isoDate > fTo) show = false;
+          }
           r.style.display = show ? '' : 'none';
           if (show) { shown++; r.querySelector('.nso-stt').textContent = shown; }
         });
