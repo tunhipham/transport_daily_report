@@ -140,6 +140,12 @@ tbody tr:hover td{background:rgba(30,41,59,.5)}
 .cal-ev.opening{background:rgba(245,158,11,.12);color:var(--org)}
 .cal-ev.reschedule{background:rgba(168,85,247,.12);color:var(--pur)}
 
+/* ═══ INLINE TABLE FILTERS ═══ */
+.tbl-filter{width:100%;padding:4px 6px;background:rgba(30,41,59,.6);border:1px solid var(--bd2);border-radius:5px;color:var(--t2);font-size:.7rem;font-family:inherit;outline:none;transition:border-color .2s}
+.tbl-filter:focus{border-color:var(--ac)}
+.tbl-filter::placeholder{color:var(--t4)}
+select.tbl-filter{cursor:pointer;-webkit-appearance:none;appearance:none;padding-right:18px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center}
+
 /* ═══ NSO REPLENISHMENT CARDS ═══ */
 .rcard{background:var(--surface);border:1px solid var(--bd);border-radius:var(--radius);padding:1.2rem;margin-bottom:1rem;backdrop-filter:blur(10px)}
 .rcard-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;flex-wrap:wrap;gap:.4rem}
@@ -1165,21 +1171,29 @@ function renderNSO(data) {
     <div class="cal-grid" id="nsoCalGrid"></div>
   </div></div>`;
 
-  // Store Table with filter
+  // Store Table with inline column filters
   html += `<div class="section"><div class="section-header"><span class="icon">📋</span><h2>Lịch Khai Trương NSO</h2></div>
-  <div class="filter-bar">
-    <label>📅 Từ:</label><input type="date" id="nsoFilterFrom">
-    <label>→ Đến:</label><input type="date" id="nsoFilterTo">
-    <button class="fbtn primary" onclick="nsoApplyFilter()">Lọc</button>
-    <button class="fbtn" onclick="nsoResetFilter()">Reset</button>
-    <span class="filter-info" id="nsoFilterCount">Hiển thị: ${stores.length}/${stores.length} stores</span>
-  </div>
+  <div style="margin-bottom:.5rem"><span class="filter-info" id="nsoFilterCount">Hiển thị: ${stores.length}/${stores.length} stores</span></div>
   <div class="table-wrap"><table>
-    <thead><tr><th class="tc" style="width:45px">STT</th><th>Tên Siêu Thị</th><th class="tc" style="width:70px">Code</th><th class="tc" style="width:105px">Ngày KT</th><th class="tc" style="width:250px">Trạng Thái</th></tr></thead>
+    <thead>
+      <tr><th class="tc" style="width:45px">STT</th><th>Tên Siêu Thị</th><th class="tc" style="width:70px">Code</th><th class="tc" style="width:105px">Ngày KT</th><th class="tc" style="width:250px">Trạng Thái</th></tr>
+      <tr style="background:rgba(30,41,59,.5)">
+        <td></td>
+        <td><input type="text" class="tbl-filter" id="nsoFltName" placeholder="Tìm tên..." oninput="nsoInlineFilter()"></td>
+        <td><input type="text" class="tbl-filter" id="nsoFltCode" placeholder="Code" oninput="nsoInlineFilter()" style="text-align:center"></td>
+        <td><input type="text" class="tbl-filter" id="nsoFltDate" placeholder="dd/mm" oninput="nsoInlineFilter()" style="text-align:center"></td>
+        <td><select class="tbl-filter" id="nsoFltStatus" onchange="nsoInlineFilter()">
+          <option value="">Tất cả</option>
+          <option value="opening">🟠 Đang khai trương</option>
+          <option value="upcoming">🟢 Sắp khai trương</option>
+          <option value="reschedule">🟣 Dời lịch</option>
+        </select></td>
+      </tr>
+    </thead>
     <tbody id="nsoStoreBody">`;
   stores.forEach((s, i) => {
     const badgeCls = s.status_type==='upcoming'?'badge-green':s.status_type==='opening'?'badge-orange':'badge-purple';
-    html += `<tr class="nso-store-row" data-date="${s.iso_date}" data-status="${s.status_type}">
+    html += `<tr class="nso-store-row" data-date="${s.iso_date}" data-status="${s.status_type}" data-name="${s.name.toLowerCase()}" data-code="${s.code.toLowerCase()}" data-datestr="${s.opening_date}">
       <td class="tc nso-stt">${i+1}</td><td>${s.name}</td>
       <td class="tc"><span class="badge badge-blue">${s.code}</span></td>
       <td class="tc">${s.opening_date}</td>
@@ -1259,28 +1273,24 @@ function renderNSO(data) {
   window.nsoCalNext=function(){window._nsoCalMonth++;if(window._nsoCalMonth>11){window._nsoCalMonth=0;window._nsoCalYear++;}renderNSOCal();};
   renderNSOCal();
 
-  // Store filter
-  window.nsoApplyFilter = function() {
-    const from=document.getElementById('nsoFilterFrom').value;
-    const to=document.getElementById('nsoFilterTo').value;
-    const rows=document.querySelectorAll('.nso-store-row');
-    let shown=0;
-    rows.forEach(r=>{
-      const d=r.getAttribute('data-date');
-      let show=true;
-      if(from&&d<from)show=false;
-      if(to&&d>to)show=false;
-      r.style.display=show?'':'none';
-      if(show){shown++;r.querySelector('.nso-stt').textContent=shown;}
+  // Inline column filter
+  window.nsoInlineFilter = function() {
+    const fName = (document.getElementById('nsoFltName').value || '').toLowerCase();
+    const fCode = (document.getElementById('nsoFltCode').value || '').toLowerCase();
+    const fDate = (document.getElementById('nsoFltDate').value || '').toLowerCase();
+    const fStatus = document.getElementById('nsoFltStatus').value;
+    const rows = document.querySelectorAll('.nso-store-row');
+    let shown = 0;
+    rows.forEach(r => {
+      let show = true;
+      if (fName && !r.getAttribute('data-name').includes(fName)) show = false;
+      if (fCode && !r.getAttribute('data-code').includes(fCode)) show = false;
+      if (fDate && !r.getAttribute('data-datestr').toLowerCase().includes(fDate)) show = false;
+      if (fStatus && r.getAttribute('data-status') !== fStatus) show = false;
+      r.style.display = show ? '' : 'none';
+      if (show) { shown++; r.querySelector('.nso-stt').textContent = shown; }
     });
-    document.getElementById('nsoFilterCount').textContent=`Hiển thị: ${shown}/${rows.length} stores`;
-  };
-  window.nsoResetFilter = function() {
-    document.getElementById('nsoFilterFrom').value='';
-    document.getElementById('nsoFilterTo').value='';
-    const rows=document.querySelectorAll('.nso-store-row');
-    rows.forEach((r,i)=>{r.style.display='';r.querySelector('.nso-stt').textContent=i+1;});
-    document.getElementById('nsoFilterCount').textContent=`Hiển thị: ${rows.length}/${rows.length} stores`;
+    document.getElementById('nsoFilterCount').textContent = `Hiển thị: ${shown}/${rows.length} stores`;
   };
 }
 
