@@ -18,8 +18,17 @@
 ```
 .agents/
   workflows/         ← Workflow files (bạn đang ở đây)
+
+agents/
   prompts/           ← Agent context prompts
     weekly-plan.md   ← Context cho weekly transport plan
+    compose-mail.md  ← Context cho compose mail
+    daily-report.md  ← Context cho daily report
+    ...
+
+data/
+  master_schedule.json ← 🔒 Master data: lịch chia/về/shift (CỐ ĐỊNH)
+  master_schedule.xlsx ← 🔒 Backup Excel
 
 script/
   dashboard/         ← Dashboard export + deploy

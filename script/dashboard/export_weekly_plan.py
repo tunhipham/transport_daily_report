@@ -482,19 +482,26 @@ def export():
                 print(f"    🏪 NSO châm hàng: {len(cham_hang)} stores" +
                       (f" ({injected} injected)" if injected else ""))
         
-        # Count stats
-        n_ngay = n_dem = n_cham = n_kk = 0
+        # Count stats — count STORES (not slots)
+        st_ngay = set()  # stores that have at least 1 Ngày
+        st_dem = set()   # stores that have at least 1 Đêm
+        st_cham = set()  # stores with châm hàng
+        st_kk = set()    # stores with kiểm kê
         for s in week_data["stores"]:
             for d in s["days"]:
                 dl = d.lower() if d else ""
                 if dl == "ngày":
-                    n_ngay += 1
+                    st_ngay.add(s["code"])
                 elif dl == "đêm":
-                    n_dem += 1
+                    st_dem.add(s["code"])
                 elif "châm" in dl:
-                    n_cham += 1
+                    st_cham.add(s["code"])
                 elif "kiểm" in dl:
-                    n_kk += 1
+                    st_kk.add(s["code"])
+        n_ngay = len(st_ngay)
+        n_dem = len(st_dem)
+        n_cham = len(st_cham)
+        n_kk = len(st_kk)
         
         # Clean up for JSON
         stores_clean = []
