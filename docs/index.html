@@ -66,6 +66,10 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .stat-card .value{font-size:2rem;font-weight:800;margin-bottom:.15rem}
 .stat-card .label{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--t3)}
 .stat-card .sub{font-size:.7rem;color:var(--t4);margin-top:.3rem}
+.stat-card .change-row{font-size:.72rem;margin-top:.25rem;font-weight:600;line-height:1.5;display:flex;flex-direction:column;gap:2px}
+.stat-card .change-row .up{color:var(--grn)}
+.stat-card .change-row .down{color:var(--red)}
+.stat-card .change-row .flat{color:var(--t4)}
 
 /* ═══ CHART CONTAINERS ═══ */
 .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem}
@@ -327,13 +331,8 @@ function renderDaily(data) {
   const KHOS = data.kho_list || [];
   const COLORS = data.kho_colors || {};
 
-  // Cards
-  let html = `<div class="stats-grid">
-    <div class="stat-card"><div class="value" style="color:var(--grn)">${fD(cur.total_tons)}</div><div class="label">Tổng Tấn</div></div>
-    <div class="stat-card"><div class="value" style="color:var(--blu)">${cur.total_xe}</div><div class="label">Tổng Xe</div></div>
-    <div class="stat-card"><div class="value" style="color:var(--org)">${cur.total_sthi}</div><div class="label">Tổng Siêu Thị</div></div>
-    <div class="stat-card"><div class="value" style="color:var(--pur)">${fN(cur.total_items)}</div><div class="label">Tổng Items</div></div>
-  </div>`;
+  // Cards — dynamic container, filled by dailyRenderCards()
+  let html = `<div class="stats-grid" id="dailyCards"></div>`;
 
   // Date picker
   html += `<div class="filter-bar">
@@ -389,8 +388,9 @@ function renderDaily(data) {
 
   el.innerHTML = html;
 
-  // Render table + sorting init
+  // Render cards + table + sorting init
   window._dailyData = data;
+  dailyRenderCards(cur);
   dailyRenderTable(cur);
   dailyRenderDonut(cur);
   dailyInitSortable();
@@ -476,8 +476,58 @@ function dailyRenderDonut(entry) {
 window.dailyOnDP = function(d) {
   const data = window._dailyData;
   const entry = data.history.find(h => h.date === d);
-  if (entry) { dailyRenderTable(entry); dailyRenderDonut(entry); }
+  if (entry) { dailyRenderCards(entry); dailyRenderTable(entry); dailyRenderDonut(entry); }
 };
+
+// ── Dynamic KPI Cards with comparisons ──
+function _parseDate(ds) {
+  const p = ds.split('/'); return new Date(+p[2], +p[1]-1, +p[0]);
+}
+function _fmtDD(d) {
+  return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+}
+function dailyRenderCards(entry) {
+  const data = window._dailyData;
+  const history = data.history;
+  const el = document.getElementById('dailyCards');
+  if (!el) return;
+
+  const idx = history.findIndex(h => h.date === entry.date);
+  const prev = idx > 0 ? history[idx - 1] : null;
+
+  // LFL: same weekday, 7 days ago
+  const entryDate = _parseDate(entry.date);
+  const lflDate = new Date(entryDate);
+  lflDate.setDate(lflDate.getDate() - 7);
+  const lflDateStr = String(lflDate.getDate()).padStart(2,'0') + '/' +
+    String(lflDate.getMonth()+1).padStart(2,'0') + '/' + lflDate.getFullYear();
+  const lfl = history.find(h => h.date === lflDateStr) || null;
+  const lflLabel = _fmtDD(lflDate);
+
+  function cmpHtml(cur, ref, refLabel) {
+    if (ref == null || ref === 0) return `<span class="flat">— vs ${refLabel}</span>`;
+    const pct = ((cur - ref) / ref * 100);
+    if (Math.abs(pct) < 0.1) return `<span class="flat">~ 0% vs ${refLabel}</span>`;
+    const cls = pct > 0 ? 'up' : 'down';
+    const arrow = pct > 0 ? '▲' : '▼';
+    return `<span class="${cls}">${arrow} ${pct > 0 ? '+' : ''}${pct.toFixed(1)}% vs ${refLabel}</span>`;
+  }
+
+  function card(value, label, color, curVal, prevEntry, lflEntry, key) {
+    const prevVal = prevEntry ? prevEntry[key] : null;
+    const lflVal = lflEntry ? lflEntry[key] : null;
+    const prevLabel = prevEntry ? prevEntry.date.substring(0,5) : '—';
+    const cmp1 = cmpHtml(curVal, prevVal, prevLabel);
+    const cmp2 = cmpHtml(curVal, lflVal, 'LFL ' + lflLabel);
+    return `<div class="stat-card"><div class="value" style="color:${color}">${value}</div><div class="label">${label}</div><div class="change-row">${cmp1}${cmp2}</div></div>`;
+  }
+
+  el.innerHTML =
+    card(fD(entry.total_tons), 'Tổng Tấn', 'var(--grn)', entry.total_tons, prev, lfl, 'total_tons') +
+    card(entry.total_xe, 'Tổng Xe', 'var(--blu)', entry.total_xe, prev, lfl, 'total_xe') +
+    card(entry.total_sthi || '—', 'Tổng Siêu Thị', 'var(--org)', entry.total_sthi || 0, prev, lfl, 'total_sthi') +
+    card(fN(entry.total_items), 'Tổng Items', 'var(--pur)', entry.total_items, prev, lfl, 'total_items');
+}
 
 // Daily charts
 let dailyCharts = {};
