@@ -698,9 +698,16 @@ def update_history(result):
             "sl_sthi": v.get("sl_sthi", 0),
         } for k, v in result["khos"].items()},
     })
-    # Sort by date and keep last 30
+    # Sort by date and keep last 365 days
+    HISTORY_LIMIT = 365
     history.sort(key=lambda x: datetime.strptime(x["date"], "%d/%m/%Y"))
-    history = history[-30:]
+    if len(history) > HISTORY_LIMIT:
+        dropped = history[:-HISTORY_LIMIT]
+        dropped_dates = [h["date"] for h in dropped]
+        print(f"  ⚠️  HISTORY LIMIT ({HISTORY_LIMIT}) exceeded! "
+              f"Dropping {len(dropped)} oldest entries: {', '.join(dropped_dates)}")
+        print(f"      → Backup history.json TRƯỚC khi mất data!")
+        history = history[-HISTORY_LIMIT:]
     save_history(history)
     return history
 

@@ -193,6 +193,8 @@ def _check_sheet_has_data(sheet_url, date_str):
         count = 0
         for ws in wb.worksheets:
             for row in ws.iter_rows(min_row=2, values_only=False):
+                if not row:
+                    continue
                 cell_val = str(row[0].value or "").strip()
                 if cell_val == date_str:
                     count += 1
