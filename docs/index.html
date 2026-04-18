@@ -280,7 +280,8 @@ async function fetchJSON(url) {
 }
 
 function fN(v) { return Math.round(v).toLocaleString(); }
-function fD(v) { return v != null ? v.toFixed(2) : '—'; }
+function fNd(v,d=1) { return v != null ? v.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d}) : '—'; }
+function fD(v) { return v != null ? v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) : '—'; }
 function fPct(v) { return v != null ? v.toFixed(1) + '%' : '—'; }
 
 const updateTimes = {};
@@ -355,9 +356,9 @@ function renderDaily(data) {
       <th class="tr sortable" data-col="4" data-type="num">Xe</th>
       <th class="tr sortable" data-col="5" data-type="num">Tấn</th>
       <th class="tr sortable" data-col="6" data-type="num" style="color:var(--blul)">Tấn/Xe</th>
-      <th class="tr sortable" data-col="7" data-type="num" style="color:var(--blul)">Items/ST</th>
-      <th class="tr sortable" data-col="8" data-type="num" style="color:var(--blul)">ST/Xe</th>
-      <th class="tr sortable" data-col="9" data-type="num" style="color:var(--blul)">KG/ST</th>
+      <th class="tr sortable" data-col="7" data-type="num" style="color:var(--blul)">Items/Siêu Thị</th>
+      <th class="tr sortable" data-col="8" data-type="num" style="color:var(--blul)">Siêu Thị/Xe</th>
+      <th class="tr sortable" data-col="9" data-type="num" style="color:var(--blul)">KG/Siêu Thị</th>
     </tr></thead>
     <tbody id="dailyTableBody"></tbody>
   </table></div></div>`;
@@ -421,17 +422,17 @@ function dailyRenderTable(entry) {
     const fd = (entry.date === full.date) ? (full.khos[kho] || {}) : {};
     const st=fd.sl_sthi||kd.sl_sthi||0, it=kd.sl_items||0, xe=kd.sl_xe||0, tn=kd.san_luong_tan||0;
     const col=COLORS[kho]||'#666';
-    const txe=xe>0?(tn/xe).toFixed(2):'—';
+    const txe=xe>0?fNd(tn/xe,2):'—';
     const ist=st>0?fN(it/st):'—';
-    const stxe=(st>0&&xe>0)?(st/xe).toFixed(1):'—';
-    const kgst=st>0?(tn*1000/st).toFixed(1):'—';
+    const stxe=(st>0&&xe>0)?fNd(st/xe,1):'—';
+    const kgst=st>0?fNd(tn*1000/st,1):'—';
     html += `<tr>
       <td>${entry.date}</td>
       <td class="kho-cell"><span class="dot" style="background:${col}"></span>${kho}</td>
       <td class="tr number">${st>0?st.toLocaleString():'—'}</td>
       <td class="tr number">${fN(it)}</td>
       <td class="tr number">${xe.toLocaleString()}</td>
-      <td class="tr number">${tn.toFixed(2)}</td>
+      <td class="tr number">${fD(tn)}</td>
       <td class="tr number" style="color:var(--blul)">${txe}</td>
       <td class="tr number" style="color:var(--blul)">${ist}</td>
       <td class="tr number" style="color:var(--blul)">${stxe}</td>
@@ -445,11 +446,11 @@ function dailyRenderTable(entry) {
     <td class="tr number">${tST>0?tST.toLocaleString():'—'}</td>
     <td class="tr number">${fN(tIT)}</td>
     <td class="tr number">${tXE.toLocaleString()}</td>
-    <td class="tr number">${tTN.toFixed(2)}</td>
-    <td class="tr number" style="color:var(--blul)">${tXE>0?(tTN/tXE).toFixed(2):'—'}</td>
+    <td class="tr number">${fD(tTN)}</td>
+    <td class="tr number" style="color:var(--blul)">${tXE>0?fNd(tTN/tXE,2):'—'}</td>
     <td class="tr number" style="color:var(--blul)">${tST>0?fN(tIT/tST):'—'}</td>
-    <td class="tr number" style="color:var(--blul)">${(tST>0&&tXE>0)?(tST/tXE).toFixed(1):'—'}</td>
-    <td class="tr number" style="color:var(--blul)">${tST>0?(tTN*1000/tST).toFixed(1):'—'}</td>
+    <td class="tr number" style="color:var(--blul)">${(tST>0&&tXE>0)?fNd(tST/tXE,1):'—'}</td>
+    <td class="tr number" style="color:var(--blul)">${tST>0?fNd(tTN*1000/tST,1):'—'}</td>
   </tr>`;
   tbody.innerHTML = html;
 }
@@ -923,9 +924,9 @@ function renderPerformance(data) {
   }
 
   function initSLA(k){buildBarTrend('perfChartSLA','sla','Đúng SLA','Trễ SLA','% SLA',95,k)}
-  function initPlan(k){buildBarTrend('perfChartPlan','plan','Đúng KH','Trễ KH','% Plan',95,k)}
-  function initPlanCmp(k){buildBarTrend('perfChartPlanCmp','plan_compliance','Đúng KH','Sai KH','% KH',null,k)}
-  function initTrips(k){buildBarTrend('perfChartTrips','trips_completion','Hoàn Thành','Chưa HT','% HT',null,k)}
+  function initPlan(k){buildBarTrend('perfChartPlan','plan','Đúng Kế Hoạch','Trễ Kế Hoạch','% Kế Hoạch',95,k)}
+  function initPlanCmp(k){buildBarTrend('perfChartPlanCmp','plan_compliance','Đúng Kế Hoạch','Sai Kế Hoạch','% Kế Hoạch',null,k)}
+  function initTrips(k){buildBarTrend('perfChartTrips','trips_completion','Hoàn Thành','Chưa Hoàn Thành','% Hoàn Thành',null,k)}
 
   makePills('filterPerfSLA', initSLA);
   makePills('filterPerfPlan', initPlan);
