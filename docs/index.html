@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
     rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <script
     src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
   <style>
@@ -2294,53 +2294,118 @@
         document.getElementById('wkCount').textContent = `Hiển thị: ${shown}/${rows.length} siêu thị`;
       };
 
-      // Export to Excel
+      // Export to Excel — format matching original "Lịch về hàng" sheet
       window.wkExportExcel = function() {
         try {
           const w = weeks[currentWeek];
           if (!w) { alert('Không có dữ liệu để xuất'); return; }
+          if (typeof XLSX === 'undefined') { alert('Thư viện Excel chưa tải xong, vui lòng thử lại'); return; }
 
-          const dates = w.dates || [];
-          const dayNames = w.day_names || [];
+          const dtArr = w.dates || [];
+          const dayN = w.day_names || [];
+          const stores = w.stores || [];
+          const wkLabel = w.label || currentWeek;
 
-          // Build header row matching sheet "Lịch về hàng"
-          const headers = ['Siêu Thị', 'Viết tắt', 'Lịch chia hàng Siêu Thị', 'Lịch về hàng Siêu Thị', 'Khai trương', 'Kiểm kê', 'Giờ nhận'];
-          for (let i = 0; i < 7; i++) headers.push(dayNames[i] + '\n' + dates[i]);
+          // Style constants
+          const sTitle = { font:{bold:true,sz:13,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:'1F3864'}}, alignment:{horizontal:'center',vertical:'center'} };
+          const sCount = { font:{bold:true,sz:12,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:'1F3864'}}, alignment:{horizontal:'center',vertical:'center'} };
+          const sWeek = { font:{bold:true,sz:11,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:'1F3864'}}, alignment:{horizontal:'center',vertical:'center'} };
+          const sDateHdr = { font:{bold:true,sz:10,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:'C00000'}}, alignment:{horizontal:'center',vertical:'center'}, border:{top:{style:'thin'},bottom:{style:'thin'},left:{style:'thin'},right:{style:'thin'}} };
+          const sDayHdr = { font:{bold:true,sz:10}, fill:{fgColor:{rgb:'FFD966'}}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border:{top:{style:'thin'},bottom:{style:'thin'},left:{style:'thin'},right:{style:'thin'}} };
+          const sColHdr = { font:{bold:true,sz:10}, fill:{fgColor:{rgb:'D9E2F3'}}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border:{top:{style:'thin'},bottom:{style:'thin'},left:{style:'thin'},right:{style:'thin'}} };
+          const sCell = { font:{sz:10}, alignment:{vertical:'center'}, border:{top:{style:'thin',color:{rgb:'D0D0D0'}},bottom:{style:'thin',color:{rgb:'D0D0D0'}},left:{style:'thin',color:{rgb:'D0D0D0'}},right:{style:'thin',color:{rgb:'D0D0D0'}}} };
+          const sCellC = { ...sCell, alignment:{horizontal:'center',vertical:'center'} };
+          const sCham = { font:{bold:true,sz:10,color:{rgb:'C65911'}}, fill:{fgColor:{rgb:'FBE5D6'}}, alignment:{horizontal:'center',vertical:'center'}, border:{top:{style:'thin',color:{rgb:'D0D0D0'}},bottom:{style:'thin',color:{rgb:'D0D0D0'}},left:{style:'thin',color:{rgb:'D0D0D0'}},right:{style:'thin',color:{rgb:'D0D0D0'}}} };
+          const sNgay = { font:{sz:10}, fill:{fgColor:{rgb:'FFFFFF'}}, alignment:{horizontal:'center',vertical:'center'}, border:{top:{style:'thin',color:{rgb:'D0D0D0'}},bottom:{style:'thin',color:{rgb:'D0D0D0'}},left:{style:'thin',color:{rgb:'D0D0D0'}},right:{style:'thin',color:{rgb:'D0D0D0'}}} };
+          const sDem = { font:{sz:10}, fill:{fgColor:{rgb:'FFFFFF'}}, alignment:{horizontal:'center',vertical:'center'}, border:{top:{style:'thin',color:{rgb:'D0D0D0'}},bottom:{style:'thin',color:{rgb:'D0D0D0'}},left:{style:'thin',color:{rgb:'D0D0D0'}},right:{style:'thin',color:{rgb:'D0D0D0'}}} };
+          const sKK = { font:{bold:true,sz:10,color:{rgb:'FF0000'}}, fill:{fgColor:{rgb:'FCE4EC'}}, alignment:{horizontal:'center',vertical:'center'}, border:{top:{style:'thin',color:{rgb:'D0D0D0'}},bottom:{style:'thin',color:{rgb:'D0D0D0'}},left:{style:'thin',color:{rgb:'D0D0D0'}},right:{style:'thin',color:{rgb:'D0D0D0'}}} };
 
-          // Build data rows
-          const dataRows = [headers];
-          (w.stores || []).forEach(s => {
-            const row = [s.name, s.code, s.schedule_chia, s.schedule_ve, s.opening_date, s.inventory_date, s.shift];
+          // Columns: A=Siêu Thị, B=Viết tắt, C=Giờ nhận, D-J=7 days
+          // Row 0: empty
+          // Row 1: Title row
+          // Row 2: Date header (for day columns)
+          // Row 3: Column headers
+          // Row 4+: Data
+
+          const aoa = [];
+
+          // R0: empty
+          aoa.push(Array(10).fill(''));
+
+          // R1: Title row
+          const r1 = Array(10).fill('');
+          r1[0] = 'LỊCH VỀ HÀNG SIÊU THỊ';
+          r1[2] = stores.length;
+          r1[3] = wkLabel;
+          aoa.push(r1);
+
+          // R2: Date header row
+          const r2 = Array(10).fill('');
+          for (let i = 0; i < 7; i++) r2[3 + i] = dtArr[i] || '';
+          aoa.push(r2);
+
+          // R3: Column headers
+          const r3 = ['SIÊU THỊ', 'Viết tắt', 'Giờ nhận'];
+          for (let i = 0; i < 7; i++) r3.push(dayN[i] || '');
+          aoa.push(r3);
+
+          // R4+: Store data
+          stores.forEach(s => {
+            const row = [s.name, s.code, s.shift || ''];
             for (let i = 0; i < 7; i++) row.push(s.days[i] || '');
-            dataRows.push(row);
+            aoa.push(row);
           });
 
-          // Check if SheetJS is available
-          if (typeof XLSX === 'undefined') {
-            // Fallback: download as CSV
-            let csv = dataRows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
-            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'Lich_ve_hang_' + currentWeek + '.csv';
-            link.click();
-            URL.revokeObjectURL(link.href);
-            return;
-          }
+          const ws = XLSX.utils.aoa_to_sheet(aoa);
 
-          // Create workbook with SheetJS
-          const ws = XLSX.utils.aoa_to_sheet(dataRows);
+          // Column widths
           ws['!cols'] = [
-            { wch: 45 }, { wch: 8 }, { wch: 16 }, { wch: 16 },
-            { wch: 12 }, { wch: 12 }, { wch: 8 },
-            { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
-            { wch: 12 }, { wch: 12 }, { wch: 12 }
+            {wch:48}, {wch:8}, {wch:9},
+            {wch:13}, {wch:13}, {wch:13}, {wch:13}, {wch:13}, {wch:13}, {wch:13}
           ];
+
+          // Row heights
+          ws['!rows'] = [{hpt:10}, {hpt:28}, {hpt:22}, {hpt:26}];
+
+          // Merges: title across A2:B2, week label across D2:J2
+          ws['!merges'] = [
+            {s:{r:1,c:0},e:{r:1,c:1}},
+            {s:{r:1,c:3},e:{r:1,c:9}},
+          ];
+
+          // Apply styles — Title row (R1)
+          const sc = (r,c,s) => { const addr = XLSX.utils.encode_cell({r,c}); if(ws[addr]) ws[addr].s = s; };
+          sc(1,0,sTitle); sc(1,1,sTitle); sc(1,2,sCount);
+          for(let c=3;c<=9;c++) sc(1,c,sWeek);
+
+          // Date header row (R2)
+          for(let c=0;c<=9;c++) sc(2,c,sDateHdr);
+
+          // Column headers (R3)
+          sc(3,0,sColHdr); sc(3,1,sColHdr); sc(3,2,sColHdr);
+          for(let c=3;c<=9;c++) sc(3,c,sDayHdr);
+
+          // Data rows (R4+)
+          stores.forEach((s,idx) => {
+            const r = 4 + idx;
+            sc(r,0,sCell); sc(r,1,sCellC); sc(r,2,sCellC);
+            for(let c=3;c<=9;c++) {
+              const v = (s.days[c-3]||'').toLowerCase();
+              if(v.includes('châm')||v.includes('cham')) sc(r,c,sCham);
+              else if(v.includes('kiểm')||v.includes('kiem')) sc(r,c,sKK);
+              else if(v==='ngày') sc(r,c,sNgay);
+              else if(v==='đêm') sc(r,c,sDem);
+              else sc(r,c,sCellC);
+            }
+          });
+
+          // Auto-filter on header row
+          ws['!autofilter'] = {ref: XLSX.utils.encode_range({s:{r:3,c:0},e:{r:3+stores.length,c:9}})};
 
           const wb = XLSX.utils.book_new();
           XLSX.utils.book_append_sheet(wb, ws, 'Lịch về hàng');
-          const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-          const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          const wbout = XLSX.write(wb, {bookType:'xlsx',type:'array'});
+          const blob = new Blob([wbout], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
@@ -2349,7 +2414,7 @@
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-        } catch (e) {
+        } catch(e) {
           console.error('Export error:', e);
           alert('Lỗi xuất Excel: ' + e.message);
         }
