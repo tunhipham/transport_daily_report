@@ -1017,7 +1017,7 @@ function perfRenderCards() {
       const pct = d.pct || 0;
       const total = d.total || 0;
       const color = pct>=95?'var(--grn)':pct>=90?'var(--org)':'var(--red)';
-      rows += `<tr><td class="kho-cell" style="font-size:.78rem">${kho}</td><td class="tc number" style="font-size:.78rem">${total}</td><td class="tc number" style="color:${color};font-weight:700;font-size:.78rem">${pct.toFixed(1)}%</td></tr>`;
+      rows += `<tr><td class="kho-cell" style="font-size:.78rem">${kho}</td><td class="tc number" style="font-size:.78rem">${total.toLocaleString()}</td><td class="tc number" style="color:${color};font-weight:700;font-size:.78rem">${pct.toFixed(1)}%</td></tr>`;
     });
     return `<div class="stat-card" style="padding:1rem"><h3 style="font-size:.82rem;font-weight:700;margin-bottom:.6rem;color:var(--t2)">${title}</h3><table style="width:100%"><thead><tr><th style="font-size:.72rem;text-align:left">Kho</th><th class="tc" style="font-size:.72rem">Tổng</th><th class="tc" style="font-size:.72rem">Tỷ lệ</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
@@ -1156,6 +1156,11 @@ function renderNSO(data) {
       <button onclick="nsoCalPrev()" title="Tháng trước">◀</button>
       <div class="cal-title" id="nsoCalTitle"></div>
       <button onclick="nsoCalNext()" title="Tháng sau">▶</button>
+    </div>
+    <div style="display:flex;gap:1.2rem;justify-content:center;margin-bottom:.8rem;flex-wrap:wrap;font-size:.75rem;font-weight:600">
+      <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(245,158,11,.25);border:1px solid var(--org);vertical-align:middle;margin-right:4px"></span><span style="color:var(--org)">Đang Khai Trương</span></span>
+      <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(16,185,129,.2);border:1px solid var(--grn);vertical-align:middle;margin-right:4px"></span><span style="color:var(--grn)">Sắp Khai Trương</span></span>
+      <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(168,85,247,.2);border:1px solid var(--pur);vertical-align:middle;margin-right:4px"></span><span style="color:var(--pur)">Dời Lịch Khai Trương</span></span>
     </div>
     <div class="cal-grid" id="nsoCalGrid"></div>
   </div></div>`;
