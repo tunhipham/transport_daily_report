@@ -265,6 +265,16 @@ def parse_excel(filepath):
             val = ws.cell(r, c).value
             days.append(str(val).strip() if val else "")
         
+        # Fix known code mismatches in source Excel
+        CODE_CORRECTIONS = {
+            # "Sunrise Riverside" is mistakenly coded as A179 in Excel, actual code is A176
+            "A179": {"name_contains": "Sunrise Riverside", "correct_code": "A176"},
+        }
+        if code in CODE_CORRECTIONS:
+            fix = CODE_CORRECTIONS[code]
+            if fix["name_contains"].lower() in name.lower():
+                code = fix["correct_code"]
+        
         stores.append({
             "name": name,
             "code": code,
