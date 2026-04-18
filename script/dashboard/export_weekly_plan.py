@@ -307,6 +307,20 @@ def cross_check_inventory(week_data, inventory):
         if isinstance(inv_dt, datetime):
             inv_dt = inv_dt.date()
         
+        # Step 1: Clear any incorrect "Kiểm kê" from Excel source
+        for i, wd in enumerate(week_dates):
+            if wd is None:
+                continue
+            current = store["days"][i]
+            if current and current.lower().startswith("kiểm"):
+                # This day has Kiểm kê — verify it's actually D or D-1
+                is_d = (wd == inv_dt)
+                is_d1 = (wd == inv_dt - timedelta(days=1))
+                if not is_d and not is_d1:
+                    # Wrong! Clear it back to empty
+                    store["days"][i] = ""
+        
+        # Step 2: Mark correct D and D-1 as Kiểm kê
         for i, wd in enumerate(week_dates):
             if wd is None:
                 continue
