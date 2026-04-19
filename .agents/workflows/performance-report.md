@@ -4,17 +4,16 @@ description: Generate or modify the monthly performance report (on-time, route, 
 
 # Performance Report Workflow
 
-## ⚠ MANDATORY: Read docs FIRST
-Before making ANY changes to `generate_performance_report.py` or `fetch_monthly_plan.py`:
-1. Read `G:\My Drive\DOCS\transport_daily_report\docs\performance_report_implementation_plan.md`
-2. Understand the 4 KPIs: SLA, Plan, Route, Completion
-3. Understand the data model and kho mapping
-4. Check Known Gotchas section
+## ⚠ MANDATORY: Read roles & prompts FIRST
+Before doing ANYTHING:
+1. Read `agents/role.md` — nguyên tắc chung, phạm vi, quy ước output
+2. Read `agents/prompts/performance-report.md` — KPI definitions, data model, kho mapping, known gotchas
+3. Understand the 4 KPIs: SLA, Plan, Route, Completion
 
 ## ⚠ MANDATORY: Backup BEFORE editing
 ```powershell
 $ts = Get-Date -Format "yyyyMMdd_HHmm"
-Copy-Item "script\generate_performance_report.py" "G:\My Drive\DOCS\transport_daily_report\backups\generate_performance_report_$ts.py"
+Copy-Item "script\domains\performance\generate.py" "G:\My Drive\DOCS\transport_daily_report\backups\generate_performance_report_$ts.py"
 ```
 
 ## ⚠ IMPORTANT: Doc & workflow files
@@ -25,14 +24,19 @@ Copy-Item "script\generate_performance_report.py" "G:\My Drive\DOCS\transport_da
 ## Steps to generate report
 
 // turbo
-1. Run the report generation script:
+1. Fetch latest monthly plan (only for newest month):
 ```powershell
-python -u script/generate_performance_report.py --months 3,4 --year 2026
+python -u script/domains/performance/fetch_monthly.py --month 4 --year 2026
 ```
 
-2. Copy output to Drive:
+2. Run the report generation script (cache locks old data automatically):
 ```powershell
-Copy-Item "output\RAW_DATA_T03+T04_2026.xlsx" "G:\My Drive\DOCS\transport_daily_report\output\" -Force
+python -u script/domains/performance/generate.py --months 3,4 --year 2026
+```
+
+3. Deploy to dashboard:
+```powershell
+python -u script/dashboard/deploy.py --domain performance
 ```
 
 ## Key architecture notes

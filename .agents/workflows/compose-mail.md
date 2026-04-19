@@ -4,6 +4,11 @@ description: Compose delivery schedule emails on Haraworks internal mail
 
 # Compose Mail Workflow
 
+## ⚠ MANDATORY: Read roles & prompts FIRST
+Before doing ANYTHING:
+1. Read `agents/role.md` — nguyên tắc chung, phạm vi, quy ước output
+2. Read `agents/prompts/compose-mail.md` — mail rules, inject logic, Haraworks setup
+
 ## Rules (QUAN TRỌNG)
 
 1. **D+1**: Mail mỗi kho là lịch giao hàng cho ngày D+1 (ngày mai)

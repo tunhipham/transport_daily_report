@@ -26,6 +26,11 @@ description: Daily report automation - download data and generate summary report
 - **Dùng chung**: Các task khác (compose_mail, du_kien_giao...) có thể đọc data từ `data/` mà không cần fetch lại
 - Backup files đặt tên theo ngày, cho phép nhiều ngày cùng tồn tại
 
+## ⚠ MANDATORY: Read roles & prompts FIRST
+Before doing ANYTHING:
+1. Read `agents/role.md` — nguyên tắc chung, phạm vi, quy ước output
+2. Read `agents/prompts/daily-report.md` — data sources, KPI definitions, kho schedule
+
 ## Prerequisites
 
 - Python packages: `openpyxl`, `requests`, `playwright`
@@ -50,7 +55,12 @@ python -u script/generate_report.py --date DD/MM/YYYY --send
    - Trend chart: Sản lượng theo kho (lịch sử 30 ngày)
    - **Auto-deploy**: Khi dùng `--send`, sau Telegram sẽ tự động deploy dashboard lên GitHub Pages (~1-2 phút)
 
-3. Push script changes to GitHub (nếu có thay đổi script):
+3. Deploy dashboard (nếu không dùng `--send`, hoặc auto-deploy lỗi):
+```
+python -u script/dashboard/deploy.py --domain daily
+```
+
+4. Push script changes to GitHub (nếu có thay đổi script):
 ```
 git -C "G:\My Drive\DOCS\transport_daily_report" add -A
 git -C "G:\My Drive\DOCS\transport_daily_report" status

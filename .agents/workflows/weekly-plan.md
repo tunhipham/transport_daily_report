@@ -8,6 +8,11 @@ description: Generate or update the weekly transport plan (Lịch về hàng si�
 > Dashboard tab: 📅 Lịch Tuần
 > Context: [agents/prompts/weekly-plan.md](../../../agents/prompts/weekly-plan.md)
 
+## ⚠ MANDATORY: Read roles & prompts FIRST
+Before doing ANYTHING:
+1. Read `agents/role.md` — nguyên tắc chung, phạm vi, quy ước output
+2. Read `agents/prompts/weekly-plan.md` — NSO logic, Excel format, master schedule rules
+
 ## Rules
 
 1. **Weekly cadence**: Làm vào thứ 5 hàng tuần, review lại thứ 6/7 cho tuần W+1

@@ -1691,18 +1691,38 @@
       const isoDates = data.iso_dates || [];
       const weeklyHtml = data.weekly_tables_html || '';
 
-      // Date filter — above cards
+      // ── Single date picker for summary tables ──
+      const latestDate = isoDates[isoDates.length - 1] || '';
+      let dateOpts = '';
+      for (let i = isoDates.length - 1; i >= 0; i--) {
+        const iso = isoDates[i];
+        const lbl = labels[i];
+        const isLatest = i === isoDates.length - 1;
+        dateOpts += `<option value="${iso}"${isLatest ? ' selected' : ''}>${lbl}${isLatest ? ' (Mới nhất)' : ''}</option>`;
+      }
       let html = `<div class="filter-bar">
-    <label>📅 Từ:</label><input type="date" id="perfDateFrom" value="${isoDates[0] || ''}" onchange="perfApplyDate()">
-    <label>Đến:</label><input type="date" id="perfDateTo" value="${isoDates[isoDates.length - 1] || ''}" onchange="perfApplyDate()">
-    <button class="fbtn" onclick="perfResetDate()">↻ Reset</button>
+    <label>📅 Chọn ngày:</label>
+    <select id="perfDatePicker" onchange="perfOnDatePick(this.value)" style="min-width:140px">${dateOpts}</select>
+    <span class="filter-info" id="perfDateInfo">Ngày: ${labels[labels.length - 1] || ''}</span>
+  </div>`;
+
+      // Cards — single date view
+      html += `<div id="perfCardsContainer"></div>`;
+
+      // ── Date range filter for charts ──
+      html += `<div class="filter-bar" id="perfChartCtrl">
+    <label>📈 Khoảng:</label>
+    <button class="fbtn" onclick="perfChartSetRange(7,this)">7 ngày</button>
+    <button class="fbtn" onclick="perfChartSetRange(14,this)">14 ngày</button>
+    <button class="fbtn active" onclick="perfChartSetRange(0,this)">Tất cả</button>
+    <span style="color:var(--t4);margin:0 6px">|</span>
+    <label>Từ:</label><input type="date" id="perfChartFrom" value="${isoDates[0] || ''}" onchange="perfChartApplyRange()">
+    <label>Đến:</label><input type="date" id="perfChartTo" value="${isoDates[isoDates.length - 1] || ''}" onchange="perfChartApplyRange()">
+    <button class="fbtn" onclick="perfChartReset()">↻ Reset</button>
     <span class="filter-info" id="perfRangeInfo">${isoDates.length} ngày</span>
   </div>`;
 
-      // Cards — NO route card (removed Đúng Tuyến)
-      html += `<div id="perfCardsContainer"></div>`;
-
-      // Chart boxes — NO route chart, renumbered, single-column layout
+      // Chart boxes — single-column layout
       const chartConfigs = [
         ['perfChartSLA', '1. Đúng Giờ SLA', 'filterPerfSLA'],
         ['perfChartPlan', '2. On Time Per Dest', 'filterPerfPlan'],
@@ -1744,8 +1764,8 @@
         khoNames, khoColors, isoDates, cards: JSON.parse(JSON.stringify(cards))
       };
 
-      // Render cards with initial data
-      perfRenderCards();
+      // Render cards for latest date
+      perfRenderCardsForDate(isoDates.length - 1);
 
       // Build filter pills & init charts
       Chart.defaults.color = '#94a3b8';
@@ -1829,45 +1849,19 @@
 
       initSLA(null); initPlan(null); initPlanCmp(null); initTrips(null);
 
-      // ── Recalculate cards from kho_bars sliced data ──
-      function perfRecalcCards(si, ei) {
+      // ── Single date picker → summary tables ──
+      window.perfOnDatePick = function (isoDate) {
         const pd = window._perfData;
-        const fc = pd.fullCharts;
-        const khoNames = pd.khoNames;
-        const newCards = {};
-        // For each metric prefix, recalculate from kho_bars
-        const metricMap = [
-          { prefix: 'sla', chartKey: 'sla' },
-          { prefix: 'plan', chartKey: 'plan' },
-          { prefix: 'plancmp', chartKey: 'plan_compliance' },
-        ];
-        metricMap.forEach(({ prefix, chartKey }) => {
-          const ch = fc[chartKey];
-          if (!ch || !ch.kho_bars) return;
-          khoNames.forEach(kho => {
-            const kb = ch.kho_bars[kho];
-            if (!kb) return;
-            const onSlice = kb.on.slice(si, ei);
-            const lateSlice = kb.late.slice(si, ei);
-            const totalOn = onSlice.reduce((a, b) => a + b, 0);
-            const totalLate = lateSlice.reduce((a, b) => a + b, 0);
-            const total = totalOn + totalLate;
-            newCards[`${prefix}_${kho}`] = { total, pct: total > 0 ? totalOn / total * 100 : 0 };
-          });
-        });
-        pd.cards = newCards;
-        perfRenderCards();
-      }
+        const idx = pd.isoDates.indexOf(isoDate);
+        if (idx === -1) return;
+        perfRenderCardsForDate(idx);
+        const lbl = pd.fullLabels[idx] || isoDate;
+        document.getElementById('perfDateInfo').textContent = 'Ngày: ' + lbl;
+      };
 
-      // Date range
-      window.perfApplyDate = function () {
+      // ── Date range for charts ──
+      function perfSliceCharts(si, ei) {
         const pd = window._perfData;
-        const df = document.getElementById('perfDateFrom').value;
-        const dt = document.getElementById('perfDateTo').value;
-        if (!df || !dt) return;
-        let si = pd.isoDates.findIndex(d => d >= df); if (si === -1) si = 0;
-        let ei = pd.isoDates.length;
-        for (let i = 0; i < pd.isoDates.length; i++) { if (pd.isoDates[i] > dt) { ei = i; break; } }
         pd.labels.length = 0;
         pd.fullLabels.slice(si, ei).forEach(l => pd.labels.push(l));
         for (const ck of Object.keys(pd.fullCharts)) {
@@ -1877,37 +1871,86 @@
           if (src.kho_bars) { for (const k of Object.keys(src.kho_bars)) { if (!dst.kho_bars) dst.kho_bars = {}; if (!dst.kho_bars[k]) dst.kho_bars[k] = {}; dst.kho_bars[k].on = src.kho_bars[k].on.slice(si, ei); dst.kho_bars[k].late = src.kho_bars[k].late.slice(si, ei); } }
           if (src.trends) { for (let i = 0; i < src.trends.length; i++) { if (dst.trends[i]) dst.trends[i].data = src.trends[i].data.slice(si, ei); } }
         }
-        perfRecalcCards(si, ei);
         initSLA(null); initPlan(null); initPlanCmp(null); initTrips(null);
         document.getElementById('perfRangeInfo').textContent = pd.labels.length + ' ngày';
-      };
-      window.perfResetDate = function () {
+      }
+
+      window.perfChartApplyRange = function () {
         const pd = window._perfData;
-        document.getElementById('perfDateFrom').value = pd.isoDates[0];
-        document.getElementById('perfDateTo').value = pd.isoDates[pd.isoDates.length - 1];
-        pd.labels.length = 0;
-        pd.fullLabels.forEach(l => pd.labels.push(l));
-        pd.charts = JSON.parse(JSON.stringify(pd.fullCharts));
-        // Restore full cards
-        perfRecalcCards(0, pd.isoDates.length);
-        initSLA(null); initPlan(null); initPlanCmp(null); initTrips(null);
-        document.getElementById('perfRangeInfo').textContent = pd.labels.length + ' ngày';
+        const df = document.getElementById('perfChartFrom').value;
+        const dt = document.getElementById('perfChartTo').value;
+        if (!df || !dt) return;
+        let si = pd.isoDates.findIndex(d => d >= df); if (si === -1) si = 0;
+        let ei = pd.isoDates.length;
+        for (let i = 0; i < pd.isoDates.length; i++) { if (pd.isoDates[i] > dt) { ei = i; break; } }
+        document.querySelectorAll('#perfChartCtrl .fbtn').forEach(b => b.classList.remove('active'));
+        perfSliceCharts(si, ei);
+      };
+
+      window.perfChartSetRange = function (days, btn) {
+        const pd = window._perfData;
+        document.querySelectorAll('#perfChartCtrl .fbtn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        if (days === 0) {
+          // All
+          document.getElementById('perfChartFrom').value = pd.isoDates[0];
+          document.getElementById('perfChartTo').value = pd.isoDates[pd.isoDates.length - 1];
+          pd.labels.length = 0;
+          pd.fullLabels.forEach(l => pd.labels.push(l));
+          pd.charts = JSON.parse(JSON.stringify(pd.fullCharts));
+          initSLA(null); initPlan(null); initPlanCmp(null); initTrips(null);
+          document.getElementById('perfRangeInfo').textContent = pd.labels.length + ' ngày';
+        } else {
+          const n = pd.isoDates.length;
+          const si = Math.max(0, n - days);
+          document.getElementById('perfChartFrom').value = pd.isoDates[si];
+          document.getElementById('perfChartTo').value = pd.isoDates[n - 1];
+          pd.charts = JSON.parse(JSON.stringify(pd.fullCharts));
+          perfSliceCharts(si, n);
+        }
+      };
+
+      window.perfChartReset = function () {
+        window.perfChartSetRange(0, document.querySelector('#perfChartCtrl .fbtn:last-of-type'));
+        // Re-activate "Tất cả" button
+        document.querySelectorAll('#perfChartCtrl .fbtn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#perfChartCtrl .fbtn').forEach(b => { if (b.textContent.includes('Tất cả')) b.classList.add('active'); });
       };
     }
 
-    // ── Render perf cards (called on init + filter) ──
-    function perfRenderCards() {
+    // ── Render perf cards for a SINGLE date (called on init + date picker) ──
+    function perfRenderCardsForDate(dateIdx) {
       const pd = window._perfData;
       if (!pd) return;
       const container = document.getElementById('perfCardsContainer');
       if (!container) return;
-      const cards = pd.cards;
+      const fc = pd.fullCharts;
       const khoNames = pd.khoNames;
+
+      // Compute single-day metrics from kho_bars at dateIdx
+      const dayCards = {};
+      const metricMap = [
+        { prefix: 'sla', chartKey: 'sla' },
+        { prefix: 'plan', chartKey: 'plan' },
+        { prefix: 'plancmp', chartKey: 'plan_compliance' },
+      ];
+      metricMap.forEach(({ prefix, chartKey }) => {
+        const ch = fc[chartKey];
+        if (!ch || !ch.kho_bars) return;
+        khoNames.forEach(kho => {
+          const kb = ch.kho_bars[kho];
+          if (!kb) return;
+          const on = kb.on[dateIdx] || 0;
+          const late = kb.late[dateIdx] || 0;
+          const total = on + late;
+          dayCards[`${prefix}_${kho}`] = { total, pct: total > 0 ? on / total * 100 : 0 };
+        });
+      });
 
       function cardTbl(title, prefix) {
         let rows = '';
         khoNames.forEach(kho => {
-          const d = cards[`${prefix}_${kho}`] || {};
+          const d = dayCards[`${prefix}_${kho}`] || {};
           const pct = d.pct || 0;
           const total = d.total || 0;
           const color = pct >= 95 ? 'var(--grn)' : pct >= 90 ? 'var(--org)' : 'var(--red)';
