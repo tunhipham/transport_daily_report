@@ -165,6 +165,41 @@ def compute_hash(inventory):
     return hashlib.md5(json.dumps(normalized).encode()).hexdigest()
 
 
+# ── Week calculation (same anchor as auto_compose.py) ──
+
+ANCHOR_WEEK = 14
+ANCHOR_START = datetime(2026, 3, 30)  # Monday W14
+
+
+def get_current_week_range():
+    """Get current week number and date range (Mon→Sun).
+    Returns (week_label, week_start_date, week_end_date).
+    """
+    today = datetime.now().date()
+    days_diff = (today - ANCHOR_START.date()).days
+    weeks_diff = days_diff // 7
+    week_num = ANCHOR_WEEK + weeks_diff
+    week_start = (ANCHOR_START + timedelta(weeks=weeks_diff)).date()
+    week_end = week_start + timedelta(days=6)
+    return f"W{week_num}", week_start, week_end
+
+
+def _parse_date_str(date_str):
+    """Parse dd/mm/yyyy string to date object."""
+    try:
+        return datetime.strptime(date_str, "%d/%m/%Y").date()
+    except (ValueError, TypeError):
+        return None
+
+
+def _date_in_week(date_str, week_start, week_end):
+    """Check if a date string falls within [week_start, week_end]."""
+    dt = _parse_date_str(date_str)
+    if dt is None:
+        return False
+    return week_start <= dt <= week_end
+
+
 def diff_inventory(old_inv, new_inv):
     """Compare old and new inventory dicts.
     Returns structured diff with added, removed, and changed entries.
@@ -197,8 +232,34 @@ def diff_inventory(old_inv, new_inv):
     }
 
 
+def filter_diff_for_week(diff, new_inv, old_inv, week_start, week_end):
+    """Filter diff to only include stores with inventory dates in the current week.
+    
+    A store is relevant if:
+    - Added: new date is in this week
+    - Removed: old date was in this week
+    - Changed: old OR new date is in this week
+    """
+    old_inv = old_inv or {}
+
+    week_added = [c for c in diff["added"]
+                  if _date_in_week(new_inv.get(c, ""), week_start, week_end)]
+    week_removed = [c for c in diff["removed"]
+                    if _date_in_week(old_inv.get(c, ""), week_start, week_end)]
+    week_changed = [ch for ch in diff["changed"]
+                    if _date_in_week(ch["old_date"], week_start, week_end)
+                    or _date_in_week(ch["new_date"], week_start, week_end)]
+
+    return {
+        "added": week_added,
+        "removed": week_removed,
+        "changed": week_changed,
+        "has_changes": bool(week_added or week_removed or week_changed),
+    }
+
+
 def format_diff_text(diff, new_inv):
-    """Format diff as human-readable text for logging."""
+    """Format diff as human-readable text for logging (all changes, unfiltered)."""
     lines = []
     if diff["added"]:
         lines.append(f"  🆕 Thêm kiểm kê ({len(diff['added'])}):")
@@ -221,37 +282,42 @@ def format_diff_text(diff, new_inv):
     return "\n".join(lines) if lines else "  (không có thay đổi)"
 
 
-def format_telegram_message(diff, new_inv):
-    """Format diff as Telegram HTML message."""
+def format_telegram_message(week_diff, new_inv, week_label, week_start, week_end):
+    """Format Telegram message — only shows changes relevant to the current week."""
     now_str = datetime.now().strftime("%d/%m/%Y %H:%M")
-    lines = [f"📋 <b>Lịch Kiểm Kê — Cập nhật {now_str}</b>", ""]
-
-    total_changes = len(diff["added"]) + len(diff["removed"]) + len(diff["changed"])
-    lines.append(f"🔄 <b>{total_changes} thay đổi:</b>")
-
-    if diff["changed"]:
-        for ch in diff["changed"][:8]:
-            lines.append(f"  • {ch['code']}: {ch['old_date']} → {ch['new_date']}")
-        if len(diff["changed"]) > 8:
-            lines.append(f"  ... +{len(diff['changed']) - 8} stores")
-
-    if diff["added"]:
-        lines.append("")
-        lines.append(f"🆕 <b>Thêm ({len(diff['added'])}):</b>")
-        for code in diff["added"][:5]:
-            lines.append(f"  • {code}: {new_inv.get(code, '?')}")
-        if len(diff["added"]) > 5:
-            lines.append(f"  ... +{len(diff['added']) - 5} stores")
-
-    if diff["removed"]:
-        lines.append("")
-        lines.append(f"🗑️ <b>Xóa ({len(diff['removed'])}):</b>")
-        for code in diff["removed"][:5]:
-            lines.append(f"  • {code}")
-        if len(diff["removed"]) > 5:
-            lines.append(f"  ... +{len(diff['removed']) - 5} stores")
-
+    ws = week_start.strftime("%d/%m")
+    we = week_end.strftime("%d/%m")
+    lines = [f"📋 <b>Kiểm Kê {week_label} ({ws}–{we})</b>"]
+    lines.append(f"🕐 Cập nhật: {now_str}")
     lines.append("")
+
+    if not week_diff["has_changes"]:
+        lines.append("✅ Không có thay đổi kiểm kê trong tuần này.")
+        lines.append("")
+        lines.append("🔗 https://tunhipham.github.io/transport_daily_report/")
+        return "\n".join(lines)
+
+    # Changed dates this week
+    if week_diff["changed"]:
+        lines.append(f"🔄 <b>Đổi lịch ({len(week_diff['changed'])}):</b>")
+        for ch in week_diff["changed"]:
+            lines.append(f"  • {ch['code']}: {ch['old_date']} → {ch['new_date']}")
+        lines.append("")
+
+    # New inventory this week
+    if week_diff["added"]:
+        lines.append(f"🆕 <b>Thêm kiểm kê ({len(week_diff['added'])}):</b>")
+        for code in week_diff["added"]:
+            lines.append(f"  • {code}: {new_inv.get(code, '?')}")
+        lines.append("")
+
+    # Removed from this week
+    if week_diff["removed"]:
+        lines.append(f"🗑️ <b>Hủy kiểm kê ({len(week_diff['removed'])}):</b>")
+        for code in week_diff["removed"]:
+            lines.append(f"  • {code}")
+        lines.append("")
+
     lines.append("✅ Dashboard đã cập nhật")
     lines.append("🔗 https://tunhipham.github.io/transport_daily_report/")
 
@@ -376,6 +442,15 @@ def run_check(dry_run=False):
     log.info(f"\n  🔔 THAY ĐỔI PHÁT HIỆN!")
     log.info(format_diff_text(diff, new_inv))
 
+    # ── Filter for current week (Telegram only shows this week's changes) ──
+    week_label, week_start, week_end = get_current_week_range()
+    week_diff = filter_diff_for_week(diff, new_inv, prev_inv, week_start, week_end)
+    log.info(f"\n  📅 {week_label} ({week_start.strftime('%d/%m')}–{week_end.strftime('%d/%m')}):")
+    if week_diff["has_changes"]:
+        log.info(f"     Tuần này: {len(week_diff['added'])} thêm, {len(week_diff['removed'])} xóa, {len(week_diff['changed'])} đổi")
+    else:
+        log.info(f"     Tuần này: không ảnh hưởng")
+
     if dry_run:
         log.info("\n  🏃 DRY RUN — skipping export/deploy/notify")
         return "changed"
@@ -386,9 +461,14 @@ def run_check(dry_run=False):
     if export_ok:
         deploy_ok = run_deploy()
 
-    # Send Telegram notification
-    telegram_msg = format_telegram_message(diff, new_inv)
-    notify_ok = send_notification(telegram_msg)
+    # Send Telegram notification (only if this week is affected)
+    notify_ok = False
+    if week_diff["has_changes"]:
+        telegram_msg = format_telegram_message(week_diff, new_inv, week_label, week_start, week_end)
+        notify_ok = send_notification(telegram_msg)
+    else:
+        log.info("  ℹ Không gửi Telegram — thay đổi không ảnh hưởng tuần này")
+        notify_ok = True  # Not an error, just not needed
 
     # ── Update state ──
     state["hash"] = new_hash
