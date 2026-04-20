@@ -333,7 +333,7 @@ def export_nso():
         d = parse_date(s["opening_date"])
         stores_list.append({
             "name": get_display_name(s),
-            "code": s["code"],
+            "code": s["code"] or "",
             "opening_date": s["opening_date"],
             "iso_date": d.isoformat(),
             "status_type": st["type"],
@@ -347,7 +347,7 @@ def export_nso():
         cal_events.append({
             "date": d.isoformat(),
             "label": get_short_label(s),
-            "code": s["code"],
+            "code": s["code"] or "",
             "type": st["type"],
         })
 

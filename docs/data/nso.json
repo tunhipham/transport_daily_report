@@ -169,7 +169,7 @@
     },
     {
       "name": "Millennium - Q4 - mới bổ sung",
-      "code": null,
+      "code": "",
       "opening_date": "08/05/2026",
       "iso_date": "2026-05-08",
       "status_type": "upcoming",
@@ -177,7 +177,7 @@
     },
     {
       "name": "6/1 Đường 13 (Thạnh Xuân 13)",
-      "code": null,
+      "code": "",
       "opening_date": "22/05/2026",
       "iso_date": "2026-05-22",
       "status_type": "upcoming",
@@ -185,7 +185,7 @@
     },
     {
       "name": "52 Thoại Ngọc Hầu",
-      "code": null,
+      "code": "",
       "opening_date": "22/05/2026",
       "iso_date": "2026-05-22",
       "status_type": "upcoming",
@@ -193,7 +193,7 @@
     },
     {
       "name": "Homyland Riverside - TDU",
-      "code": null,
+      "code": "",
       "opening_date": "23/05/2026",
       "iso_date": "2026-05-23",
       "status_type": "upcoming",
@@ -201,7 +201,7 @@
     },
     {
       "name": "299 Liên Phường - TDU",
-      "code": null,
+      "code": "",
       "opening_date": "29/05/2026",
       "iso_date": "2026-05-29",
       "status_type": "upcoming",
@@ -209,7 +209,7 @@
     },
     {
       "name": "Đường A4 - TBI - mới bổ sung",
-      "code": null,
+      "code": "",
       "opening_date": "29/05/2026",
       "iso_date": "2026-05-29",
       "status_type": "upcoming",
@@ -217,7 +217,7 @@
     },
     {
       "name": "Đường 20 - Sau lưng Giga Mall (Opal Garden)",
-      "code": null,
+      "code": "",
       "opening_date": "26/06/2026",
       "iso_date": "2026-06-26",
       "status_type": "upcoming",
@@ -372,43 +372,43 @@
     {
       "date": "2026-05-08",
       "label": "None - Millennium - Q4 - mới bổ sung",
-      "code": null,
+      "code": "",
       "type": "upcoming"
     },
     {
       "date": "2026-05-22",
       "label": "None - 6/1 Đường 13 (Thạnh Xuân 13)",
-      "code": null,
+      "code": "",
       "type": "upcoming"
     },
     {
       "date": "2026-05-22",
       "label": "None - 52 Thoại Ngọc Hầu",
-      "code": null,
+      "code": "",
       "type": "upcoming"
     },
     {
       "date": "2026-05-23",
       "label": "None - Homyland Riverside - TDU",
-      "code": null,
+      "code": "",
       "type": "upcoming"
     },
     {
       "date": "2026-05-29",
       "label": "None - 299 Liên Phường - TDU",
-      "code": null,
+      "code": "",
       "type": "upcoming"
     },
     {
       "date": "2026-05-29",
       "label": "None - Đường A4 - TBI - mới bổ sung",
-      "code": null,
+      "code": "",
       "type": "upcoming"
     },
     {
       "date": "2026-06-26",
       "label": "None - Đường 20 - Sau lưng Giga Mall (Opal Garden)",
-      "code": null,
+      "code": "",
       "type": "upcoming"
     },
     {
