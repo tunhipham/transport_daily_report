@@ -2133,9 +2133,9 @@
     <tbody id="nsoStoreBody">`;
       stores.forEach((s, i) => {
         const badgeCls = s.status_type === 'upcoming' ? 'badge-green' : s.status_type === 'opening' ? 'badge-orange' : 'badge-purple';
-        html += `<tr class="nso-store-row" data-date="${s.iso_date}" data-status="${s.status_type}" data-name="${s.name.toLowerCase()}" data-code="${s.code.toLowerCase()}" data-datestr="${s.opening_date}">
+        html += `<tr class="nso-store-row" data-date="${s.iso_date}" data-status="${s.status_type}" data-name="${(s.name||'').toLowerCase()}" data-code="${(s.code||'').toLowerCase()}" data-datestr="${s.opening_date}">
       <td class="tc nso-stt">${i + 1}</td><td>${s.name}</td>
-      <td class="tc"><span class="badge badge-blue">${s.code}</span></td>
+      <td class="tc"><span class="badge badge-blue">${s.code || '—'}</span></td>
       <td class="tc">${s.opening_date}</td>
       <td class="tc"><span class="badge ${badgeCls}">${s.status_text}</span></td>
     </tr>`;
