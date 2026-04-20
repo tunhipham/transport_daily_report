@@ -396,10 +396,19 @@ def export_nso():
         "week_range": f"{fmt_ddmm(mon)} → {fmt_ddmm(sun)}",
     }
 
+    # Write to output/nso/ first
+    nso_output_dir = os.path.join(BASE, "output", "nso")
+    os.makedirs(nso_output_dir, exist_ok=True)
+    nso_output_path = os.path.join(nso_output_dir, "nso.json")
+    with open(nso_output_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    print(f"  📁 {nso_output_path} ({n_total} stores, {os.path.getsize(nso_output_path):,} bytes)")
+
+    # Copy to docs/data/ for dashboard
     out_path = os.path.join(DOCS_DATA, "nso.json")
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False)
-    print(f"  ✅ {out_path} ({n_total} stores, {os.path.getsize(out_path):,} bytes)")
+    import shutil
+    shutil.copy2(nso_output_path, out_path)
+    print(f"  ✅ {out_path} ({os.path.getsize(out_path):,} bytes)")
     return True
 
 
