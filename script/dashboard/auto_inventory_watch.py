@@ -24,6 +24,7 @@ sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 STATE_DIR = os.path.join(BASE, "output", "state")
+STATE_PATH = os.path.join(STATE_DIR, "inventory_watch_state.json")
 LOCK_PATH = os.path.join(STATE_DIR, "inventory_watch.lock")
 LOG_PATH = os.path.join(BASE, "output", "logs", "inventory_watch.log")
 TELEGRAM_CONFIG = os.path.join(BASE, "config", "telegram.json")
@@ -31,7 +32,7 @@ WEEKLY_PLAN_JSON = os.path.join(BASE, "docs", "data", "weekly_plan.json")
 
 # Import shared libs
 sys.path.insert(0, os.path.join(BASE, "script"))
-from lib.telegram import load_telegram_config, send_telegram_text
+from lib.telegram import load_telegram_config, send_telegram_text, delete_telegram_message
 
 # ── Logging ──────────────────────────────────────────────────────────
 
@@ -326,13 +327,44 @@ def run_deploy():
         return False
 
 
+def load_state():
+    """Load state (last telegram message_id etc)."""
+    os.makedirs(STATE_DIR, exist_ok=True)
+    if os.path.exists(STATE_PATH):
+        with open(STATE_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+
+def save_state(state):
+    """Save state."""
+    os.makedirs(STATE_DIR, exist_ok=True)
+    with open(STATE_PATH, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+
+
 def send_notification(message):
-    """Send Telegram notification."""
+    """Send Telegram notification. Deletes previous message first."""
     bot_token, chat_id = load_telegram_config(TELEGRAM_CONFIG, domain="weekly_plan")
     if not bot_token or not chat_id:
         log.warning("  ⚠ Telegram not configured for weekly_plan domain")
         return False
+
+    # Delete previous message
+    state = load_state()
+    prev_mid = state.get("last_telegram_msg_id")
+    if prev_mid:
+        ok = delete_telegram_message(prev_mid, bot_token, chat_id)
+        if ok:
+            log.info(f"  🗑️ Deleted previous Telegram message (msg_id={prev_mid})")
+        else:
+            log.info(f"  ℹ Could not delete previous message (msg_id={prev_mid})")
+
+    # Send new message
     mid = send_telegram_text(message, bot_token, chat_id)
+    if mid:
+        state["last_telegram_msg_id"] = mid
+        save_state(state)
     return mid is not None
 
 
