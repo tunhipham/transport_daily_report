@@ -112,31 +112,89 @@ D+4+  = về lịch daily theo schedule_ve
 - **Row 5+**: Data — Châm hàng (cam), Kiểm kê (đỏ/hồng)
 - **Không** xuất 4 cột: Lịch chia, Lịch về, Khai trương, Kiểm kê
 
+---
+
 ## Auto-Watch Kiểm Kê (Thứ 2)
 
-Mỗi thứ 2, Task Scheduler tự chạy `auto_inventory_watch.py --watch`:
-- Poll Google Sheets mỗi **1 giờ** từ 07:00 → 17:30
-- So sánh hash lịch kiểm kê → phát hiện thay đổi
-- Nếu có thay đổi: **re-export** weekly_plan.json → **deploy** GitHub Pages → **Telegram notify**
-- Log: `output/logs/inventory_watch.log`
-- State: `output/state/inventory_watch_state.json`
+Hệ thống tự động giám sát lịch kiểm kê mỗi thứ 2. Script: `script/dashboard/auto_inventory_watch.py`
+
+### Flow hoạt động
+
+```
+Task Scheduler (thứ 2 07:00) → auto_inventory_watch.py --watch
+  └─ Mỗi 1h (07:00 → 17:30):
+       ├─ Đọc weekly_plan.json → lấy danh sách kiểm kê tuần hiện tại (BEFORE)
+       ├─ Chạy export_weekly_plan.py (fetch Google Sheets mới)
+       ├─ Đọc weekly_plan.json mới → lấy danh sách kiểm kê (AFTER)
+       ├─ So sánh BEFORE vs AFTER:
+       │     ├─ 🆕 Store thêm kiểm kê trong tuần
+       │     ├─ 🔄 Store đổi ngày kiểm kê
+       │     ├─ 🗑️ Store hủy kiểm kê
+       │     └─ ✅ Không thay đổi
+       ├─ Deploy lên GitHub Pages
+       └─ Gửi Telegram notify (xóa message cũ → gửi mới)
+```
+
+### So sánh gì?
+
+Chỉ so sánh **stores có `inventory_date` rơi vào tuần hiện tại** (vd W17: 20/04–26/04).
+Không quan tâm stores có kiểm kê tuần khác.
+
+### Telegram message
+
+Mỗi lần gửi message mới sẽ **xóa message trước** (luôn chỉ có 1 message trên channel).
+
+**Không thay đổi:**
+```
+📋 Kiểm Kê W17 (20/04–26/04)
+🕐 Cập nhật: 20/04/2026 09:36
+
+✅ Lịch kiểm kê tuần này không thay đổi (10 stores)
+🔗 https://tunhipham.github.io/transport_daily_report/
+```
+
+**Có thay đổi:**
+```
+📋 Kiểm Kê W17 (20/04–26/04)
+🕐 Cập nhật: 20/04/2026 10:15
+
+🔄 Đổi lịch (1):
+  • A108 KFM_HCM_TDU - Cây Keo: 24/04 → 25/04
+
+🆕 Thêm kiểm kê (1):
+  • A999 KFM_HCM_XXX - Store Mới: 22/04
+
+✅ Dashboard đã cập nhật
+🔗 https://tunhipham.github.io/transport_daily_report/
+```
+
+### State & Logs
+
+| File | Nội dung |
+|------|----------|
+| `output/state/inventory_watch_state.json` | `last_telegram_msg_id` (để xóa message cũ) |
+| `output/state/inventory_watch.lock` | Lock file chống chạy trùng instance |
+| `output/logs/inventory_watch.log` | Log chi tiết mỗi cycle |
 
 ### Register Task Scheduler (1 lần)
 ```powershell
 schtasks /create /tn "KFM_InventoryWatch" /xml "config\auto_inventory_watch_task.xml"
 ```
 
-### Backup — Fetch thủ công (ngoài thứ 2)
+### Commands
 
-Khi cần update lịch kiểm kê ngoài giờ/ngày tự động:
-
-```powershell
-python script/dashboard/auto_inventory_watch.py --backup
-```
+| Lệnh | Khi nào dùng |
+|-------|-------------|
+| `python script/dashboard/auto_inventory_watch.py --backup` | Fetch thủ công bất kỳ ngày nào |
+| `python script/dashboard/auto_inventory_watch.py --backup --dry-run` | Xem thay đổi mà không deploy/notify |
+| `python script/dashboard/auto_inventory_watch.py --watch` | Watch mode (chỉ chạy thứ 2) |
+| `python script/dashboard/auto_inventory_watch.py --force` | Chạy 1 shot, bỏ qua check thứ 2 |
 
 > [!TIP]
-> `--backup` bỏ qua check thứ 2 và chạy 1 lần: fetch → diff → export → deploy → notify.
+> `--backup` bỏ qua check thứ 2 và chạy 1 lần: đọc BEFORE → export → đọc AFTER → diff → deploy → notify.
 > Thêm `--dry-run` để xem thay đổi mà không deploy/notify.
+
+---
 
 ## Troubleshooting
 
@@ -149,3 +207,4 @@ python script/dashboard/auto_inventory_watch.py --backup
 | Số stores thiếu | So sánh danh sách active stores vs W{nn} Excel file |
 | Watch không chạy | Check lock file `output/state/inventory_watch.lock` — xóa nếu stale |
 | Telegram không gửi | Check `config/telegram.json` key `weekly_plan` |
+| Telegram không xóa cũ | Check `output/state/inventory_watch_state.json` có `last_telegram_msg_id` |

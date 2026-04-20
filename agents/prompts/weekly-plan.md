@@ -43,6 +43,53 @@ elif isinstance(val, date):
 | Lịch về hàng (days) | Excel file W{nn} | 🔄 **DYNAMIC** — có thể thay đổi mỗi tuần |
 | NSO opening dates | `script/domains/nso/generate.py` | ➕ Thêm khi có store mới |
 
+## Auto-Watch Kiểm Kê
+
+### Tổng quan
+
+Mỗi **thứ 2**, Task Scheduler tự chạy `auto_inventory_watch.py --watch`:
+- Poll mỗi **1 giờ** từ 07:00 → 17:30
+- So sánh lịch kiểm kê **trên dashboard** (BEFORE) vs **Google Sheets mới** (AFTER)
+- Chỉ quan tâm stores có kiểm kê **trong tuần hiện tại** (vd: W17 = 20/04–26/04)
+- Nếu có thay đổi → re-export → deploy → Telegram notify
+- Telegram: xóa message cũ → gửi message mới (luôn chỉ 1 message trên channel)
+
+### Scripts & Config
+
+| File | Mô tả |
+|------|-------|
+| `script/dashboard/auto_inventory_watch.py` | Script chính — fetch, diff, export, deploy, notify |
+| `script/dashboard/auto_inventory_watch.bat` | Batch launcher cho Task Scheduler |
+| `config/auto_inventory_watch_task.xml` | Task Scheduler config (Monday only, 07:00→17:30) |
+| `config/telegram.json` → key `"weekly_plan"` | Bot token + chat_id cho Telegram notify |
+| `output/state/inventory_watch_state.json` | Lưu `last_telegram_msg_id` (xóa message cũ) |
+| `output/state/inventory_watch.lock` | Lock chống chạy trùng instance |
+| `output/logs/inventory_watch.log` | Log chi tiết mỗi cycle |
+
+### Commands
+
+```bash
+# Watch mode (auto - chỉ thứ 2)
+python script/dashboard/auto_inventory_watch.py --watch
+
+# Backup — chạy thủ công bất kỳ ngày nào
+python script/dashboard/auto_inventory_watch.py --backup
+
+# Dry run — xem thay đổi, không deploy/notify
+python script/dashboard/auto_inventory_watch.py --backup --dry-run
+
+# Force — chạy 1 shot, bỏ qua check thứ 2
+python script/dashboard/auto_inventory_watch.py --force
+```
+
+### Week Anchor
+
+Script dùng cùng anchor với `auto_compose.py`:
+```python
+ANCHOR_WEEK = 14
+ANCHOR_START = datetime(2026, 3, 30)  # Monday W14
+```
+
 ## Cấu trúc project liên quan
 
 ```
@@ -52,16 +99,28 @@ data/
 script/
   dashboard/
     export_weekly_plan.py    # Parse Excel → JSON (main logic)
+    auto_inventory_watch.py  # 🔄 Auto-watch kiểm kê (thứ 2, mỗi 1h)
+    auto_inventory_watch.bat # Batch launcher cho Task Scheduler
     export_data.py           # Export daily/performance/inventory/nso
     deploy.py                # Git push (supports --domain weekly_plan)
   compose/
     compose_mail.py          # Email composition (cũng fetch kiểm kê)
   domains/
     nso/generate.py          # NSO STORES list (opening dates)
-  lib/sources.py             # INVENTORY_SHEET_URL
+  lib/
+    sources.py               # INVENTORY_SHEET_URL
+    telegram.py              # send_telegram_text, delete_telegram_message
+config/
+  telegram.json              # Bot config (key: weekly_plan)
+  auto_inventory_watch_task.xml  # Task Scheduler XML
 output/
   artifacts/
     weekly transport plan/   # Source Excel files (W14, W15, W16, W17...)
+  state/
+    inventory_watch_state.json  # Watch state (last msg_id)
+    inventory_watch.lock        # Lock file
+  logs/
+    inventory_watch.log         # Watch log
 docs/
   data/weekly_plan.json      # Output JSON cho dashboard
   index.html                 # Dashboard SPA
