@@ -1,4 +1,4 @@
-﻿---
+---
 description: Manual fetch + compose + inject after cutoff hours (backup procedure)
 ---
 
@@ -35,6 +35,9 @@ python -u script/domains/performance/fetch_weekly.py --week W{week} --start DD/M
 > Generic `_mail_body.html` bị ghi đè mỗi lần compose → inject sau có thể dùng nhầm data.
 
 > ℹ️ Inject dùng **JS base64 + setData()** — không phụ thuộc clipboard, hoạt động từ mọi session.
+
+> ✅ **THỊT CÁ**: fetch = chốt → compose + inject luôn (data chính xác từ lần fetch đầu).
+> ⚠️ **ĐÔNG MÁT**: phải đủ cả 2 file (KH HÀNG ĐÔNG + KH HÀNG MÁT) mới compose. Nếu chỉ có 1 → chờ.
 
 **KRC:**
 ```

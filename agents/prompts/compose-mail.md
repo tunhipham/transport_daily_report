@@ -26,6 +26,8 @@ Lịch kiểm kê thay đổi liên tục (người input update bất kỳ lúc
 7. **Kiểm kê (DRY only)**: Siêu thị có lịch kiểm kê tổng → không nhận hàng. Script tự fetch và highlight ĐỎ.
    - Source: [Lịch kiểm kê 2026](https://docs.google.com/spreadsheets/d/1KIXDqGDW60sKNXuHOriT8utPTyhV-pCy11jlf18Zz-0/edit?gid=220196646#gid=220196646)
 8. **Time format**: Giờ luôn HH:MM (leading zero), ví dụ 0:17 → 00:17
+9. **THỊT CÁ — fetch = chốt**: Data THỊT CÁ bình thường chỉ fetch 1 lần là đủ/chính xác. Fetch xong → compose + inject luôn, không cần đợi re-compose.
+10. **ĐÔNG MÁT — cần đủ 2 plan**: Kho ĐÔNG MÁT gồm 2 file source: "KH HÀNG ĐÔNG" + "KH HÀNG MÁT". **Chỉ compose + inject khi đã fetch đủ cả 2 file**. Nếu chỉ có 1 → chờ file còn lại.
 
 ---
 
@@ -50,13 +52,19 @@ Operations, Operations Training & Development, Operations Excellence, Sales, Del
 
 ## Lịch Check Từng Kho
 
-| Kho | Check Window | Cutoff | Mail cho | Ngày nghỉ |
-|-----|-------------|--------|----------|-----------|
-| **DRY Tối** | 12:00 - 14:00 | 14:00 | Tối cùng ngày D | Chủ nhật |
-| **DRY Sáng** | 15:00 - 16:30 | 16:30 | Sáng ngày D+1 | Chủ nhật |
-| **ĐÔNG MÁT** | 15:00 - 19:00 | 19:00 | Ngày D+1 | Thứ 2 |
-| **KRC** | 17:00 - 19:00 | 19:00 | Ngày D+1 | — |
-| **THỊT CÁ** | 17:00 - 19:00 | 19:00 | Ngày D+1 | — |
+| Kho | Check Window | Cutoff | Mail cho | Ngày nghỉ | Ghi chú |
+|-----|-------------|--------|----------|-----------|--------|
+| **DRY Tối** | 12:00 - 14:00 | 14:00 | Tối cùng ngày D | Chủ nhật | Data thay đổi liên tục → re-compose |
+| **DRY Sáng** | 15:00 - 16:30 | 16:30 | Sáng ngày D+1 | Chủ nhật | Data thay đổi liên tục → re-compose |
+| **ĐÔNG MÁT** | 15:00 - 19:00 | 19:00 | Ngày D+1 | Thứ 2 | ⚠ Cần đủ cả 2 file (ĐÔNG + MÁT) mới compose |
+| **KRC** | 17:00 - 19:00 | 19:00 | Ngày D+1 | — | Data thay đổi liên tục → re-compose |
+| **THỊT CÁ** | 17:00 - 19:00 | 19:00 | Ngày D+1 | — | ✅ Fetch = chốt → inject luôn |
+
+### Đặc thù từng kho khi compose
+
+- **THỊT CÁ**: Data bình thường fetch 1 lần là chính xác. Fetch xong → compose + inject luôn (không cần đợi cutoff hay re-compose).
+- **ĐÔNG MÁT**: Gồm 2 file source trên Drive: "KH HÀNG ĐÔNG" + "KH HÀNG MÁT". Chỉ compose khi đủ cả 2 file. Nếu 1 file chưa có → chờ.
+- **DRY / KRC**: Data từ Google Sheets, planner update liên tục → cần re-fetch + re-compose gần cutoff.
 
 ### Timeline một ngày (ví dụ Thứ 4)
 
@@ -68,7 +76,9 @@ Operations, Operations Training & Development, Operations Excellence, Sales, Del
 16:30  ─── DRY Sáng CUTOFF ────────────────────────────
 
 17:00  ─── KRC + THỊT CÁ bắt đầu check ───────────────
+         (THỊT CÁ: fetch đc = inject luôn, ko cần chờ cutoff)
 19:00  ─── KRC + ĐÔNG MÁT + THỊT CÁ CUTOFF ───────────
+         (ĐÔNG MÁT: chỉ inject nếu đủ cả 2 plan ĐÔNG + MÁT)
 
 20:00  ─── Task Scheduler dừng ─────────────────────────
 ```

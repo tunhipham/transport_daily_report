@@ -24,6 +24,8 @@ Before doing ANYTHING:
    - Source: [Lịch kiểm kê 2026](https://docs.google.com/spreadsheets/d/1KIXDqGDW60sKNXuHOriT8utPTyhV-pCy11jlf18Zz-0/edit?gid=220196646#gid=220196646)
    - Sheet "Lịch Kiểm kê 2026", Col D = ID Mart, Col H = Ngày kiểm kê tổng 2026
 8. **Time format**: Giờ luôn HH:MM (leading zero), ví dụ 0:17 → 00:17
+9. **THỊT CÁ — fetch = chốt**: Data THỊT CÁ fetch 1 lần là đủ/chính xác. Fetch xong → compose + inject luôn, không cần đợi re-compose hay cutoff.
+10. **ĐÔNG MÁT — cần đủ 2 plan**: Gồm 2 file source: "KH HÀNG ĐÔNG" + "KH HÀNG MÁT". **Chỉ compose + inject khi đã fetch đủ cả 2**. Nếu chỉ có 1 → chờ file còn lại.
 
 ## Thông tin mail
 
@@ -50,7 +52,7 @@ Operations, Operations Training & Development, Operations Excellence, Sales, Del
 
 // turbo
 ```
-python -u script/auto_compose.py --watch
+python -u script/compose/auto_compose.py --watch
 ```
 
 Watch mode sẽ:
@@ -75,13 +77,13 @@ Watch mode sẽ:
 
 ```powershell
 # Reply vào thread có sẵn (mặc định — tự tìm thread W{week})
-python -u script/inject_haraworks.py --kho KRC --date DD/MM/YYYY --week W15
-python -u script/inject_haraworks.py --kho DRY --session sang --date DD/MM/YYYY --week W15
-python -u script/inject_haraworks.py --kho "ĐÔNG MÁT" --date DD/MM/YYYY --week W15
-python -u script/inject_haraworks.py --kho "THỊT CÁ" --date DD/MM/YYYY --week W15
+python -u script/compose/inject_haraworks.py --kho KRC --date DD/MM/YYYY --week W15
+python -u script/compose/inject_haraworks.py --kho DRY --session sang --date DD/MM/YYYY --week W15
+python -u script/compose/inject_haraworks.py --kho "DONG MAT" --date DD/MM/YYYY --week W15
+python -u script/compose/inject_haraworks.py --kho "THIT CA" --date DD/MM/YYYY --week W15
 
 # Force compose mail MỚI (đầu tuần, tạo thread mới)
-python -u script/inject_haraworks.py --kho KRC --date DD/MM/YYYY --week W15 --new
+python -u script/compose/inject_haraworks.py --kho KRC --date DD/MM/YYYY --week W15 --new
 ```
 
 **Reply vs New logic:**
@@ -93,28 +95,34 @@ python -u script/inject_haraworks.py --kho KRC --date DD/MM/YYYY --week W15 --ne
 
 // turbo
 ```
-python -u script/auto_compose.py --status
+python -u script/compose/auto_compose.py --status
 ```
 
-- `python auto_compose.py` — chạy scheduled (check time window + compose + **auto inject FINAL**)
-- `python auto_compose.py --status` — xem trạng thái hôm nay
-- `python auto_compose.py --force KRC` — force compose KRC (bypass time window)
-- `python auto_compose.py --force DRY --force-session sang` — force DRY Sáng
-- `python auto_compose.py --dry-run` — check data mà không compose
-- `python auto_compose.py --no-auto-inject` — compose nhưng không inject vào Haraworks
-- `python auto_compose.py --reset` — reset state hôm nay
+- `python script/compose/auto_compose.py` — chạy scheduled (check time window + compose + **auto inject FINAL**)
+- `python script/compose/auto_compose.py --status` — xem trạng thái hôm nay
+- `python script/compose/auto_compose.py --force KRC` — force compose KRC (bypass time window)
+- `python script/compose/auto_compose.py --force DRY --force-session sang` — force DRY Sáng
+- `python script/compose/auto_compose.py --dry-run` — check data mà không compose
+- `python script/compose/auto_compose.py --no-auto-inject` — compose nhưng không inject vào Haraworks
+- `python script/compose/auto_compose.py --reset` — reset state hôm nay
 
 ---
 
 ## Lịch Check Từng Kho
 
-| Kho | Check Window | Cutoff | Mail cho | Ngày nghỉ |
-|-----|-------------|--------|----------|-----------|
-| **DRY Tối** | 12:00 - 14:00 | 14:00 | Tối cùng ngày D | Chủ nhật |
-| **DRY Sáng** | 15:00 - 16:30 | 16:30 | Sáng ngày D+1 | Chủ nhật |
-| **ĐÔNG MÁT** | 15:00 - 19:00 | 19:00 | Ngày D+1 | Thứ 2 |
-| **KRC** | 17:00 - 19:00 | 19:00 | Ngày D+1 | — |
-| **THỊT CÁ** | 17:00 - 19:00 | 19:00 | Ngày D+1 | — |
+| Kho | Check Window | Cutoff | Mail cho | Ngày nghỉ | Ghi chú |
+|-----|-------------|--------|----------|-----------|--------|
+| **DRY Tối** | 12:00 - 14:00 | 14:00 | Tối cùng ngày D | Chủ nhật | Data thay đổi liên tục → re-compose |
+| **DRY Sáng** | 15:00 - 16:30 | 16:30 | Sáng ngày D+1 | Chủ nhật | Data thay đổi liên tục → re-compose |
+| **ĐÔNG MÁT** | 15:00 - 19:00 | 19:00 | Ngày D+1 | Thứ 2 | ⚠ Cần đủ cả 2 file (ĐÔNG + MÁT) mới compose |
+| **KRC** | 17:00 - 19:00 | 19:00 | Ngày D+1 | — | Data thay đổi liên tục → re-compose |
+| **THỊT CÁ** | 17:00 - 19:00 | 19:00 | Ngày D+1 | — | ✅ Fetch = chốt → inject luôn |
+
+### Đặc thù từng kho khi compose
+
+- **THỊT CÁ**: Data bình thường fetch 1 lần là chính xác. Fetch xong → compose + inject luôn (không cần đợi cutoff hay re-compose).
+- **ĐÔNG MÁT**: Gồm 2 file source trên Drive: "KH HÀNG ĐÔNG" + "KH HÀNG MÁT". Chỉ compose khi đủ cả 2 file. Nếu 1 file chưa có → chờ.
+- **DRY / KRC**: Data từ Google Sheets, planner update liên tục → cần re-fetch + re-compose gần cutoff.
 
 ### Timeline một ngày (ví dụ Thứ 4)
 
@@ -129,8 +137,10 @@ python -u script/auto_compose.py --status
        │ ĐÔNG MÁT tiếp tục check...
 
 17:00  ─── KRC + THỊT CÁ bắt đầu check ───────────────
+         (THỊT CÁ: fetch đc = inject luôn, ko cần chờ cutoff)
 18:40  │ ⏰ ALL APPROACHING CUTOFF → FINAL compose
 19:00  ─── KRC + ĐÔNG MÁT + THỊT CÁ CUTOFF ───────────
+         (ĐÔNG MÁT: chỉ inject nếu đủ cả 2 plan ĐÔNG + MÁT)
 
 20:00  ─── Task Scheduler dừng ─────────────────────────
 ```
@@ -187,7 +197,7 @@ schtasks /create /tn "AutoComposeMail" /xml "config\auto_compose_task.xml" /f
 ### 0. LUÔN re-fetch data mới nhất trước khi compose (BẮT BUỘC)
 // turbo
 ```
-python -u script/fetch_weekly_plan.py --week W{week} --start DD/MM/YYYY
+python -u script/domains/performance/fetch_weekly.py --week W{week} --start DD/MM/YYYY
 ```
 
 ⚠️ **QUAN TRỌNG**: Google Sheet nguồn được planner cập nhật liên tục trong ngày.
@@ -197,17 +207,17 @@ Data fetch từ sáng có thể thiếu/sai cho ngày D+1 (giờ giao còn #N/A)
 ### 1. Generate HTML email body
 // turbo
 ```
-python -u script/compose_mail.py --kho KRC --date DD/MM/YYYY
+python -u script/compose/compose_mail.py --kho KRC --date DD/MM/YYYY
 ```
 Hoặc cho DRY:
 ```
-python -u script/compose_mail.py --kho DRY --session sang --date DD/MM/YYYY
-python -u script/compose_mail.py --kho DRY --session toi --date DD/MM/YYYY
+python -u script/compose/compose_mail.py --kho DRY --session sang --date DD/MM/YYYY
+python -u script/compose/compose_mail.py --kho DRY --session toi --date DD/MM/YYYY
 ```
 
 ### 2. Inject vào Haraworks
 ```
-python -u script/inject_haraworks.py --kho KRC --date DD/MM/YYYY --week W15
+python -u script/compose/inject_haraworks.py --kho KRC --date DD/MM/YYYY --week W15
 ```
 
 ### 3. Review draft trên Haraworks
@@ -235,15 +245,15 @@ Script track thay đổi ở mức **từng store + thời gian**:
 
 | File | Purpose |
 |------|---------|
-| `script/auto_compose.py` | Orchestrator: watch mode, scheduled compose, state tracking |
-| `script/inject_haraworks.py` | Selenium: inject HTML vào Haraworks CKEditor, tạo draft |
-| `script/compose_mail.py` | Generate HTML email body cho mỗi kho/ngày |
-| `script/fetch_weekly_plan.py` | Fetch data từ Google Sheets + Drive |
+| `script/compose/auto_compose.py` | Orchestrator: watch mode, scheduled compose, state tracking |
+| `script/compose/inject_haraworks.py` | Selenium: inject HTML vào Haraworks CKEditor, tạo draft |
+| `script/compose/compose_mail.py` | Generate HTML email body cho mỗi kho/ngày |
+| `script/domains/performance/fetch_weekly.py` | Fetch data từ Google Sheets + Drive |
 | `config/mail_schedule.json` | Config lịch compose + Drive sources |
 | `config/auto_compose_task.xml` | XML định nghĩa Windows Task |
-| `output/auto_compose_state.json` | State tracking (compose count, hash, status) |
-| `output/auto_compose.log` | Log file |
-| `output/_mail_{kho}_body.html` | Generated HTML body per kho |
+| `output/state/auto_compose_state.json` | State tracking (compose count, hash, status) |
+| `output/logs/auto_compose.log` | Log file |
+| `output/mail/_mail_{kho}_body.html` | Generated HTML body per kho |
 | `.edge_automail/` | Edge automation profile (login session lưu ở đây) |
 
 ## Troubleshooting
