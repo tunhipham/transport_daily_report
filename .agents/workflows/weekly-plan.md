@@ -142,7 +142,8 @@ Không quan tâm stores có kiểm kê tuần khác.
 
 ### Telegram message
 
-Mỗi lần gửi message mới sẽ **xóa message trước** (luôn chỉ có 1 message trên channel).
+Notify gửi vào **tin nhắn cá nhân** (không gửi vào group ILT).
+Mỗi lần gửi message mới sẽ **xóa message trước** (luôn chỉ có 1 message).
 
 **Không thay đổi:**
 ```
@@ -173,6 +174,7 @@ Mỗi lần gửi message mới sẽ **xóa message trước** (luôn chỉ có 
 | File | Nội dung |
 |------|----------|
 | `output/state/inventory_watch_state.json` | `last_telegram_msg_id` (để xóa message cũ) |
+| `config/telegram.json` → key `weekly_plan` | `chat_id: 5782090339` = personal chat (không phải group) |
 | `output/state/inventory_watch.lock` | Lock file chống chạy trùng instance |
 | `output/logs/inventory_watch.log` | Log chi tiết mỗi cycle |
 

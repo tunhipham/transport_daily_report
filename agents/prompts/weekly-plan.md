@@ -52,7 +52,7 @@ Mỗi **thứ 2**, Task Scheduler tự chạy `auto_inventory_watch.py --watch`:
 - So sánh lịch kiểm kê **trên dashboard** (BEFORE) vs **Google Sheets mới** (AFTER)
 - Chỉ quan tâm stores có kiểm kê **trong tuần hiện tại** (vd: W17 = 20/04–26/04)
 - Nếu có thay đổi → re-export → deploy → Telegram notify
-- Telegram: xóa message cũ → gửi message mới (luôn chỉ 1 message trên channel)
+- Telegram: gửi vào **tin nhắn cá nhân** (không gửi group), xóa message cũ → gửi message mới (luôn chỉ 1 message)
 
 ### Scripts & Config
 
@@ -61,7 +61,7 @@ Mỗi **thứ 2**, Task Scheduler tự chạy `auto_inventory_watch.py --watch`:
 | `script/dashboard/auto_inventory_watch.py` | Script chính — fetch, diff, export, deploy, notify |
 | `script/dashboard/auto_inventory_watch.bat` | Batch launcher cho Task Scheduler |
 | `config/auto_inventory_watch_task.xml` | Task Scheduler config (Monday only, 07:00→17:30) |
-| `config/telegram.json` → key `"weekly_plan"` | Bot token + chat_id cho Telegram notify |
+| `config/telegram.json` → key `"weekly_plan"` | Bot token + chat_id = **personal** (không phải group) |
 | `output/state/inventory_watch_state.json` | Lưu `last_telegram_msg_id` (xóa message cũ) |
 | `output/state/inventory_watch.lock` | Lock chống chạy trùng instance |
 | `output/logs/inventory_watch.log` | Log chi tiết mỗi cycle |
