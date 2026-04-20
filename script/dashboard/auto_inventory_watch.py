@@ -422,10 +422,15 @@ def run_check(dry_run=False):
         log.info("\n  🏃 DRY RUN — skipping deploy/notify")
         return "changed" if diff["has_changes"] else "unchanged"
 
-    # ── Deploy ──
+    # ── No changes → skip deploy/notify ──
+    if not diff["has_changes"]:
+        log.info("\n  ✓ Không thay đổi → skip deploy/notify")
+        return "unchanged"
+
+    # ── Deploy (chỉ khi có thay đổi) ──
     deploy_ok = run_deploy()
 
-    # ── Telegram notify ──
+    # ── Telegram notify (chỉ khi có thay đổi) ──
     telegram_msg = format_telegram_message(diff, week_label, week_start, week_end)
     notify_ok = send_notification(telegram_msg)
 
@@ -435,14 +440,11 @@ def run_check(dry_run=False):
     log.info(f"     Export:   ✅")
     log.info(f"     Deploy:   {'✅' if deploy_ok   else '❌'}")
     log.info(f"     Telegram: {'✅' if notify_ok   else '❌'}")
-    if diff["has_changes"]:
-        total = len(diff['added']) + len(diff['changed']) + len(diff['removed'])
-        log.info(f"     Changes:  {total} ({len(diff['added'])} thêm, {len(diff['changed'])} đổi, {len(diff['removed'])} hủy)")
-    else:
-        log.info(f"     Changes:  Không thay đổi")
+    total = len(diff['added']) + len(diff['changed']) + len(diff['removed'])
+    log.info(f"     Changes:  {total} ({len(diff['added'])} thêm, {len(diff['changed'])} đổi, {len(diff['removed'])} hủy)")
     log.info(f"  {'─'*45}")
 
-    return "changed" if diff["has_changes"] else "unchanged"
+    return "changed"
 
 
 # ══════════════════════════════════════════════════════════════════════

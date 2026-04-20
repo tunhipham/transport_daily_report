@@ -99,9 +99,9 @@ STORES = [
         "name_system": "KFM_HCM_TDU",
         "name_full": "BS15 Vinhomes Grand Park",
         "name_mail": "VHGP Q9 - BS1501",
-        "opening_date": "23/04/2026",
+        "opening_date": "25/04/2026",
         "version": None,  # TODO: cần bổ sung version từ DSST col H
-        "original_date": None,
+        "original_date": "23/04/2026",  # Dời từ 23/04 sang 25/04
     },
     {
         "code": "A178",
