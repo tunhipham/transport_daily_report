@@ -29,3 +29,7 @@ WEIGHT_DATA_FILE = r"G:\My Drive\DOCS\DAILY\Sản phẩm thường - Thông tin 
 
 # ── NSO ──
 NSO_DATA_DIR = r"G:\My Drive\DOCS\DAILY\LICH DI HANG DC"
+
+# ── DSST (Danh sách siêu thị — store lookup for NSO) ──
+DSST_SHEET_URL = "https://docs.google.com/spreadsheets/d/1byEE8KterdcRr10IydIjbPcJcQwhX2HtGBzd0VZ5N1k/export?format=xlsx"
+DSST_GID = 1655867479  # Sheet gid chứa danh sách ST

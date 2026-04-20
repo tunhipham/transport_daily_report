@@ -48,7 +48,29 @@ DONG_MAT_KG = 400  # cố định cho mọi version
 # opening_date: ngày khai trương dự kiến dd/mm/yyyy
 # version     : Version_ST_FMCG (DSST col H). None = chưa xác định
 # original_date: ngày KT cũ nếu bị dời (dd/mm/yyyy). None = không dời
-STORES = [
+
+import json as _json
+
+JSON_STORES_PATH = os.path.join(REPO_ROOT, "data", "nso_stores.json")
+
+
+def load_stores():
+    """Load STORES from JSON file. Falls back to hardcoded _DEFAULT_STORES."""
+    if os.path.exists(JSON_STORES_PATH):
+        with open(JSON_STORES_PATH, "r", encoding="utf-8") as f:
+            stores = _json.load(f)
+        return stores
+    return list(_DEFAULT_STORES)
+
+
+def save_stores(stores):
+    """Save STORES to JSON file."""
+    os.makedirs(os.path.dirname(JSON_STORES_PATH), exist_ok=True)
+    with open(JSON_STORES_PATH, "w", encoding="utf-8") as f:
+        _json.dump(stores, f, ensure_ascii=False, indent=2)
+
+
+_DEFAULT_STORES = [
     {
         "code": "A161",
         "name_system": "KFM_HCM_NBE",
@@ -230,6 +252,9 @@ STORES = [
         "original_date": None,
     },
 ]
+
+# Load from JSON (fallback to _DEFAULT_STORES above)
+STORES = load_stores()
 
 # =====================================================
 # HELPER FUNCTIONS
