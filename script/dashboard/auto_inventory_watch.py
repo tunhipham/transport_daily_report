@@ -2,9 +2,9 @@
 """
 auto_inventory_watch.py — Monitor kiểm kê schedule changes on Mondays
 
-Polls Google Sheets inventory schedule every hour, detects changes,
-re-exports weekly_plan.json, deploys to GitHub Pages, and sends
-Telegram notification when changes are found.
+Compares inventory dates in the current weekly plan (dashboard) with
+fresh data from Google Sheets. Reports only changes affecting the
+current week's stores (new, changed, cancelled inventory dates).
 
 Usage:
   python script/dashboard/auto_inventory_watch.py              # One-shot check
@@ -17,21 +17,20 @@ Schedule: runs via Windows Task Scheduler on Mondays only.
           Use --backup for ad-hoc runs outside Monday.
 """
 
-import os, sys, json, hashlib, argparse, subprocess, logging, time, atexit
+import os, sys, json, argparse, subprocess, logging, time, atexit
 from datetime import datetime, timedelta
 
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 STATE_DIR = os.path.join(BASE, "output", "state")
-STATE_PATH = os.path.join(STATE_DIR, "inventory_watch_state.json")
 LOCK_PATH = os.path.join(STATE_DIR, "inventory_watch.lock")
 LOG_PATH = os.path.join(BASE, "output", "logs", "inventory_watch.log")
 TELEGRAM_CONFIG = os.path.join(BASE, "config", "telegram.json")
+WEEKLY_PLAN_JSON = os.path.join(BASE, "docs", "data", "weekly_plan.json")
 
 # Import shared libs
 sys.path.insert(0, os.path.join(BASE, "script"))
-from lib.sources import INVENTORY_SHEET_URL
 from lib.telegram import load_telegram_config, send_telegram_text
 
 # ── Logging ──────────────────────────────────────────────────────────
@@ -66,16 +65,15 @@ def acquire_lock():
         try:
             with open(LOCK_PATH, "r") as f:
                 pid = int(f.read().strip())
-            # Check if process is still running
             import ctypes
             kernel32 = ctypes.windll.kernel32
-            handle = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+            handle = kernel32.OpenProcess(0x1000, False, pid)
             if handle:
                 kernel32.CloseHandle(handle)
                 log.info(f"  ⚠ Another instance running (PID {pid}), exiting.")
                 return False
         except (ValueError, OSError):
-            pass  # Stale lock file
+            pass
     with open(LOCK_PATH, "w") as f:
         f.write(str(os.getpid()))
     return True
@@ -94,85 +92,15 @@ def release_lock():
 
 
 # ══════════════════════════════════════════════════════════════════════
-#  State management
+#  Week calculation (same anchor as auto_compose.py)
 # ══════════════════════════════════════════════════════════════════════
-
-def load_state():
-    """Load previous state from JSON file."""
-    os.makedirs(STATE_DIR, exist_ok=True)
-    if os.path.exists(STATE_PATH):
-        with open(STATE_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
-
-
-def save_state(state):
-    """Save state to JSON file."""
-    os.makedirs(STATE_DIR, exist_ok=True)
-    with open(STATE_PATH, "w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
-
-
-# ══════════════════════════════════════════════════════════════════════
-#  Fetch & diff inventory data
-# ══════════════════════════════════════════════════════════════════════
-
-def fetch_inventory():
-    """Fetch inventory schedule from Google Sheets.
-    Returns dict: store_code → date_str (dd/mm/yyyy).
-    """
-    import requests
-    from io import BytesIO
-    from openpyxl import load_workbook
-
-    try:
-        r = requests.get(INVENTORY_SHEET_URL, allow_redirects=True, timeout=60)
-        r.raise_for_status()
-        wb = load_workbook(BytesIO(r.content), read_only=True, data_only=True)
-        ws = wb['Lịch Kiểm kê 2026']
-
-        inventory = {}  # store_code → date_str
-        for row in ws.iter_rows(min_row=10, values_only=False):
-            store_id = str(row[3].value or "").strip()   # Col D = ID Mart
-            kiem_ke = row[7].value                         # Col H = Ngày kiểm kê tổng 2026
-            if store_id and kiem_ke:
-                dt = None
-                if isinstance(kiem_ke, datetime):
-                    dt = kiem_ke.date()
-                elif hasattr(kiem_ke, 'strftime'):  # date object
-                    dt = kiem_ke
-                elif isinstance(kiem_ke, str):
-                    try:
-                        from datetime import date
-                        dt = datetime.strptime(kiem_ke, "%d/%m/%Y").date()
-                    except ValueError:
-                        pass
-                if dt:
-                    inventory[store_id] = dt.strftime("%d/%m/%Y")
-        wb.close()
-        log.info(f"  📋 Fetched {len(inventory)} stores with inventory dates")
-        return inventory
-    except Exception as e:
-        log.error(f"  ❌ Could not fetch inventory schedule: {e}")
-        return None
-
-
-def compute_hash(inventory):
-    """Hash inventory dict for quick comparison."""
-    if not inventory:
-        return ""
-    normalized = sorted(inventory.items())
-    return hashlib.md5(json.dumps(normalized).encode()).hexdigest()
-
-
-# ── Week calculation (same anchor as auto_compose.py) ──
 
 ANCHOR_WEEK = 14
 ANCHOR_START = datetime(2026, 3, 30)  # Monday W14
 
 
-def get_current_week_range():
-    """Get current week number and date range (Mon→Sun).
+def get_current_week():
+    """Get current week label (e.g. 'W17') and date range.
     Returns (week_label, week_start_date, week_end_date).
     """
     today = datetime.now().date()
@@ -184,7 +112,7 @@ def get_current_week_range():
     return f"W{week_num}", week_start, week_end
 
 
-def _parse_date_str(date_str):
+def _parse_date(date_str):
     """Parse dd/mm/yyyy string to date object."""
     try:
         return datetime.strptime(date_str, "%d/%m/%Y").date()
@@ -192,130 +120,150 @@ def _parse_date_str(date_str):
         return None
 
 
-def _date_in_week(date_str, week_start, week_end):
-    """Check if a date string falls within [week_start, week_end]."""
-    dt = _parse_date_str(date_str)
-    if dt is None:
-        return False
-    return week_start <= dt <= week_end
+# ══════════════════════════════════════════════════════════════════════
+#  Read inventory from weekly_plan.json
+# ══════════════════════════════════════════════════════════════════════
 
+def read_week_inventory(week_label, week_start, week_end):
+    """Read current weekly_plan.json and extract inventory dates
+    for stores in the given week that fall within the week's date range.
 
-def diff_inventory(old_inv, new_inv):
-    """Compare old and new inventory dicts.
-    Returns structured diff with added, removed, and changed entries.
+    Returns dict: store_code → inventory_date_str (only dates within the week).
     """
-    old_inv = old_inv or {}
-    new_inv = new_inv or {}
+    if not os.path.exists(WEEKLY_PLAN_JSON):
+        log.warning(f"  ⚠ {WEEKLY_PLAN_JSON} not found")
+        return {}
 
-    old_codes = set(old_inv.keys())
-    new_codes = set(new_inv.keys())
+    with open(WEEKLY_PLAN_JSON, "r", encoding="utf-8") as f:
+        data = json.load(f)
 
-    added = sorted(new_codes - old_codes)
-    removed = sorted(old_codes - new_codes)
+    weeks = data.get("weeks", {})
+    week_data = weeks.get(week_label, {})
+    stores = week_data.get("stores", [])
+
+    inventory = {}
+    for store in stores:
+        code = store.get("code", "")
+        inv_date_str = store.get("inventory_date", "")
+        name = store.get("name", "")
+        if not inv_date_str:
+            continue
+        dt = _parse_date(inv_date_str)
+        if dt and week_start <= dt <= week_end:
+            inventory[code] = {
+                "date": inv_date_str,
+                "name": name,
+            }
+
+    return inventory
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  Diff: before vs after export
+# ══════════════════════════════════════════════════════════════════════
+
+def diff_week_inventory(before, after):
+    """Compare before and after inventory for the current week.
+    
+    Returns diff with:
+    - added: stores that gained an inventory date in this week
+    - removed: stores that lost their inventory date from this week
+    - changed: stores whose inventory date changed within this week
+    - unchanged: stores with same inventory date
+    """
+    before_codes = set(before.keys())
+    after_codes = set(after.keys())
+
+    added = sorted(after_codes - before_codes)
+    removed = sorted(before_codes - after_codes)
 
     changed = []
-    for code in sorted(old_codes & new_codes):
-        if old_inv[code] != new_inv[code]:
+    unchanged = []
+    for code in sorted(before_codes & after_codes):
+        if before[code]["date"] != after[code]["date"]:
             changed.append({
                 "code": code,
-                "old_date": old_inv[code],
-                "new_date": new_inv[code],
+                "name": after[code]["name"],
+                "old_date": before[code]["date"],
+                "new_date": after[code]["date"],
             })
+        else:
+            unchanged.append(code)
 
     return {
-        "added": added,
-        "removed": removed,
+        "added": [{
+            "code": c,
+            "name": after[c]["name"],
+            "date": after[c]["date"],
+        } for c in added],
+        "removed": [{
+            "code": c,
+            "name": before[c]["name"],
+            "date": before[c]["date"],
+        } for c in removed],
         "changed": changed,
+        "unchanged": unchanged,
         "has_changes": bool(added or removed or changed),
-        "added_details": {c: new_inv[c] for c in added},
-        "removed_details": {c: old_inv[c] for c in removed},
     }
 
 
-def filter_diff_for_week(diff, new_inv, old_inv, week_start, week_end):
-    """Filter diff to only include stores with inventory dates in the current week.
-    
-    A store is relevant if:
-    - Added: new date is in this week
-    - Removed: old date was in this week
-    - Changed: old OR new date is in this week
-    """
-    old_inv = old_inv or {}
+def format_diff_log(diff, week_label):
+    """Format diff for console/log output."""
+    lines = [f"  📅 {week_label} — Kết quả so sánh:"]
 
-    week_added = [c for c in diff["added"]
-                  if _date_in_week(new_inv.get(c, ""), week_start, week_end)]
-    week_removed = [c for c in diff["removed"]
-                    if _date_in_week(old_inv.get(c, ""), week_start, week_end)]
-    week_changed = [ch for ch in diff["changed"]
-                    if _date_in_week(ch["old_date"], week_start, week_end)
-                    or _date_in_week(ch["new_date"], week_start, week_end)]
-
-    return {
-        "added": week_added,
-        "removed": week_removed,
-        "changed": week_changed,
-        "has_changes": bool(week_added or week_removed or week_changed),
-    }
-
-
-def format_diff_text(diff, new_inv):
-    """Format diff as human-readable text for logging (all changes, unfiltered)."""
-    lines = []
     if diff["added"]:
-        lines.append(f"  🆕 Thêm kiểm kê ({len(diff['added'])}):")
-        for code in diff["added"][:10]:
-            lines.append(f"     • {code}: {new_inv.get(code, '?')}")
-        if len(diff["added"]) > 10:
-            lines.append(f"     ... và {len(diff['added']) - 10} stores nữa")
-    if diff["removed"]:
-        lines.append(f"  🗑️ Xóa kiểm kê ({len(diff['removed'])}):")
-        for code in diff["removed"][:10]:
-            lines.append(f"     • {code}")
-        if len(diff["removed"]) > 10:
-            lines.append(f"     ... và {len(diff['removed']) - 10} stores nữa")
+        lines.append(f"  🆕 Thêm mới ({len(diff['added'])}):")
+        for s in diff["added"]:
+            lines.append(f"     • {s['code']} {s['name']}: {s['date']}")
+
     if diff["changed"]:
-        lines.append(f"  🔄 Đổi ngày ({len(diff['changed'])}):")
-        for ch in diff["changed"][:10]:
-            lines.append(f"     • {ch['code']}: {ch['old_date']} → {ch['new_date']}")
-        if len(diff["changed"]) > 10:
-            lines.append(f"     ... và {len(diff['changed']) - 10} stores nữa")
-    return "\n".join(lines) if lines else "  (không có thay đổi)"
+        lines.append(f"  🔄 Đổi lịch ({len(diff['changed'])}):")
+        for s in diff["changed"]:
+            lines.append(f"     • {s['code']} {s['name']}: {s['old_date']} → {s['new_date']}")
+
+    if diff["removed"]:
+        lines.append(f"  🗑️ Hủy kiểm kê ({len(diff['removed'])}):")
+        for s in diff["removed"]:
+            lines.append(f"     • {s['code']} {s['name']}: {s['date']}")
+
+    if not diff["has_changes"]:
+        lines.append(f"  ✓ Không thay đổi ({len(diff['unchanged'])} stores giữ nguyên)")
+
+    return "\n".join(lines)
 
 
-def format_telegram_message(week_diff, new_inv, week_label, week_start, week_end):
-    """Format Telegram message — only shows changes relevant to the current week."""
+def format_telegram_message(diff, week_label, week_start, week_end):
+    """Format Telegram HTML message — only shows what changed in this week."""
     now_str = datetime.now().strftime("%d/%m/%Y %H:%M")
     ws = week_start.strftime("%d/%m")
     we = week_end.strftime("%d/%m")
+
     lines = [f"📋 <b>Kiểm Kê {week_label} ({ws}–{we})</b>"]
     lines.append(f"🕐 Cập nhật: {now_str}")
     lines.append("")
 
-    if not week_diff["has_changes"]:
-        lines.append("✅ Không có thay đổi kiểm kê trong tuần này.")
+    if not diff["has_changes"]:
+        lines.append(f"✅ Lịch kiểm kê tuần này không thay đổi ({len(diff['unchanged'])} stores)")
         lines.append("")
         lines.append("🔗 https://tunhipham.github.io/transport_daily_report/")
         return "\n".join(lines)
 
-    # Changed dates this week
-    if week_diff["changed"]:
-        lines.append(f"🔄 <b>Đổi lịch ({len(week_diff['changed'])}):</b>")
-        for ch in week_diff["changed"]:
-            lines.append(f"  • {ch['code']}: {ch['old_date']} → {ch['new_date']}")
+    if diff["changed"]:
+        lines.append(f"🔄 <b>Đổi lịch ({len(diff['changed'])}):</b>")
+        for s in diff["changed"]:
+            lines.append(f"  • {s['code']} {s['name']}: {s['old_date']} → {s['new_date']}")
         lines.append("")
 
-    # New inventory this week
-    if week_diff["added"]:
-        lines.append(f"🆕 <b>Thêm kiểm kê ({len(week_diff['added'])}):</b>")
-        for code in week_diff["added"]:
-            lines.append(f"  • {code}: {new_inv.get(code, '?')}")
+    if diff["added"]:
+        lines.append(f"🆕 <b>Thêm kiểm kê ({len(diff['added'])}):</b>")
+        for s in diff["added"]:
+            lines.append(f"  • {s['code']} {s['name']}: {s['date']}")
         lines.append("")
 
-    # Removed from this week
-    if week_diff["removed"]:
-        lines.append(f"🗑️ <b>Hủy kiểm kê ({len(week_diff['removed'])}):</b>")
-        for code in week_diff["removed"]:
-            lines.append(f"  • {code}")
+    if diff["removed"]:
+        lines.append(f"🗑️ <b>Hủy kiểm kê ({len(diff['removed'])}):</b>")
+        for s in diff["removed"]:
+            lines.append(f"  • {s['code']} {s['name']}: {s['date']}")
         lines.append("")
 
     lines.append("✅ Dashboard đã cập nhật")
@@ -369,7 +317,6 @@ def run_deploy():
         else:
             log.warning(f"  ⚠ Deploy returned code {result.returncode}")
             if result.stdout:
-                # Check for "nothing to commit" — that's OK
                 if "nothing to commit" in result.stdout or "No changes" in result.stdout:
                     log.info("  ℹ No changes to deploy (data unchanged after export)")
                     return True
@@ -395,6 +342,13 @@ def send_notification(message):
 
 def run_check(dry_run=False):
     """Run one inventory check cycle.
+    
+    Flow:
+    1. Read CURRENT weekly_plan.json → get this week's inventory (BEFORE)
+    2. Run export_weekly_plan.py (fetches fresh Google Sheets)
+    3. Read UPDATED weekly_plan.json → get this week's inventory (AFTER)
+    4. Diff BEFORE vs AFTER → report changes
+    
     Returns: 'changed', 'unchanged', or 'error'.
     """
     now = datetime.now()
@@ -403,96 +357,60 @@ def run_check(dry_run=False):
     log.info(f"  📋 Inventory Watch — {now_str}")
     log.info(f"{'═'*55}")
 
-    # ── Fetch latest inventory ──
-    log.info("\n  🔍 Fetching inventory schedule from Google Sheets...")
-    new_inv = fetch_inventory()
-    if new_inv is None:
-        log.error("  ❌ Fetch failed, skipping this cycle")
-        return "error"
+    # ── Determine current week ──
+    week_label, week_start, week_end = get_current_week()
+    log.info(f"\n  📅 {week_label}: {week_start.strftime('%d/%m')}–{week_end.strftime('%d/%m')}")
 
-    # ── Load previous state ──
-    state = load_state()
-    prev_inv = state.get("inventory", {})
-    prev_hash = state.get("hash", "")
+    # ── Step 1: Read BEFORE state from dashboard ──
+    log.info(f"\n  📖 Reading current {week_label} inventory from dashboard...")
+    before = read_week_inventory(week_label, week_start, week_end)
+    log.info(f"     → {len(before)} stores with kiểm kê this week")
+    for code, info in sorted(before.items()):
+        log.info(f"       • {code} {info['name']}: {info['date']}")
 
-    # ── Compare ──
-    new_hash = compute_hash(new_inv)
-    log.info(f"  🔑 Hash: {new_hash[:12]}  (prev: {prev_hash[:12] if prev_hash else 'none'})")
-
-    if new_hash == prev_hash and prev_hash:
-        log.info("  ✓ Không có thay đổi")
-        state["last_check"] = now_str
-        state["check_count"] = state.get("check_count", 0) + 1
-        save_state(state)
-        return "unchanged"
-
-    # ── Changes detected! ──
-    diff = diff_inventory(prev_inv, new_inv)
-
-    if not diff["has_changes"] and prev_hash:
-        # Hash changed but no meaningful diff (unlikely but possible)
-        log.info("  ✓ Hash changed but no meaningful data diff")
-        state["hash"] = new_hash
-        state["inventory"] = new_inv
-        state["last_check"] = now_str
-        state["check_count"] = state.get("check_count", 0) + 1
-        save_state(state)
-        return "unchanged"
-
-    log.info(f"\n  🔔 THAY ĐỔI PHÁT HIỆN!")
-    log.info(format_diff_text(diff, new_inv))
-
-    # ── Filter for current week (Telegram only shows this week's changes) ──
-    week_label, week_start, week_end = get_current_week_range()
-    week_diff = filter_diff_for_week(diff, new_inv, prev_inv, week_start, week_end)
-    log.info(f"\n  📅 {week_label} ({week_start.strftime('%d/%m')}–{week_end.strftime('%d/%m')}):")
-    if week_diff["has_changes"]:
-        log.info(f"     Tuần này: {len(week_diff['added'])} thêm, {len(week_diff['removed'])} xóa, {len(week_diff['changed'])} đổi")
+    # ── Step 2: Re-export (fetch fresh Google Sheets) ──
+    if not dry_run:
+        export_ok = run_export()
+        if not export_ok:
+            log.error("  ❌ Export failed, cannot compare")
+            return "error"
     else:
-        log.info(f"     Tuần này: không ảnh hưởng")
+        log.info("\n  🏃 DRY RUN — skipping export")
+
+    # ── Step 3: Read AFTER state from dashboard ──
+    log.info(f"\n  📖 Reading updated {week_label} inventory from dashboard...")
+    after = read_week_inventory(week_label, week_start, week_end)
+    log.info(f"     → {len(after)} stores with kiểm kê this week")
+
+    # ── Step 4: Diff ──
+    diff = diff_week_inventory(before, after)
+    log.info(f"\n{format_diff_log(diff, week_label)}")
 
     if dry_run:
-        log.info("\n  🏃 DRY RUN — skipping export/deploy/notify")
-        return "changed"
+        log.info("\n  🏃 DRY RUN — skipping deploy/notify")
+        return "changed" if diff["has_changes"] else "unchanged"
 
-    # ── Export → Deploy → Notify ──
-    export_ok = run_export()
-    deploy_ok = False
-    if export_ok:
-        deploy_ok = run_deploy()
+    # ── Deploy ──
+    deploy_ok = run_deploy()
 
-    # Send Telegram notification (only if this week is affected)
-    notify_ok = False
-    if week_diff["has_changes"]:
-        telegram_msg = format_telegram_message(week_diff, new_inv, week_label, week_start, week_end)
-        notify_ok = send_notification(telegram_msg)
-    else:
-        log.info("  ℹ Không gửi Telegram — thay đổi không ảnh hưởng tuần này")
-        notify_ok = True  # Not an error, just not needed
-
-    # ── Update state ──
-    state["hash"] = new_hash
-    state["inventory"] = new_inv
-    state["last_check"] = now_str
-    state["last_change"] = now_str
-    state["check_count"] = state.get("check_count", 0) + 1
-    state["change_count"] = state.get("change_count", 0) + 1
-    state["last_diff"] = {
-        "added": len(diff["added"]),
-        "removed": len(diff["removed"]),
-        "changed": len(diff["changed"]),
-    }
-    save_state(state)
+    # ── Telegram notify ──
+    telegram_msg = format_telegram_message(diff, week_label, week_start, week_end)
+    notify_ok = send_notification(telegram_msg)
 
     # ── Summary ──
     log.info(f"\n  {'─'*45}")
     log.info(f"  📊 Kết quả:")
-    log.info(f"     Export:   {'✅' if export_ok   else '❌'}")
+    log.info(f"     Export:   ✅")
     log.info(f"     Deploy:   {'✅' if deploy_ok   else '❌'}")
     log.info(f"     Telegram: {'✅' if notify_ok   else '❌'}")
+    if diff["has_changes"]:
+        total = len(diff['added']) + len(diff['changed']) + len(diff['removed'])
+        log.info(f"     Changes:  {total} ({len(diff['added'])} thêm, {len(diff['changed'])} đổi, {len(diff['removed'])} hủy)")
+    else:
+        log.info(f"     Changes:  Không thay đổi")
     log.info(f"  {'─'*45}")
 
-    return "changed"
+    return "changed" if diff["has_changes"] else "unchanged"
 
 
 # ══════════════════════════════════════════════════════════════════════
