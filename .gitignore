@@ -23,6 +23,8 @@ data/
 credentials.json
 token.json
 config/telegram.json
+config/telegram_client.json
+config/.telethon_session.session
 config/sent_messages.json
 
 # OS

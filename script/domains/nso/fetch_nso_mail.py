@@ -77,12 +77,15 @@ def setup_driver():
         from selenium.webdriver.chrome.options import Options as ChromeOptions
         chrome_options = ChromeOptions()
         chrome_options.page_load_strategy = 'eager'
-        chrome_auto_dir = os.path.join(REPO_ROOT, ".chrome_automail")
-        os.makedirs(chrome_auto_dir, exist_ok=True)
-        chrome_options.add_argument(f"--user-data-dir={chrome_auto_dir}")
+        # Use Chrome Default profile (phamtunhi2k — has Google auth)
+        chrome_user_data = os.path.join(os.path.expanduser("~"), "AppData", "Local", "Google", "Chrome", "User Data")
+        chrome_options.add_argument(f"--user-data-dir={chrome_user_data}")
         chrome_options.add_argument("--profile-directory=Default")
+        chrome_options.add_argument("--remote-debugging-port=0")
         chrome_options.add_argument("--window-size=1600,900")
         chrome_options.add_argument("--log-level=3")
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         driver = webdriver.Chrome(options=chrome_options)
 
     driver.implicitly_wait(10)
@@ -374,152 +377,27 @@ def parse_nso_table(driver):
     return stores
 
 
-# ══════════════════════════════════════════════════════════════
-#  DSST LOOKUP (download via Selenium since sheet needs auth)
-# ══════════════════════════════════════════════════════════════
+def read_dsst():
+    """Read DSST store data from local cache.
 
-def download_dsst_via_browser(driver):
-    """Download DSST sheet as xlsx through authenticated browser session.
-    
-    Returns path to downloaded file or None.
+    Cache file: data/dsst_cache.json (refreshed by _save_dsst.py)
+    Returns dict: code -> {name_system, name_full, branch_name, version}
     """
-    import tempfile
-    import openpyxl
+    cache_path = os.path.join(REPO_ROOT, "data", "dsst_cache.json")
+    print("  📖 Reading DSST cache...")
 
-    print("  📥 Downloading DSST sheet...")
-
-    # Set download path
-    download_dir = os.path.join(REPO_ROOT, "output", "state", "nso")
-    os.makedirs(download_dir, exist_ok=True)
-    dsst_path = os.path.join(download_dir, "dsst_cache.xlsx")
-
-    # Navigate to export URL — browser handles auth via Google session
-    export_url = f"{DSST_SHEET_URL}&gid={DSST_GID}"
-
-    try:
-        # Navigate to Google domain first to ensure cookies are available
-        driver.get("https://docs.google.com/spreadsheets/d/1byEE8KterdcRr10IydIjbPcJcQwhX2HtGBzd0VZ5N1k/edit")
-        time.sleep(3)
-
-        # Use async fetch API with Promise to download xlsx
-        result = driver.execute_async_script("""
-            var url = arguments[0];
-            var callback = arguments[arguments.length - 1];
-            fetch(url, {credentials: 'include'})
-                .then(function(r) { return r.arrayBuffer(); })
-                .then(function(buf) {
-                    var arr = new Uint8Array(buf);
-                    var chunks = [];
-                    var chunkSize = 8192;
-                    for (var i = 0; i < arr.length; i += chunkSize) {
-                        var slice = arr.subarray(i, Math.min(i + chunkSize, arr.length));
-                        chunks.push(String.fromCharCode.apply(null, slice));
-                    }
-                    callback(btoa(chunks.join('')));
-                })
-                .catch(function(e) { callback(null); });
-        """, export_url)
-
-        if result:
-            import base64
-            data = base64.b64decode(result)
-            with open(dsst_path, 'wb') as f:
-                f.write(data)
-            print(f"  ✅ DSST downloaded ({len(data):,} bytes)")
-            return dsst_path
-        else:
-            print("  ⚠ Fetch download failed, trying direct navigation...")
-    except Exception as e:
-        print(f"  ⚠ XHR approach failed: {e}")
-
-    # Fallback: direct navigation (will trigger download)
-    try:
-        driver.get(export_url)
-        time.sleep(8)
-
-        # Check common download locations
-        for dl_dir in [
-            os.path.join(os.path.expanduser("~"), "Downloads"),
-            os.path.join(os.path.expanduser("~"), "Desktop"),
-        ]:
-            if os.path.exists(dl_dir):
-                files = [f for f in os.listdir(dl_dir) if f.endswith('.xlsx') and 'MDT' in f.upper()]
-                if files:
-                    src = os.path.join(dl_dir, sorted(files, key=lambda x: os.path.getmtime(os.path.join(dl_dir, x)))[-1])
-                    import shutil
-                    shutil.copy2(src, dsst_path)
-                    print(f"  ✅ DSST found in downloads: {src}")
-                    return dsst_path
-    except Exception as e:
-        print(f"  ⚠ Direct download failed: {e}")
-
-    # Use cached version if exists
-    if os.path.exists(dsst_path):
-        age_hours = (time.time() - os.path.getmtime(dsst_path)) / 3600
-        print(f"  ⚠ Using cached DSST ({age_hours:.0f}h old)")
-        return dsst_path
-
-    print("  ❌ Could not download DSST")
-    return None
-
-
-def load_dsst_lookup(xlsx_path):
-    """Load DSST sheet and build lookup dict by code.
-
-    Returns dict: code → {name_system, name_full, version}
-    """
-    import openpyxl
-
-    if not xlsx_path or not os.path.exists(xlsx_path):
+    if not os.path.exists(cache_path):
+        print(f"  ⚠ DSST cache not found: {cache_path}")
         return {}
 
-    print("  📖 Loading DSST lookup...")
-    wb = openpyxl.load_workbook(xlsx_path, read_only=True, data_only=True)
-
-    # Find the right sheet by gid or name
-    ws = None
-    for sheet in wb.sheetnames:
-        ws = wb[sheet]
-        # Check if this is the right sheet by looking at headers
-        header_row = [str(c.value or '').strip() for c in next(ws.iter_rows(min_row=1, max_row=1))]
-        if any('version' in h.lower() or 'brand' in h.lower() or 'code' in h.lower() for h in header_row):
-            break
-    else:
-        ws = wb.worksheets[0]
-
-    # Read all rows
-    lookup = {}
-    for row in ws.iter_rows(min_row=2, values_only=True):
-        if len(row) < 8:
-            continue
-
-        # Col B (idx 1) = name_system, Col C (idx 2) = code, Col H (idx 7) = version
-        code = str(row[2] or '').strip()
-        if not code or not re.match(r'^A\d+$', code):
-            continue
-
-        name_system = str(row[1] or '').strip() or None
-        name_full = str(row[3] or '').strip() if len(row) > 3 else None
-        version_raw = row[7] if len(row) > 7 else None
-
-        version = None
-        if version_raw is not None:
-            try:
-                version = int(float(str(version_raw)))
-                if version not in (700, 1000, 1500, 2000):
-                    version = None
-            except (ValueError, TypeError):
-                pass
-
-        lookup[code] = {
-            "name_system": name_system,
-            "name_full": name_full,
-            "version": version,
-        }
-
-    wb.close()
-    print(f"  ✅ DSST lookup: {len(lookup)} stores")
-    return lookup
+    try:
+        with open(cache_path, "r", encoding="utf-8") as f:
+            lookup = json.load(f)
+        print(f"  ✅ DSST lookup: {len(lookup)} stores")
+        return lookup
+    except Exception as e:
+        print(f"  ⚠ DSST cache read failed: {e}")
+        return {}
 
 
 # ══════════════════════════════════════════════════════════════
@@ -595,15 +473,48 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
             current_stores.append(new_store)
             added.append(ms["name_mail"][:25])
 
-    # Enrich with DSST data
+    # Enrich with DSST data — fuzzy match name → code + version
     for store in current_stores:
         code = store.get("code")
+
+        # If already has code, just fill missing fields
         if code:
             dsst = dsst_lookup.get(code, {})
             if dsst.get("name_system") and not store.get("name_system"):
                 store["name_system"] = dsst["name_system"]
             if dsst.get("version") and not store.get("version"):
                 store["version"] = dsst["version"]
+            continue
+
+        # No code — fuzzy match mail name against DSST branch_name
+        mail_name = (store.get("name_mail") or store.get("name_full") or "").lower()
+        if not mail_name:
+            continue
+
+        # Split into keywords (>2 chars, skip noise)
+        noise = {"chung", "cư", "siêu", "thị", "mới", "bổ", "sung", "kfm", "hcm"}
+        keywords = [w for w in re.split(r'[\s\-/,\.]+', mail_name) if len(w) > 1 and w not in noise]
+
+        best_match = None
+        best_score = 0
+
+        for dsst_code, dsst_info in dsst_lookup.items():
+            dsst_name = (dsst_info.get("branch_name") or dsst_info.get("name_full") or "").lower()
+            if not dsst_name:
+                continue
+            # Count how many keywords match
+            score = sum(1 for kw in keywords if kw in dsst_name)
+            if score > best_score and score >= 2:
+                best_score = score
+                best_match = (dsst_code, dsst_info)
+
+        if best_match:
+            dsst_code, dsst_info = best_match
+            store["code"] = dsst_code
+            store["name_system"] = dsst_info.get("name_system")
+            if not store.get("name_full"):
+                store["name_full"] = dsst_info.get("name_full")
+            store["version"] = dsst_info.get("version")
 
     return current_stores, added, updated
 
@@ -629,13 +540,16 @@ def main():
         print(f"  💡 Use --force to run anyway.")
         return
 
+    # Read DSST cache (no browser needed)
+    dsst_lookup = read_dsst()
+
     driver = None
     try:
         # Setup browser
         print("\n  🌐 Starting browser...")
         driver = setup_driver()
 
-        # Login
+        # Login to Haraworks
         if not ensure_logged_in(driver):
             print("  ❌ Cannot login to Haraworks")
             return
@@ -650,10 +564,6 @@ def main():
         if not mail_stores:
             print("  ❌ No stores parsed from mail")
             return
-
-        # Download DSST
-        dsst_path = download_dsst_via_browser(driver)
-        dsst_lookup = load_dsst_lookup(dsst_path)
 
         # Load current stores
         current_stores = load_stores()

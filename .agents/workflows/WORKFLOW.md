@@ -11,6 +11,7 @@
 | `/backup-inject` | [backup-inject.md](backup-inject.md) | Manual fetch + compose + inject (backup) | Khi cần |
 | `/performance-report` | [performance-report.md](performance-report.md) | Generate monthly performance report | Khi cần |
 | `/weekly-plan` | [weekly-plan.md](weekly-plan.md) | Tạo/cập nhật lịch tuần giao hàng ST | Thứ 5 hàng tuần |
+| `/telegram-group` | [telegram-group.md](telegram-group.md) | Tạo group Telegram + add members | Khi cần |
 | `/dashboard` | [dashboard.md](dashboard.md) | Deploy dashboard lên GitHub Pages | Sau mỗi report |
 
 ## Project Structure
