@@ -12,6 +12,7 @@
 | `/performance-report` | [performance-report.md](performance-report.md) | Generate monthly performance report | Khi cần |
 | `/weekly-plan` | [weekly-plan.md](weekly-plan.md) | Tạo/cập nhật lịch tuần giao hàng ST | Thứ 5 hàng tuần |
 | `/telegram-group` | [telegram-group.md](telegram-group.md) | Tạo group Telegram + add members | Khi cần |
+| `/nso-scan` | [nso-scan.md](nso-scan.md) | Quét email NSO + merge master + deploy | Mon/Tue |
 | `/dashboard` | [dashboard.md](dashboard.md) | Deploy dashboard lên GitHub Pages | Sau mỗi report |
 
 ## Project Structure
@@ -30,6 +31,10 @@ agents/
 data/
   master_schedule.json ← 🔒 Master data: lịch chia/về/shift (CỐ ĐỊNH)
   master_schedule.xlsx ← 🔒 Backup Excel
+  nso/
+    nso_master.xlsx    ← 🗃️ NSO master (Stores + History sheets)
+    nso_stores.json    ← 📄 JSON backup
+  dsst_cache.json      ← 📦 DSST store metadata cache
 
 script/
   dashboard/         ← Dashboard export + deploy
@@ -62,6 +67,9 @@ python script/domains/performance/generate.py --month 04
 
 # Weekly plan export + deploy
 python script/dashboard/deploy.py --domain weekly_plan
+
+# NSO scan + deploy
+python -u script/domains/nso/fetch_nso_mail.py --force
 
 # Deploy all domains
 python script/dashboard/deploy.py --domain all

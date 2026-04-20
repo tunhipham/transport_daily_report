@@ -232,7 +232,7 @@ def ensure_logged_in(driver):
 # ══════════════════════════════════════════════════════════════
 
 def find_nso_mail(driver):
-    """Find the NSO update email in inbox and navigate to its detail page."""
+    """Find the NSO update email in inbox. Returns the mail URL or None."""
     from selenium.webdriver.common.by import By
 
     print(f"  🔍 Searching for '{MAIL_SUBJECT_PATTERN}'...")
@@ -256,7 +256,6 @@ def find_nso_mail(driver):
         for (var i = 0; i < all.length; i++) {
             var t = (all[i].textContent || '').trim();
             if (t.indexOf(subject) >= 0 && t.length < 500) {
-                // Walk up to find the clickable row/link
                 var el = all[i];
                 for (var j = 0; j < 10; j++) {
                     if (!el.parentElement) break;
@@ -287,10 +286,11 @@ def find_nso_mail(driver):
         if clicked:
             time.sleep(5)
             if "detail" in driver.current_url:
-                print(f"  ✅ Opened mail: {driver.current_url}")
-                return True
+                detail_url = driver.current_url
+                print(f"  ✅ Opened mail: {detail_url}")
+                return detail_url
         print("  ❌ NSO mail not found")
-        return False
+        return None
 
     # Navigate directly to the detail page
     print(f"  📧 Found mail URL: {detail_url}")
@@ -299,10 +299,27 @@ def find_nso_mail(driver):
 
     if "detail" in driver.current_url:
         print(f"  ✅ Opened mail detail")
-        return True
+        return detail_url
 
     print("  ⚠ URL didn't change to detail")
-    return False
+    return None
+
+
+# State file for dedup
+STATE_FILE = os.path.join(REPO_ROOT, "data", "nso", ".last_mail_url")
+
+def _read_last_mail_url():
+    """Read last processed mail URL from state file."""
+    if os.path.exists(STATE_FILE):
+        with open(STATE_FILE, "r") as f:
+            return f.read().strip()
+    return None
+
+def _save_last_mail_url(url):
+    """Save processed mail URL to state file."""
+    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+    with open(STATE_FILE, "w") as f:
+        f.write(url)
 
 
 def parse_nso_table(driver):
@@ -591,8 +608,16 @@ def main():
             return
 
         # Find NSO mail
-        if not find_nso_mail(driver):
+        mail_url = find_nso_mail(driver)
+        if not mail_url:
             print("  ❌ Cannot find NSO mail")
+            return
+
+        # Dedup: skip if same mail already processed
+        last_url = _read_last_mail_url()
+        if last_url == mail_url and not args.force:
+            print(f"  ⏭ Mail already processed: {mail_url.split('/')[-1][:12]}...")
+            print(f"  💡 Use --force to re-process")
             return
 
         # Parse table
@@ -621,6 +646,10 @@ def main():
         # Save master + output
         master.save()
         master.save_output(scan_summary=summary)
+
+        # Mark mail as processed
+        _save_last_mail_url(mail_url)
+        print(f"  📌 Saved state: {mail_url.split('/')[-1][:12]}...")
 
         # Re-export + deploy
         import subprocess
