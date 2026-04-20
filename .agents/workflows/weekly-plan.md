@@ -112,6 +112,32 @@ D+4+  = về lịch daily theo schedule_ve
 - **Row 5+**: Data — Châm hàng (cam), Kiểm kê (đỏ/hồng)
 - **Không** xuất 4 cột: Lịch chia, Lịch về, Khai trương, Kiểm kê
 
+## Auto-Watch Kiểm Kê (Thứ 2)
+
+Mỗi thứ 2, Task Scheduler tự chạy `auto_inventory_watch.py --watch`:
+- Poll Google Sheets mỗi **1 giờ** từ 07:00 → 17:30
+- So sánh hash lịch kiểm kê → phát hiện thay đổi
+- Nếu có thay đổi: **re-export** weekly_plan.json → **deploy** GitHub Pages → **Telegram notify**
+- Log: `output/logs/inventory_watch.log`
+- State: `output/state/inventory_watch_state.json`
+
+### Register Task Scheduler (1 lần)
+```powershell
+schtasks /create /tn "KFM_InventoryWatch" /xml "config\auto_inventory_watch_task.xml"
+```
+
+### Backup — Fetch thủ công (ngoài thứ 2)
+
+Khi cần update lịch kiểm kê ngoài giờ/ngày tự động:
+
+```powershell
+python script/dashboard/auto_inventory_watch.py --backup
+```
+
+> [!TIP]
+> `--backup` bỏ qua check thứ 2 và chạy 1 lần: fetch → diff → export → deploy → notify.
+> Thêm `--dry-run` để xem thay đổi mà không deploy/notify.
+
 ## Troubleshooting
 
 | Vấn đề | Giải pháp |
@@ -121,3 +147,5 @@ D+4+  = về lịch daily theo schedule_ve
 | Excel bị UUID filename | Dùng `XLSX.writeFile()` thay vì blob URL |
 | Dashboard data cũ | Hard refresh — JSON fetch đã có cache-bust `?t=timestamp` |
 | Số stores thiếu | So sánh danh sách active stores vs W{nn} Excel file |
+| Watch không chạy | Check lock file `output/state/inventory_watch.lock` — xóa nếu stale |
+| Telegram không gửi | Check `config/telegram.json` key `weekly_plan` |

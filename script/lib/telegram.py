@@ -183,6 +183,52 @@ def delete_telegram_message(message_id, bot_token, chat_id):
             return False
 
 
+def send_telegram_text(text, bot_token, chat_id, parse_mode="HTML"):
+    """Send a text message to Telegram chat. Returns message_id or None."""
+    if not bot_token or not chat_id:
+        print("  ⚠ Telegram not configured, skipping text send")
+        return None
+
+    if _HAS_REQUESTS:
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        try:
+            resp = _requests.post(url, data={
+                "chat_id": chat_id,
+                "text": text,
+                "parse_mode": parse_mode,
+            }, timeout=30, verify=False)
+            result = resp.json()
+            if result.get("ok"):
+                mid = result["result"]["message_id"]
+                print(f"  ✅ Telegram text sent (msg_id={mid})")
+                return mid
+            print(f"  ❌ Telegram text error: {result.get('description', resp.text[:100])}")
+            return None
+        except Exception as e:
+            print(f"  ❌ Telegram text exception: {e}")
+            return None
+    else:
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        try:
+            data = urllib.parse.urlencode({
+                "chat_id": chat_id,
+                "text": text,
+                "parse_mode": parse_mode,
+            }).encode('utf-8')
+            req = urllib.request.Request(url, data=data)
+            resp = urllib.request.urlopen(req, timeout=30)
+            result = json.loads(resp.read().decode('utf-8'))
+            if result.get("ok"):
+                mid = result["result"]["message_id"]
+                print(f"  ✅ Telegram text sent (msg_id={mid})")
+                return mid
+            print(f"  ❌ Telegram text error: {result.get('description')}")
+            return None
+        except Exception as e:
+            print(f"  ❌ Telegram text exception: {e}")
+            return None
+
+
 # ── Sent messages tracking (date-tag based, used by daily) ──
 
 def load_sent_messages(sent_file):

@@ -40,11 +40,11 @@ Before doing ANYTHING:
 
 1. Generate report (ALL data fetched online automatically):
 ```
-python -u script/generate_report.py --send
+python -u script/domains/daily/generate.py --send
 ```
 Hoặc chỉ định ngày cụ thể:
 ```
-python -u script/generate_report.py --date DD/MM/YYYY --send
+python -u script/domains/daily/generate.py --date DD/MM/YYYY --send
 ```
 
 2. Review output — report hiển thị bảng tổng hợp + charts:
@@ -88,6 +88,6 @@ git -C "G:\My Drive\DOCS\transport_daily_report" push
 - Transfer Google Drive: https://drive.google.com/drive/folders/17Z_UPMDywWFplcg0fx3XSG87vSsG8LHb
 - Yeu cau Google Drive: https://drive.google.com/drive/folders/1DpDon0QHhDRoX7_ZnEygwKlXsbcPGp-t
 - Local sync paths: `G:\My Drive\DOCS\DAILY\transfer`, `G:\My Drive\DOCS\DAILY\yeu_cau_chuyen_hang_thuong`
-- History: `output/history.json` (tối đa 30 ngày, dùng cho trend chart)
+- History: `output/state/history.json` (tối đa 365 ngày, dùng cho trend chart)
 - Nếu Google Sheets bị rate limit, retry tự động hoặc chạy lại sau vài phút
 
