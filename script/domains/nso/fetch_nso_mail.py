@@ -315,25 +315,50 @@ def parse_nso_table(driver):
     """
     print("  📋 Parsing NSO email...")
 
-    # Wait for CKEditor to render
+    # Wait for content to render
     time.sleep(3)
 
-    # Extract innerText from CKEditor content
-    ck_text = driver.execute_script(
-        'var ck = document.querySelector(".ck-content");'
-        'return ck ? ck.innerText : null;'
-    )
+    # Extract innerText — try multiple selectors
+    ck_text = driver.execute_script('''
+        var selectors = [".ck-content", ".mail-body", ".card-body", ".mail-content"];
+        var best = null;
+        for (var i = 0; i < selectors.length; i++) {
+            var els = document.querySelectorAll(selectors[i]);
+            for (var j = 0; j < els.length; j++) {
+                var t = els[j].innerText;
+                if (t && (!best || t.length > best.length)) {
+                    best = t;
+                }
+            }
+        }
+        return best;
+    ''')
 
     if not ck_text:
-        print("  ❌ No CKEditor content found")
+        print("  ❌ No email content found")
         return []
 
     print(f"  📄 Email text: {len(ck_text)} chars")
 
+    # ── Normalize text: fix broken dates (22\n/05/2026 → 22/05/2026) ──
+    # Join lines that start with / back to previous line
+    lines = ck_text.split('\n')
+    fixed = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith('/') and fixed:
+            fixed[-1] = fixed[-1].rstrip() + stripped
+        else:
+            fixed.append(line)
+    ck_text = '\n'.join(fixed)
+
+    # Also fix "dd /mm/yyyy" patterns (spaces around /)
+    ck_text = re.sub(r'(\d{1,2})\s*/\s*(\d{1,2})\s*/\s*(\d{4})', r'\1/\2/\3', ck_text)
+
     # Parse store entries using regex
     stores = []
     entry_pattern = re.compile(r'(\d{1,3})\.\s+(.+?)(?=\n)')
-    date_pattern = re.compile(r'Ngày khai trương:\s*(\d{2}/\d{2}/\d{4})')
+    date_pattern = re.compile(r'Ngày khai trương:\s*([\d/]+)')
 
     # Split into blocks per store entry
     entries = re.split(r'\n(?=\d{1,3}\.\s)', ck_text)
@@ -353,12 +378,17 @@ def parse_nso_table(driver):
         # Clean name
         name_mail = re.sub(r'https?://\S+', '', name_mail).strip()
         name_mail = name_mail.rstrip(' -')
+        # Remove trailing notes like "- dời ngày khai trương trễ"
+        name_mail = re.sub(r'\s*-\s*dời.*$', '', name_mail, flags=re.IGNORECASE).strip()
+        name_mail = re.sub(r'\s*-\s*mới bổ sung\s*$', '', name_mail, flags=re.IGNORECASE).strip()
 
         date_match = date_pattern.search(entry)
         if not date_match:
             continue
 
-        opening_date = date_match.group(1)
+        # Clean spaces from date: "22 /0 5/2026" → "22/05/2026"
+        raw_date = date_match.group(1)
+        opening_date = re.sub(r'\s+', '', raw_date)
 
         stores.append({
             "stt": int(stt),
@@ -543,6 +573,12 @@ def main():
     # Read DSST cache (no browser needed)
     dsst_lookup = read_dsst()
 
+    # Load master
+    from nso_master import NsoMaster
+    master = NsoMaster()
+    master.load()
+    print(f"  📊 Master: {len(master.stores)} stores")
+
     driver = None
     try:
         # Setup browser
@@ -565,47 +601,42 @@ def main():
             print("  ❌ No stores parsed from mail")
             return
 
-        # Load current stores
-        current_stores = load_stores()
-        print(f"\n  📊 Current stores: {len(current_stores)}")
-        print(f"  📧 Mail stores: {len(mail_stores)}")
+        print(f"\n  📧 Mail stores: {len(mail_stores)}")
         print(f"  📖 DSST lookup: {len(dsst_lookup)}")
 
-        # Merge
-        merged, added, updated = merge_stores(current_stores, mail_stores, dsst_lookup)
+        # Merge via master (with history tracking)
+        summary, added, updated = master.merge_mail(mail_stores, dsst_lookup)
 
         print(f"\n  {'─'*40}")
         print(f"  📊 Merge result:")
-        print(f"     Total: {len(merged)}")
+        print(f"     Total: {len(master.stores)}")
         print(f"     New:   {len(added)} {added[:5] if added else ''}")
         print(f"     Updated dates: {len(updated)} {updated[:5] if updated else ''}")
+        print(f"     History entries: {len(master.history)}")
 
         if args.dry_run:
             print(f"\n  🏃 DRY RUN — not writing files")
             return
 
-        if not added and not updated:
-            print(f"\n  ✓ No changes needed")
-        else:
-            # Save
-            save_stores(merged)
-            print(f"\n  💾 Saved {len(merged)} stores to {JSON_STORES_PATH}")
+        # Save master + output
+        master.save()
+        master.save_output(scan_summary=summary)
 
-            # Re-export + deploy
-            import subprocess
-            print(f"\n  📦 Re-exporting NSO data...")
-            subprocess.run(
-                [sys.executable, os.path.join(REPO_ROOT, "script", "dashboard", "export_data.py"),
-                 "--domain", "nso"],
-                cwd=REPO_ROOT, timeout=60
-            )
+        # Re-export + deploy
+        import subprocess
+        print(f"\n  📦 Re-exporting NSO data...")
+        subprocess.run(
+            [sys.executable, os.path.join(REPO_ROOT, "script", "dashboard", "export_data.py"),
+             "--domain", "nso"],
+            cwd=REPO_ROOT, timeout=60
+        )
 
-            print(f"  🚀 Deploying...")
-            subprocess.run(
-                [sys.executable, os.path.join(REPO_ROOT, "script", "dashboard", "deploy.py"),
-                 "--domain", "nso"],
-                cwd=REPO_ROOT, timeout=120
-            )
+        print(f"  🚀 Deploying...")
+        subprocess.run(
+            [sys.executable, os.path.join(REPO_ROOT, "script", "dashboard", "deploy.py"),
+             "--domain", "nso"],
+            cwd=REPO_ROOT, timeout=120
+        )
 
     except Exception as e:
         print(f"\n  ❌ Error: {e}")
@@ -623,3 +654,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
