@@ -218,7 +218,7 @@ def compute_even_date_schedule(week_dates):
     """
     even_weekdays = set()
     for wd in week_dates:
-        if wd and wd.day % 2 == 0:
+        if wd and wd.day % 2 == 0 and wd.weekday() != 6:  # exclude Sunday
             even_weekdays.add(wd.weekday())
     return even_weekdays
 
