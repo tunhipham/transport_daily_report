@@ -471,6 +471,15 @@ def export():
     print("\n  🔍 Fetching inventory schedule (kiểm kê)...")
     inventory = fetch_inventory_schedule()
     
+    # Load DSST cache for name correction (remove legacy - MINI/- MART suffixes)
+    dsst_names = {}
+    dsst_path = os.path.join(BASE, "data", "dsst_cache.json")
+    if os.path.exists(dsst_path):
+        with open(dsst_path, "r", encoding="utf-8") as f:
+            dsst = json.load(f)
+        dsst_names = {code: entry.get("branch_name", "") for code, entry in dsst.items() if entry.get("branch_name")}
+        print(f"  📋 Loaded {len(dsst_names)} store names from DSST cache")
+    
     # Parse all weeks
     weeks = {}
     available_weeks = []
@@ -483,6 +492,12 @@ def export():
         
         wk = week_data["week_key"]
         original_count = len(week_data["stores"])
+        
+        # Correct store names from DSST cache
+        if dsst_names:
+            for s in week_data["stores"]:
+                if s["code"] in dsst_names:
+                    s["name"] = dsst_names[s["code"]]
         
         # Cross-check inventory
         if inventory:
