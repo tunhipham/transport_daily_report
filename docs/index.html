@@ -2075,9 +2075,32 @@
       const el = document.getElementById('nso-content');
       el.style.display = 'block';
 
-      const stats = data.stats || {};
-      const stores = data.stores || [];
-      const calEvents = data.calendar_events || [];
+      // ── Client-side D+3 filter: auto-hide stores past D+3 ──
+      const todayMs = new Date(); todayMs.setHours(0,0,0,0);
+      function daysDiff(isoDate) {
+        const d = new Date(isoDate); d.setHours(0,0,0,0);
+        return Math.floor((todayMs - d) / 86400000);
+      }
+      // Filter stores: keep only those where delta <= 3 (not past D+3)
+      const allStores = data.stores || [];
+      const stores = allStores.filter(s => {
+        const delta = daysDiff(s.iso_date);
+        if (delta > 3) return false; // past D+3 → hide
+        // Re-compute status_type/text based on current date
+        if (delta < 0) { s.status_type = 'upcoming'; s.status_text = 'Sắp khai trương'; }
+        else if (delta >= 0 && delta <= 3 && s.status_type !== 'reschedule') { s.status_type = 'opening'; s.status_text = 'Đang khai trương'; }
+        return true;
+      });
+      // Filter calendar events the same way
+      const allCalEvents = data.calendar_events || [];
+      const calEvents = allCalEvents.filter(ev => daysDiff(ev.date) <= 3);
+      // Recalculate stats from filtered data
+      const stats = {
+        total: stores.length,
+        upcoming: stores.filter(s => s.status_type === 'upcoming').length,
+        opening: stores.filter(s => s.status_type === 'opening').length,
+        reschedule: stores.filter(s => s.status_type === 'reschedule').length,
+      };
       const schedules = data.schedules || [];
       const versionRules = data.version_rules || {};
 

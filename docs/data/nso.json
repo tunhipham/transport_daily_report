@@ -1,36 +1,12 @@
 {
-  "_updated": "20/04/2026 23:21",
+  "_updated": "21/04/2026 10:18",
   "stats": {
-    "total": 30,
+    "total": 27,
     "upcoming": 22,
-    "opening": 4,
+    "opening": 1,
     "reschedule": 4
   },
   "stores": [
-    {
-      "name": "KFM_HCM_NBE - A2.SH28-30 The Park Residence",
-      "code": "A161",
-      "opening_date": "17/04/2026",
-      "iso_date": "2026-04-17",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
-    },
-    {
-      "name": "KFM_HCM_BTH - 127 Tân Cảng",
-      "code": "A148",
-      "opening_date": "17/04/2026",
-      "iso_date": "2026-04-17",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
-    },
-    {
-      "name": "KFM_HCM_TDU - A1.02 Him Lam Phú An",
-      "code": "A179",
-      "opening_date": "17/04/2026",
-      "iso_date": "2026-04-17",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
-    },
     {
       "name": "KFM_HCM_Q07 - 1016/21 Chung Cư Sky Garden 2-R1-2",
       "code": "A177",
@@ -249,24 +225,6 @@
     }
   ],
   "calendar_events": [
-    {
-      "date": "2026-04-17",
-      "label": "A161 - The Park Residence",
-      "code": "A161",
-      "type": "opening"
-    },
-    {
-      "date": "2026-04-17",
-      "label": "A148 - 127 Tân Cảng",
-      "code": "A148",
-      "type": "opening"
-    },
-    {
-      "date": "2026-04-17",
-      "label": "A179 - Him Lam Phú An",
-      "code": "A179",
-      "type": "opening"
-    },
     {
       "date": "2026-04-18",
       "label": "A177 - Sky Garden 2",
