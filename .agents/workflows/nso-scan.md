@@ -100,10 +100,14 @@ fetch_nso_mail.py ──→ Haraworks mail → parse stores
                         ↓
               output/nso/ (nso.json, nso_master.xlsx, scan_summary.txt)
                         ↓
-              export_data.py → docs/data/nso.json
+              export_data.py → docs/data/nso.json (Python filter D+3)
                         ↓
               deploy.py → GitHub Pages
+                        ↓
+              index.html JS → Client-side D+3 filter (real-time)
 ```
+
+> **Client-side D+3 filter**: Dashboard JS tự tính `daysDiff(iso_date)` dựa trên `new Date()` và ẩn store có `delta > 3` — dù `nso.json` chưa kịp re-generate, store vẫn tự biến mất trên giao diện.
 
 ## Telegram Notification
 
@@ -126,6 +130,7 @@ fetch_nso_mail.py ──→ Haraworks mail → parse stores
 | DSST cache empty | Chạy `_save_dsst.py` với DSST sheet mở |
 | NSO tab trống | Check JS console cho null code errors |
 | Date sai format | Check `22\n/05` pattern → text normalization |
+| Store quá D+3 vẫn hiện | Dashboard JS tự filter client-side. Nếu vẫn lỗi → re-deploy: `python script/dashboard/deploy.py --domain nso` |
 | Telegram không gửi | Check `config/telegram.json` → `nso` domain |
 
 ## Task Scheduler

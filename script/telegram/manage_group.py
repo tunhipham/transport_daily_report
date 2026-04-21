@@ -97,11 +97,13 @@ async def cmd_create(args):
         print(f"👥 Members to add: {', '.join(member_inputs)}")
     print()
 
-    # Resolve member entities
+    # Resolve member entities (supports @username, +phone, or numeric user ID)
     resolved_users = []
     for m in member_inputs:
         try:
-            entity = await client.get_entity(m)
+            # If it's a pure number, treat as user ID
+            lookup = int(m) if m.isdigit() else m
+            entity = await client.get_entity(lookup)
             resolved_users.append(entity)
             name = getattr(entity, 'first_name', '') or ''
             uname = getattr(entity, 'username', '') or ''
@@ -163,11 +165,36 @@ async def cmd_create(args):
                 await client.disconnect()
                 return
 
-        # Get the created chat
-        chat = result.chats[0]
-        print(f"\n🎉 Group đã tạo thành công!")
-        print(f"   📝 Tên: {chat.title}")
-        print(f"   🆔 ID: {chat.id}")
+        # Get the created chat — handle different response types
+        if hasattr(result, 'chats') and result.chats:
+            chat = result.chats[0]
+            print(f"\n🎉 Group đã tạo thành công!")
+            print(f"   📝 Tên: {chat.title}")
+            print(f"   🆔 ID: {chat.id}")
+        elif hasattr(result, 'updates'):
+            # Extract from updates
+            for update in result.updates:
+                if hasattr(update, 'message') and hasattr(update.message, 'peer_id'):
+                    chat_id = getattr(update.message.peer_id, 'chat_id', None)
+                    if chat_id:
+                        print(f"\n🎉 Group đã tạo thành công!")
+                        print(f"   📝 Tên: {group_name}")
+                        print(f"   🆔 ID: {chat_id}")
+                        break
+            else:
+                print(f"\n🎉 Group đã tạo thành công!")
+                print(f"   📝 Tên: {group_name}")
+        else:
+            # Fallback: group was created, fetch it from dialogs
+            print(f"\n🎉 Group đã tạo (đang tìm ID)...")
+            async for dialog in client.iter_dialogs():
+                if dialog.title == group_name:
+                    print(f"   📝 Tên: {dialog.title}")
+                    print(f"   🆔 ID: {dialog.entity.id}")
+                    break
+            else:
+                print(f"   📝 Tên: {group_name}")
+                print(f"   (Tạo xong nhưng không lấy được ID)")
         print(f"   👑 Owner: BẠN")
 
     except errors.FloodWaitError as e:
@@ -219,7 +246,9 @@ async def cmd_add(args):
 
     for i, m in enumerate(member_inputs, 1):
         try:
-            entity = await client.get_entity(m)
+            # If it's a pure number, treat as user ID
+            lookup = int(m) if m.isdigit() else m
+            entity = await client.get_entity(lookup)
             name = getattr(entity, 'first_name', '') or m
 
             if isinstance(target_group, Channel):
@@ -332,6 +361,76 @@ async def cmd_info(args):
     await client.disconnect()
 
 
+# DC NSO notice preset message
+DC_NOTICE_MSG = """📢 *Siêu thị lưu ý:*
+
+Hàng DC sẽ châm hàng *4 ngày liên tục* cho NSO.
+
+👉 Khai trương ngày D sẽ châm hàng từ ngày *D* đến hết ngày *D+3*
+👉 Từ ngày *D+4* sẽ về hàng DC theo lịch daily"""
+
+
+async def cmd_notify(args):
+    """Gửi tin nhắn bot vào group."""
+    import requests as req
+
+    group_name = args.group
+    message = args.message
+    dc_notice = getattr(args, 'dc_notice', False)
+
+    if not message and not dc_notice:
+        print("❌ Cần --message hoặc --dc-notice")
+        return
+
+    if dc_notice:
+        message = DC_NOTICE_MSG
+
+    # Load bot token
+    bot_config_file = os.path.join(REPO_ROOT, "config", "telegram.json")
+    if not os.path.exists(bot_config_file):
+        print(f"❌ Bot config not found: {bot_config_file}")
+        return
+
+    with open(bot_config_file, 'r', encoding='utf-8') as f:
+        bot_config = json.load(f)
+    bot_token = bot_config.get('daily', {}).get('bot_token', '')
+    if not bot_token:
+        print("❌ Bot token trống!")
+        return
+
+    # Find group via Telethon to get chat_id
+    client = await get_client()
+
+    from telethon.tl.types import Channel, Chat
+    target_id = None
+    async for dialog in client.iter_dialogs():
+        if dialog.title and group_name.lower() in dialog.title.lower():
+            entity = dialog.entity
+            if isinstance(entity, (Channel, Chat)):
+                target_id = entity.id
+                print(f"📋 Group: {dialog.title} (ID: {target_id})")
+                break
+
+    await client.disconnect()
+
+    if not target_id:
+        print(f"❌ Không tìm thấy group \"{group_name}\"")
+        return
+
+    # Send via Bot API (basic group IDs need negative prefix)
+    chat_id = -target_id
+    r = req.post(
+        f"https://api.telegram.org/bot{bot_token}/sendMessage",
+        json={"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
+    )
+    result = r.json()
+
+    if result.get("ok"):
+        print(f"✅ Bot đã gửi tin nhắn vào group!")
+    else:
+        print(f"❌ Lỗi gửi: {result.get('description', 'Unknown error')}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Telegram Group Management",
@@ -342,6 +441,8 @@ Examples:
   %(prog)s add --group "KFM Team" --members @user3 +84123456789
   %(prog)s list
   %(prog)s info --group "KFM Team"
+  %(prog)s notify --group "DC - A178" --dc-notice
+  %(prog)s notify --group "Group Name" --message "Custom message"
         """
     )
 
@@ -350,7 +451,7 @@ Examples:
     # create
     p_create = subparsers.add_parser("create", help="Tạo group mới")
     p_create.add_argument("--name", required=True, help="Tên group")
-    p_create.add_argument("--members", nargs="+", help="Username (@xxx) hoặc phone (+84xxx)")
+    p_create.add_argument("--members", nargs="+", help="Username (@xxx), phone (+84xxx), hoặc user ID (số)")
 
     # add
     p_add = subparsers.add_parser("add", help="Add members vào group")
@@ -365,6 +466,12 @@ Examples:
     p_info = subparsers.add_parser("info", help="Xem info group")
     p_info.add_argument("--group", required=True, help="Tên group")
 
+    # notify
+    p_notify = subparsers.add_parser("notify", help="Gửi tin nhắn bot vào group")
+    p_notify.add_argument("--group", required=True, help="Tên group")
+    p_notify.add_argument("--message", type=str, help="Nội dung tin nhắn")
+    p_notify.add_argument("--dc-notice", action="store_true", help="Gửi thông báo lưu ý DC NSO")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -376,6 +483,7 @@ Examples:
         "add": cmd_add,
         "list": cmd_list,
         "info": cmd_info,
+        "notify": cmd_notify,
     }
 
     asyncio.run(cmd_map[args.command](args))

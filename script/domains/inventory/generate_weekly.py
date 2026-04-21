@@ -29,7 +29,7 @@ import numpy as np
 import base64
 
 # Import shared functions from daily report
-from generate_report import (
+from generate import (
     load_master_data,
     load_weight_data,
     load_doi_soat_files,

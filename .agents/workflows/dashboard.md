@@ -99,3 +99,8 @@ Live tại: https://tunhipham.github.io/transport_daily_report/
 - **Data trống**: Chạy report domain trước rồi mới deploy
 - **GitHub Pages chưa update**: Chờ 2-3 phút, check Actions tab trên GitHub
 - **Weekly plan lỗi**: Xem chi tiết tại workflow `/weekly-plan`
+- **NSO store quá D+3 vẫn hiện**: Dashboard JS tự filter client-side (auto-hide `delta > 3`). Nếu cần cập nhật JSON sạch: `python script/dashboard/deploy.py --domain nso`
+
+## Notes
+
+> **NSO tab**: Dashboard có **client-side D+3 filter** — JS tự ẩn store quá D+3 dựa trên `new Date()`, dù `nso.json` chưa re-generate. Không cần re-deploy mỗi ngày chỉ để ẩn store cũ.

@@ -69,7 +69,9 @@ NsoMaster logs every change to History sheet:
 - **Dedup**: Track last mail URL in `data/nso/.last_mail_url` — skip if same
 - `--force` bypasses both weekday check AND dedup
 - Stores with `original_date ≠ opening_date` → status "Dời lịch"
-- Stores within 7 days → status "Đang khai trương"
+- Stores within D→D+3 → status "Đang khai trương"
+- **Stores past D+3 auto-hidden** — Python `get_status()` returns `None` khi `delta > 3`
+- **Client-side D+3 filter** — Dashboard JS tự filter real-time bằng `new Date()`, dù `nso.json` stale vẫn hiển thị đúng
 - Version rules: 2000/1500/1000/700 → different KSL amounts (D→D+6)
 - ĐÔNG MÁT: fixed 400kg for every version
 

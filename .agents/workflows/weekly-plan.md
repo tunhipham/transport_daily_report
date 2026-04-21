@@ -60,11 +60,13 @@ NSO_SCHEDULE = {
   "code": "A999",
   "short": "A999",
   "name": "Tên Siêu Thị",
-  "schedule_chia": "Ngày chia 3-5-7",
   "schedule_ve": "Thứ 2-4-6",
   "shift": "Đêm"
 }
 ```
+
+> [!NOTE]
+> A112 Cô Giang có `schedule_ve: "Ngày chẵn"` — logic đặc biệt: về hàng vào ngày chẵn (2,4,6,8...). Script tự tính dynamic theo tuần.
 
 > [!IMPORTANT]
 > Shift mặc định = Đêm. User sẽ confirm nếu store nào giao Ngày.

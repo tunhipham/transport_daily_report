@@ -207,6 +207,22 @@ def parse_schedule_days(schedule_str):
     return days
 
 
+def compute_even_date_schedule(week_dates):
+    """Compute delivery schedule for A112 Cô Giang based on even-date logic.
+    
+    Even dates (2,4,6,8...) determine which weekdays get delivery.
+    E.g. if even dates in the week fall on Mon/Wed/Fri → deliver on 2-4-6.
+    If even dates fall on Tue/Thu/Sat → deliver on 3-5-7.
+    
+    Returns set of weekday indices (Mon=0).
+    """
+    even_weekdays = set()
+    for wd in week_dates:
+        if wd and wd.day % 2 == 0:
+            even_weekdays.add(wd.weekday())
+    return even_weekdays
+
+
 def parse_excel(filepath):
     """Parse a single weekly plan Excel file."""
     from openpyxl import load_workbook
@@ -482,19 +498,46 @@ def export():
                 print(f"    🏪 NSO châm hàng: {len(cham_hang)} stores" +
                       (f" ({injected} injected)" if injected else ""))
         
-        # Count stats — count STORES (not slots)
-        st_ngay = set()  # stores that have at least 1 Ngày
-        st_dem = set()   # stores that have at least 1 Đêm
-        st_cham = set()  # stores with châm hàng
-        st_kk = set()    # stores with kiểm kê
+        # A112 Cô Giang: compute even-date delivery schedule
+        if valid_dates:
+            even_weekdays = compute_even_date_schedule(valid_dates)
+            for s in week_data["stores"]:
+                if s["code"] == "A112" and even_weekdays:
+                    shift = s.get("shift", "Đêm")
+                    for i, wd in enumerate(week_data.get("week_dates", [])):
+                        if wd is None:
+                            continue
+                        # Don't overwrite Kiểm kê or Châm hàng
+                        current = (s["days"][i] or "").lower()
+                        if "kiểm" in current or "châm" in current:
+                            continue
+                        if wd.weekday() in even_weekdays:
+                            s["days"][i] = shift
+                        else:
+                            s["days"][i] = ""
+                    # Build schedule_ve label from even weekdays
+                    thu_nums = sorted(wd + 2 for wd in even_weekdays if wd < 6)
+                    if thu_nums:
+                        s["schedule_ve"] = "Thứ " + "-".join(str(n) for n in thu_nums)
+                    print(f"    📅 A112 Cô Giang: even-date → {s.get('schedule_ve', '')}")
+                    break
+        
+        # Count stats — Ngày/Đêm from shift field, châm/kiểm kê from days (independent)
+        st_ngay = set()  # stores with shift=Ngày
+        st_dem = set()   # stores with shift=Đêm
+        st_cham = set()  # stores with châm hàng days
+        st_kk = set()    # stores with kiểm kê days
         for s in week_data["stores"]:
+            # Count Ngày/Đêm by shift field
+            shift_lower = (s.get("shift") or "").lower()
+            if shift_lower == "ngày":
+                st_ngay.add(s["code"])
+            elif shift_lower == "đêm":
+                st_dem.add(s["code"])
+            # Count châm hàng / kiểm kê from day values (independent)
             for d in s["days"]:
                 dl = d.lower() if d else ""
-                if dl == "ngày":
-                    st_ngay.add(s["code"])
-                elif dl == "đêm":
-                    st_dem.add(s["code"])
-                elif "châm" in dl:
+                if "châm" in dl:
                     st_cham.add(s["code"])
                 elif "kiểm" in dl:
                     st_kk.add(s["code"])
@@ -503,13 +546,12 @@ def export():
         n_cham = len(st_cham)
         n_kk = len(st_kk)
         
-        # Clean up for JSON
+        # Clean up for JSON (schedule_chia removed — not needed)
         stores_clean = []
         for s in week_data["stores"]:
             stores_clean.append({
                 "name": s["name"],
                 "code": s["code"],
-                "schedule_chia": s["schedule_chia"],
                 "schedule_ve": s["schedule_ve"],
                 "opening_date": s["opening_date"],
                 "inventory_date": s["inventory_date"],
