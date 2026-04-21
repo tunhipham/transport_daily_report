@@ -29,22 +29,15 @@ User là owner của group được tạo.
 
 ## Credentials
 
-### Telegram Client API (Telethon)
-- **Config file**: `config/telegram_client.json`
-- **Session file**: `config/.telethon_session.session` (tự tạo sau lần đầu login)
-- **API ID**: Lấy từ https://my.telegram.org/apps
-- **API Hash**: Lấy từ https://my.telegram.org/apps
+> 📁 Xem `config/credentials.md` (gitignored) cho đầy đủ API keys, passwords.
 
-```json
-{
-  "api_id": "<YOUR_API_ID>",
-  "api_hash": "<YOUR_API_HASH>"
-}
-```
+### Telegram Client API (Telethon)
+- **Config file**: `config/telegram_client.json` (gitignored)
+- **Session file**: `config/.telethon_session.session` (auto-generated, gitignored)
+- **2FA**: Account bật Two-Step Verification → cần cloud password khi login lần đầu
 
 ### Telegram Bot (existing)
-- **Config**: `config/telegram.json`
-- **Bot token**: Xem trong `config/telegram.json`
+- **Config**: `config/telegram.json` (gitignored)
 
 ---
 
@@ -83,7 +76,20 @@ python -u script/telegram/manage_group.py info --group "Tên Group"
 
 1. **Cài Telethon**: `pip install telethon`
 2. **Config đã có sẵn** tại `config/telegram_client.json`
-3. **Lần đầu chạy**: Script hỏi số điện thoại + OTP (gửi vào app Telegram)
+3. **Login dùng `_login.py`** (tránh lỗi stdin interactive):
+   ```powershell
+   # Bước 1: Gửi OTP
+   python -u script/telegram/_login.py --send
+
+   # Bước 2: Nhập OTP (từ app Telegram)
+   python -u script/telegram/_login.py --code 12345
+
+   # Bước 3: Nhập 2FA password (nếu account bật 2FA)
+   python -u script/telegram/_login.py --password "your_password"
+
+   # Check status
+   python -u script/telegram/_login.py --status
+   ```
 4. **Session được lưu** → các lần sau không cần OTP nữa
 
 ---

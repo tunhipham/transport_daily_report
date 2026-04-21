@@ -19,6 +19,7 @@ NSO pipeline quét email "Cập nhật NSO" trên Haraworks, merge dữ liệu s
 | `script/domains/nso/generate.py` | Generate HTML dashboard + Excel exports |
 | `script/dashboard/export_data.py` | Export NSO JSON for dashboard |
 | `data/nso/nso_master.xlsx` | 🗃️ Master data (Stores + History sheets) |
+| `data/nso/.last_mail_url` | 📌 Last processed mail URL (dedup state) |
 | `data/dsst_cache.json` | 📦 DSST store lookup cache |
 
 ### Output Files
@@ -64,15 +65,27 @@ NsoMaster logs every change to History sheet:
 - `Update {field}`: Manual field update
 
 ## Business Rules
-- Scanner runs **Mon/Tue only** (auto). Use `--force` to override
+- Scanner runs **Thứ 2 + Thứ 3 only** (auto). Use `--force` to override
+- **Dedup**: Track last mail URL in `data/nso/.last_mail_url` — skip if same
+- `--force` bypasses both weekday check AND dedup
 - Stores with `original_date ≠ opening_date` → status "Dời lịch"
 - Stores within 7 days → status "Đang khai trương"
 - Version rules: 2000/1500/1000/700 → different KSL amounts (D→D+6)
 - ĐÔNG MÁT: fixed 400kg for every version
 
+## Telegram Notification (Thứ 3)
+- **Trigger**: `auto_nso_watch.bat` detects `DayOfWeek == Tuesday` → `generate.py --send-telegram`
+- **Config**: `config/telegram.json` → `nso` domain (bot_token + chat_id)
+- **Flow**: Xóa tin cũ → screenshot calendar → gửi ảnh → gửi dashboard HTML kèm caption
+- **Caption**: Tổng active stores + TUẦN NÀY (stores khai trương) + TUẦN SAU (stores khai trương)
+- **State**: `output/state/nso/sent_messages.json` — track message IDs để xóa tin cũ
+
 ## Commands
 ```powershell
-# Scan + deploy
+# Auto mode (Thứ 2+3, skip mail cũ)
+python -u script/domains/nso/fetch_nso_mail.py
+
+# Force mode (bypass weekday + dedup)
 python -u script/domains/nso/fetch_nso_mail.py --force
 
 # Dry run
@@ -86,4 +99,7 @@ python -u script/dashboard/deploy.py --domain nso
 
 # Generate HTML dashboard + Excel
 python -u script/domains/nso/generate.py
+
+# Generate + send Telegram notification (thủ công)
+python -u script/domains/nso/generate.py --send-telegram
 ```

@@ -26,6 +26,7 @@ config/telegram.json
 config/telegram_client.json
 config/.telethon_session.session
 config/sent_messages.json
+config/credentials.md
 
 # OS
 Thumbs.db

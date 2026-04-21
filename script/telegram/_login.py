@@ -94,9 +94,48 @@ async def sign_in(code):
         config.pop("_phone_code_hash", None)
         with open(CONFIG_FILE, "w") as f:
             json.dump(config, f, indent=2)
+    
+    except Exception as e:
+        err_str = str(e)
+        if "Two-steps verification" in err_str or "SessionPasswordNeeded" in err_str:
+            print(f"🔐 Account bật 2FA — cần cloud password.")
+            print(f"   Chạy: python _login.py --password YOUR_PASSWORD")
+        else:
+            print(f"❌ Lỗi đăng nhập: {e}")
+    
+    await client.disconnect()
+
+
+async def sign_in_password(password):
+    """Sign in with 2FA cloud password (after OTP step)."""
+    from telethon import TelegramClient
+    
+    with open(CONFIG_FILE, "r") as f:
+        config = json.load(f)
+    
+    client = TelegramClient(SESSION_FILE, config["api_id"], config["api_hash"])
+    await client.connect()
+    
+    if await client.is_user_authorized():
+        me = await client.get_me()
+        print(f"✅ Đã đăng nhập rồi: {me.first_name} (@{me.username or 'N/A'})")
+        await client.disconnect()
+        return
+    
+    print(f"🔐 Signing in with 2FA password...")
+    
+    try:
+        await client.sign_in(password=password)
+        me = await client.get_me()
+        print(f"✅ Đăng nhập thành công: {me.first_name} (@{me.username or 'N/A'})")
+        
+        # Clean up temp hash
+        config.pop("_phone_code_hash", None)
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(config, f, indent=2)
             
     except Exception as e:
-        print(f"❌ Lỗi đăng nhập: {e}")
+        print(f"❌ Lỗi đăng nhập 2FA: {e}")
     
     await client.disconnect()
 
@@ -123,6 +162,7 @@ def main():
     parser = argparse.ArgumentParser(description="Telethon Login Helper")
     parser.add_argument("--send", action="store_true", help="Send OTP code")
     parser.add_argument("--code", type=str, help="Enter OTP code")
+    parser.add_argument("--password", type=str, help="Enter 2FA cloud password")
     parser.add_argument("--status", action="store_true", help="Check login status")
     args = parser.parse_args()
     
@@ -130,6 +170,8 @@ def main():
         asyncio.run(send_code())
     elif args.code:
         asyncio.run(sign_in(args.code))
+    elif args.password:
+        asyncio.run(sign_in_password(args.password))
     elif args.status:
         asyncio.run(check_status())
     else:
