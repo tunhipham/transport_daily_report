@@ -1701,22 +1701,23 @@
         const isLatest = i === isoDates.length - 1;
         dateOpts += `<option value="${iso}"${isLatest ? ' selected' : ''}>${lbl}${isLatest ? ' (Mới nhất)' : ''}</option>`;
       }
-      let html = `<div class="filter-bar">
-    <label>📅 Chọn ngày:</label>
-    <select id="perfDatePicker" onchange="perfOnDatePick(this.value)" style="min-width:140px">${dateOpts}</select>
-    <span class="filter-info" id="perfDateInfo">Ngày: ${labels[labels.length - 1] || ''}</span>
-  </div>`;
-
-      // ── Excel export bar ──
+      // ── Excel export bar (top) ──
       let khoOpts = '<option value="all">Tất cả Kho</option>';
       khoNames.forEach(k => { khoOpts += `<option value="${k}">${k}</option>`; });
-      html += `<div class="wk-filter-bar" style="margin-bottom:1rem">
+      let html = `<div class="filter-bar" style="margin-bottom:.6rem">
     <label>📥 Xuất Excel:</label>
     <label>Từ:</label><input type="date" id="perfExportFrom" value="${isoDates[0] || ''}">
     <label>Đến:</label><input type="date" id="perfExportTo" value="${isoDates[isoDates.length - 1] || ''}">
     <select id="perfExportKho">${khoOpts}</select>
     <button class="wk-export-btn" onclick="perfExportExcel()">📥 Xuất Excel</button>
-    <span class="wk-count" id="perfExportCount"></span>
+    <span class="filter-info" id="perfExportCount"></span>
+  </div>`;
+
+      // ── Date picker for summary cards ──
+      html += `<div class="filter-bar">
+    <label>📅 Chọn ngày:</label>
+    <select id="perfDatePicker" onchange="perfOnDatePick(this.value)" style="min-width:140px">${dateOpts}</select>
+    <span class="filter-info" id="perfDateInfo">Ngày: ${labels[labels.length - 1] || ''}</span>
   </div>`;
 
       // Cards — single date view
