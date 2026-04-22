@@ -84,6 +84,8 @@ Nhiệm vụ: fetch data từ nhiều nguồn, tổng hợp KPI, render interact
 
 ### PNG cho Telegram — Tỉ lệ biểu đồ
 
+Gửi Telegram: **5 ảnh PNG** (Bảng KPI, Đóng góp, Trend Sản lượng, Trend Items, Trend Xe) + **1 tin nhắn text** thông báo dashboard đã cập nhật kèm link. Không gửi file HTML.
+
 | Thông số | Daily SVG | Weekly SVG |
 |----------|-----------|------------|
 | **viewBox** | `0 0 760 340` | `0 0 760 340` |

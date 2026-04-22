@@ -53,6 +53,7 @@ python -u script/domains/daily/generate.py --date DD/MM/YYYY --send
    - KPI: Tấn/Xe, Items/Siêu Thị, Siêu Thị/Xe, KG/Siêu Thị
    - Donut chart: % Đóng góp sản lượng
    - Trend chart: Sản lượng theo kho (lịch sử 30 ngày)
+   - **Telegram**: Gửi 5 ảnh PNG + 1 tin nhắn thông báo dashboard đã cập nhật (không gửi file HTML)
    - **Auto-deploy**: Khi dùng `--send`, sau Telegram sẽ tự động deploy dashboard lên GitHub Pages (~1-2 phút)
 
 3. Deploy dashboard (nếu không dùng `--send`, hoặc auto-deploy lỗi):

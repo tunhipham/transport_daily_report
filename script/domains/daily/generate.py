@@ -1967,6 +1967,7 @@ from lib.telegram import (
     load_telegram_config as _load_tg_config,
     send_telegram_photo as _send_tg_photo,
     send_telegram_document as _send_tg_doc,
+    send_telegram_text as _send_tg_text,
     delete_messages_by_tag,
     track_sent_message,
     load_sent_messages as _load_sent,
@@ -2006,6 +2007,13 @@ def send_telegram_document(file_path, caption=""):
     if not bot_token or not chat_id:
         return None
     return _send_tg_doc(file_path, caption, bot_token, chat_id)
+
+def send_telegram_text(text):
+    """Send text message to Telegram. Returns message_id on success, None on failure."""
+    bot_token, chat_id = load_telegram_config()
+    if not bot_token or not chat_id:
+        return None
+    return _send_tg_text(text, bot_token, chat_id)
 
 
 # ──────────────────────────────────────────
@@ -2543,13 +2551,6 @@ def main():
     section_htmls = build_section_htmls(result, history, weekly_history)
     section_paths = export_section_images(section_htmls, output_dir, date_tag)
 
-    # Save full HTML version for browser viewing
-    html = build_report_html(result, history, weekly_history)
-    html_path = os.path.join(output_dir, f"BAO_CAO_{date_tag}.html")
-    with open(html_path, "w", encoding="utf-8") as f:
-        f.write(html)
-    print(f"  ✅ HTML: {html_path}")
-
     # Step 7: Send to Telegram (only if --send flag is passed)
     if send_telegram:
         print(f"\n📤 Sending to Telegram...")
@@ -2564,7 +2565,8 @@ def main():
             mid = send_telegram_photo(img_path, f"{caption}\n{sec_label}")
             if mid:
                 sent_msg_ids.append(mid)
-        mid = send_telegram_document(html_path, f"📋 Báo cáo HTML {date_str} — mở bằng trình duyệt để xem chi tiết")
+        dashboard_text = f"📊 Dashboard đã cập nhật: {date_str}\n🔗 https://tunhipham.github.io/transport_daily_report/"
+        mid = send_telegram_text(dashboard_text)
         if mid:
             sent_msg_ids.append(mid)
 
@@ -2578,8 +2580,7 @@ def main():
         print(f"\n📌 Review report:")
         for sp in section_paths:
             print(f"   • {sp}")
-        print(f"   • {html_path}")
-        print(f"   Để gửi Telegram, chạy lại với: python script/generate_report.py --date {date_str} --send")
+        print(f"   Để gửi Telegram, chạy lại với: python script/domains/daily/generate.py --date {date_str} --send")
 
     # Step 8: Auto-deploy dashboard to GitHub Pages (after --send)
     if send_telegram:
