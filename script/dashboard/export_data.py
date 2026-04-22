@@ -96,7 +96,7 @@ def export_performance():
         from generate import (
             load_trip_data, load_thitca_data, load_plan_data,
             calc_metrics, prepare_chart_data, generate_summary_cards,
-            generate_weekly_tables, KHO_COLORS
+            generate_weekly_tables, export_raw_excel, KHO_COLORS
         )
     except ImportError as e:
         print(f"  ⚠ Cannot import performance generate: {e}")
@@ -159,6 +159,11 @@ def export_performance():
     # Serialize
     kho_names = list(KHO_COLORS.keys())
 
+    # Generate raw data for Excel export
+    month_str = f"T{month:02d}"
+    _, raw_data_json = export_raw_excel(month_rows, plan_lookup, route_order, month_str, year)
+    print(f"  📊 Raw data: {len(raw_data_json)} rows for Excel export")
+
     data = {
         "_updated": NOW_STR,
         "month": month,
@@ -170,6 +175,7 @@ def export_performance():
         "kho_colors": KHO_COLORS,
         "iso_dates": iso_dates,
         "weekly_tables_html": weekly_html,
+        "raw_data": raw_data_json,
     }
 
     out_path = os.path.join(DOCS_DATA, "performance.json")

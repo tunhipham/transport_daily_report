@@ -165,7 +165,9 @@ def _load_single_file(fpath):
         total_raw += 1
         trip_id = str(row[0] or "").strip()
         trip_status = str(row[1] or "").strip()
+        vehicle_number = str(row[2] or "").strip() if len(row) > 2 else ""
         driver = str(row[3] or "").strip()
+        phone = str(row[4] or "").strip() if len(row) > 4 else ""
         depart_date = str(row[5] or "").strip()
         depart_time_raw = str(row[6] or "").strip() if row[6] else ""
         noi_chuyen = str(row[8] or "").strip()
@@ -205,6 +207,8 @@ def _load_single_file(fpath):
             "sub_kho": sub_kho,
             "noi_chuyen": noi_chuyen,
             "driver": driver,
+            "vehicle_number": vehicle_number,
+            "phone": phone,
             "date": dep_date,
             "trip_status": trip_status,
             "dest_status": dest_status,
@@ -332,7 +336,9 @@ def load_thitca_data(months):
                 "dest": r["store"],
                 "kho": "THỊT CÁ",
                 "noi_chuyen": "THỊT CÁ",
-                "driver": "",
+                "driver": r.get("driver", ""),
+                "vehicle_number": r.get("vehicle_number", ""),
+                "phone": "",
                 "date": date,
                 "trip_status": "Hoàn thành",
                 "dest_status": "Hoàn thành",
@@ -1804,7 +1810,7 @@ def main():
     
     # 5. Export raw data Excel
     print("\n📊 Exporting raw data Excel...")
-    xlsx_path = export_raw_excel(all_rows, plan_lookup, route_order, month_str, year)
+    xlsx_path, _ = export_raw_excel(all_rows, plan_lookup, route_order, month_str, year)
     print(f"✅ Excel saved: {xlsx_path}")
     
     # 6. Verification
@@ -1935,10 +1941,9 @@ def export_raw_excel(all_rows, plan_lookup, route_order, month_str, year):
     
     headers = [
         "Tuần", "Ngày", "Thứ", "Kho", "Phân Loại",
-        "Giao Hàng", "Mã Trip / Tuyến", "Điểm Đến",
-        "Giờ Đến", "Giờ Kế Hoạch",
-        "Đúng Tuyến", "Thứ Tự KH", "Thứ Tự TT",
-        "SLA", "Kế Hoạch vs Thực Tế",
+        "Giao Hàng", "Mã Trip / Tuyến", "Số Xe", "Tên Tài Xế", "SĐT",
+        "Điểm Đến", "Giờ Đến", "Giờ Kế Hoạch",
+        "Đúng Kế Hoạch", "SLA", "Kế Hoạch vs Thực Tế",
     ]
     
     hdr_font = Font(bold=True, color="FFFFFF", size=11)
@@ -1953,6 +1958,8 @@ def export_raw_excel(all_rows, plan_lookup, route_order, month_str, year):
     fill_som = PatternFill(start_color="D4EDDA", end_color="D4EDDA", fill_type="solid")
     fill_dung = PatternFill(start_color="CCE5FF", end_color="CCE5FF", fill_type="solid")
     fill_tre = PatternFill(start_color="F8D7DA", end_color="F8D7DA", fill_type="solid")
+    fill_plan_dung = PatternFill(start_color="D4EDDA", end_color="D4EDDA", fill_type="solid")
+    fill_plan_sai = PatternFill(start_color="F8D7DA", end_color="F8D7DA", fill_type="solid")
     
     for c, h in enumerate(headers, 1):
         cell = ws.cell(row=1, column=c, value=h)
@@ -1968,6 +1975,9 @@ def export_raw_excel(all_rows, plan_lookup, route_order, month_str, year):
         r.get("arrival_time") or dtime(23, 59),
     ))
     
+    # Collect raw_data for JSON export
+    raw_data_json = []
+    
     row_num = 2
     for r in sorted_rows:
         d = r.get("date")
@@ -1980,6 +1990,9 @@ def export_raw_excel(all_rows, plan_lookup, route_order, month_str, year):
         tuyen = r.get("tuyen", "")
         trip_id = r.get("trip_id", "")
         sub_kho = r.get("sub_kho", "")
+        vehicle_number = r.get("vehicle_number", "")
+        driver = r.get("driver", "")
+        phone = r.get("phone", "")
         
         # Try sub_kho-specific plan first (ĐÔNG vs MÁT have different planned times)
         plan_info = None
@@ -2005,18 +2018,13 @@ def export_raw_excel(all_rows, plan_lookup, route_order, month_str, year):
         else:
             trip_label = trip_id if trip_id else tuyen
         
-        route_key = (d, tuyen, kho) if tuyen else None
-        if route_key and route_key in route_compliance:
-            route_ok = "Đúng" if route_compliance[route_key] else "Sai"
-        else:
-            route_ok = ""
-        
-        # Route ranks
-        p_rank = ""
-        a_rank = ""
+        # Plan compliance: compare actual rank vs planned rank
+        plan_compliance_status = ""
         if tuyen and arrival:
-            p_rank = planned_rank.get((d, tuyen, kho, dest), "")
-            a_rank = actual_rank.get((d, tuyen, kho, dest), "")
+            p_rk = planned_rank.get((d, tuyen, kho, dest))
+            a_rk = actual_rank.get((d, tuyen, kho, dest))
+            if p_rk is not None and a_rk is not None:
+                plan_compliance_status = "Đúng" if a_rk == p_rk else "Sai"
         
         # SLA status
         sla_status = ""
@@ -2037,7 +2045,7 @@ def export_raw_excel(all_rows, plan_lookup, route_order, month_str, year):
                 else:
                     sla_status = "Trễ"
         
-        # Plan status
+        # Plan status (on-time vs plan)
         plan_status = ""
         if arrival and planned_time:
             if arrival < planned_time:
@@ -2051,9 +2059,7 @@ def export_raw_excel(all_rows, plan_lookup, route_order, month_str, year):
         # Giao=N → clear all KPI columns
         if not arrival:
             planned_str = ""
-            route_ok = ""
-            p_rank = ""
-            a_rank = ""
+            plan_compliance_status = ""
             sla_status = ""
             plan_status = ""
         else:
@@ -2061,10 +2067,9 @@ def export_raw_excel(all_rows, plan_lookup, route_order, month_str, year):
         
         values = [
             week, d.strftime("%d/%m/%Y"), day_name, kho, sub_kho,
-            has_delivery, trip_label, dest,
-            arrival_str, planned_str,
-            route_ok, p_rank, a_rank,
-            sla_status, plan_status,
+            has_delivery, trip_label, vehicle_number, driver, phone,
+            dest, arrival_str, planned_str,
+            plan_compliance_status, sla_status, plan_status,
         ]
         
         for c, v in enumerate(values, 1):
@@ -2072,8 +2077,15 @@ def export_raw_excel(all_rows, plan_lookup, route_order, month_str, year):
             cell.border = thin_bd
             cell.alignment = Alignment(horizontal="center")
         
-        # Color SLA (col N = 14)
-        sla_cell = ws.cell(row=row_num, column=14)
+        # Color Đúng KH (col N = 14)
+        plan_cmp_cell = ws.cell(row=row_num, column=14)
+        if plan_compliance_status == "Đúng":
+            plan_cmp_cell.fill = fill_plan_dung
+        elif plan_compliance_status == "Sai":
+            plan_cmp_cell.fill = fill_plan_sai
+        
+        # Color SLA (col O = 15)
+        sla_cell = ws.cell(row=row_num, column=15)
         if sla_status == "Sớm":
             sla_cell.fill = fill_som
         elif sla_status == "Đúng":
@@ -2081,8 +2093,8 @@ def export_raw_excel(all_rows, plan_lookup, route_order, month_str, year):
         elif sla_status == "Trễ":
             sla_cell.fill = fill_tre
         
-        # Color Plan (col O = 15)
-        plan_cell = ws.cell(row=row_num, column=15)
+        # Color Plan (col P = 16)
+        plan_cell = ws.cell(row=row_num, column=16)
         if plan_status == "Sớm":
             plan_cell.fill = fill_som
         elif plan_status == "Đúng":
@@ -2091,23 +2103,32 @@ def export_raw_excel(all_rows, plan_lookup, route_order, month_str, year):
             plan_cell.fill = fill_tre
         
         row_num += 1
+        
+        # Build raw_data for JSON
+        raw_data_json.append({
+            "w": week, "d": d.strftime("%d/%m/%Y"), "day": day_name,
+            "kho": kho, "sk": sub_kho, "del": has_delivery,
+            "trip": trip_label, "veh": vehicle_number, "drv": driver, "ph": phone,
+            "dest": dest, "arr": arrival_str, "plan": planned_str,
+            "pc": plan_compliance_status, "sla": sla_status, "ps": plan_status,
+        })
     
-    # Column widths
+    # Column widths — 16 columns A:P
     widths = {'A': 6, 'B': 13, 'C': 8, 'D': 12, 'E': 10,
-              'F': 10, 'G': 22, 'H': 28,
-              'I': 10, 'J': 13, 'K': 12, 'L': 10, 'M': 10,
-              'N': 8, 'O': 20}
+              'F': 10, 'G': 22, 'H': 14, 'I': 18, 'J': 14,
+              'K': 28, 'L': 10, 'M': 13,
+              'N': 14, 'O': 8, 'P': 20}
     for col_letter, w in widths.items():
         ws.column_dimensions[col_letter].width = w
     
     ws.freeze_panes = "A2"
-    ws.auto_filter.ref = f"A1:O{row_num - 1}"
+    ws.auto_filter.ref = f"A1:P{row_num - 1}"
     
     perf_dir = os.path.join(OUTPUT, "artifacts", "performance")
     os.makedirs(perf_dir, exist_ok=True)
     out_path = os.path.join(perf_dir, f"RAW_DATA_{month_str}_{year}.xlsx")
     wb.save(out_path)
-    return out_path
+    return out_path, raw_data_json
 
 
 if __name__ == "__main__":

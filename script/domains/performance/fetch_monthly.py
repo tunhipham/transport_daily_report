@@ -312,6 +312,7 @@ def fetch_thitca_external(month, year):
         # T03: A=Ngày B=Mã CH E=Tuyến H=Dự kiến I=TG đến
         # T04: C=Ngày D=Mã CH G=Tuyến J=Dự kiến K=TG đến
         date_col, store_col, tuyen_col, plan_col, actual_col = 0, 1, 4, 7, 8
+        driver_col, vehicle_col = None, None
         for hdr in ws.iter_rows(min_row=1, max_row=1, values_only=True):
             for i, c in enumerate(hdr):
                 h = str(c or "").strip().upper()
@@ -325,7 +326,11 @@ def fetch_thitca_external(month, year):
                     plan_col = i
                 elif "TG ĐẾN" in h or "TG DEN" in h or "ĐẾN CỬA" in h:
                     actual_col = i
-        print(f"    Columns: date={date_col}, store={store_col}, tuyen={tuyen_col}, plan={plan_col}, actual={actual_col}")
+                elif "NVGN" in h or "NVGH" in h or ("NHÂN VIÊN" in h and "GIAO" in h):
+                    driver_col = i
+                elif "BKS" in h or "BIỂN" in h or "BIEN" in h:
+                    vehicle_col = i
+        print(f"    Columns: date={date_col}, store={store_col}, tuyen={tuyen_col}, plan={plan_col}, actual={actual_col}, driver={driver_col}, vehicle={vehicle_col}")
         
         for row in ws.iter_rows(min_row=2, values_only=True):
             date_val = row[date_col] if len(row) > date_col else None
@@ -341,6 +346,9 @@ def fetch_thitca_external(month, year):
             planned_time = format_time(row[plan_col]) if len(row) > plan_col and row[plan_col] else ""
             actual_time = format_time(row[actual_col]) if len(row) > actual_col and row[actual_col] else ""
 
+            driver = str(row[driver_col] or "").strip() if driver_col is not None and len(row) > driver_col else ""
+            vehicle = str(row[vehicle_col] or "").strip() if vehicle_col is not None and len(row) > vehicle_col else ""
+
             if store and actual_time:
                 rows.append({
                     "date": date_str,
@@ -349,6 +357,8 @@ def fetch_thitca_external(month, year):
                     "planned_time": planned_time,
                     "actual_time": actual_time,
                     "kho": "THỊT CÁ",
+                    "driver": driver,
+                    "vehicle_number": vehicle,
                 })
         wb.close()
         print(f"    ✅ {len(rows)} rows")

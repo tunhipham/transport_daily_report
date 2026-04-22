@@ -1055,6 +1055,7 @@
     .wk-legend-dot.lg-kk { background:rgba(168,85,247,.4); border:1px solid rgba(168,85,247,.6) }
     .wk-legend-dot.lg-cham { background:rgba(251,146,60,.4); border:1px solid rgba(251,146,60,.6) }
   </style>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 
 <body>
@@ -1706,6 +1707,18 @@
     <span class="filter-info" id="perfDateInfo">Ngày: ${labels[labels.length - 1] || ''}</span>
   </div>`;
 
+      // ── Excel export bar ──
+      let khoOpts = '<option value="all">Tất cả Kho</option>';
+      khoNames.forEach(k => { khoOpts += `<option value="${k}">${k}</option>`; });
+      html += `<div class="wk-filter-bar" style="margin-bottom:1rem">
+    <label>📥 Xuất Excel:</label>
+    <label>Từ:</label><input type="date" id="perfExportFrom" value="${isoDates[0] || ''}">
+    <label>Đến:</label><input type="date" id="perfExportTo" value="${isoDates[isoDates.length - 1] || ''}">
+    <select id="perfExportKho">${khoOpts}</select>
+    <button class="wk-export-btn" onclick="perfExportExcel()">📥 Xuất Excel</button>
+    <span class="wk-count" id="perfExportCount"></span>
+  </div>`;
+
       // Cards — single date view
       html += `<div id="perfCardsContainer"></div>`;
 
@@ -1754,6 +1767,11 @@
       }
 
       el.innerHTML = html;
+
+      // Store raw_data for Excel export
+      window._perfRawData = data.raw_data || [];
+      const countEl = document.getElementById('perfExportCount');
+      if (countEl) countEl.textContent = `${window._perfRawData.length} dòng`;
 
       // Store perf data globally
       window._perfData = {
@@ -1915,6 +1933,58 @@
         // Re-activate "Tất cả" button
         document.querySelectorAll('#perfChartCtrl .fbtn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('#perfChartCtrl .fbtn').forEach(b => { if (b.textContent.includes('Tất cả')) b.classList.add('active'); });
+      };
+
+      // ── Excel Export ──
+      window.perfExportExcel = function () {
+        const raw = window._perfRawData || [];
+        if (!raw.length) { alert('Không có dữ liệu để xuất.'); return; }
+
+        const fromEl = document.getElementById('perfExportFrom');
+        const toEl = document.getElementById('perfExportTo');
+        const khoEl = document.getElementById('perfExportKho');
+        const fromISO = fromEl ? fromEl.value : '';
+        const toISO = toEl ? toEl.value : '';
+        const khoVal = khoEl ? khoEl.value : 'all';
+
+        // Helper: DD/MM/YYYY → YYYY-MM-DD for comparison
+        function vnToISO(s) {
+          const p = s.split('/');
+          return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : s;
+        }
+
+        let filtered = raw;
+        if (fromISO) filtered = filtered.filter(r => vnToISO(r.d) >= fromISO);
+        if (toISO) filtered = filtered.filter(r => vnToISO(r.d) <= toISO);
+        if (khoVal !== 'all') filtered = filtered.filter(r => r.kho === khoVal);
+
+        if (!filtered.length) { alert('Không có dữ liệu trong khoảng đã chọn.'); return; }
+
+        const headers = [
+          'Tuần', 'Ngày', 'Thứ', 'Kho', 'Phân Loại',
+          'Giao Hàng', 'Mã Trip / Tuyến', 'Số Xe', 'Tên Tài Xế', 'SĐT',
+          'Điểm Đến', 'Giờ Đến', 'Giờ Kế Hoạch',
+          'Đúng Kế Hoạch', 'SLA', 'Kế Hoạch vs Thực Tế',
+        ];
+        const keys = ['w','d','day','kho','sk','del','trip','veh','drv','ph','dest','arr','plan','pc','sla','ps'];
+        const rows = [headers, ...filtered.map(r => keys.map(k => r[k] || ''))];
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+
+        // Column widths
+        ws['!cols'] = [
+          {wch:6},{wch:13},{wch:8},{wch:12},{wch:10},
+          {wch:10},{wch:22},{wch:14},{wch:18},{wch:14},
+          {wch:28},{wch:10},{wch:13},
+          {wch:14},{wch:8},{wch:20},
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Raw Data');
+
+        const khoLabel = khoVal === 'all' ? 'ALL' : khoVal.replace(/ /g,'_');
+        const fname = `RAW_DATA_${fromISO || 'start'}_${toISO || 'end'}_${khoLabel}.xlsx`;
+        XLSX.writeFile(wb, fname);
       };
     }
 
