@@ -431,93 +431,55 @@ def write_excel(stores, week_dates, week_num, week_label):
     ws.row_dimensions[1].height = 8
 
     # ═══════════════════════════════════════════════
-    # ROW 2: Title (col A-B merged) + count (col C) + week label (col H-N merged)
+    # ROW 2: A2=title, B2=count, C2=empty, D2:J2=week label
     # ═══════════════════════════════════════════════
     ws.row_dimensions[2].height = 28
-    ws.merge_cells('A2:B2')
     c = ws.cell(2, 1, 'LỊCH VỀ HÀNG SIÊU THỊ')
     apply_style(c, sTitle)
-    apply_style(ws.cell(2, 2), sTitle)
-    c = ws.cell(2, 3, len(stores))
+    c = ws.cell(2, 2, len(stores))
     apply_style(c, sCount)
-    # Fill navy blue across cols D-G
-    for col in range(4, 8):
-        apply_style(ws.cell(2, col, ''), sWeek)
-    # Week label in col H (where export_weekly_plan reads it)
-    ws.merge_cells('H2:N2')
-    c = ws.cell(2, 8, week_label)
+    apply_style(ws.cell(2, 3, ''), sWeek)
+    # Week label merged D2:J2
+    ws.merge_cells('D2:J2')
+    c = ws.cell(2, 4, week_label)
     apply_style(c, sWeek)
-    for col in range(9, 15):
+    for col in range(5, 11):
         apply_style(ws.cell(2, col), sWeek)
 
     # ═══════════════════════════════════════════════
-    # ROW 3: Date headers in cols H-N (where export reads them)
+    # ROW 3: Date headers — D3:J3 = dd/mm/yyyy (no time)
     # ═══════════════════════════════════════════════
     ws.row_dimensions[3].height = 22
-    # Fill red across A-G
-    for col in range(1, 8):
+    for col in range(1, 4):
         apply_style(ws.cell(3, col, ''), sDateHdr)
-    # Dates in cols H(8) through N(14)
     for i, wd in enumerate(week_dates):
-        c = ws.cell(3, 8 + i, datetime(wd.year, wd.month, wd.day))
+        c = ws.cell(3, 4 + i, wd.strftime('%d/%m/%Y'))
         apply_style(c, sDateHdr)
 
     # ═══════════════════════════════════════════════
-    # ROW 4: Column headers (A-G) + day names (H-N)
+    # ROW 4: A=SIÊU THỊ, B=Viết tắt, C=Giờ nhận, D-J=day names
     # ═══════════════════════════════════════════════
     ws.row_dimensions[4].height = 26
-    col_headers = ["SIÊU THỊ", "Viết tắt", "Lịch chia hàng ST", "Lịch về hàng ST",
-                    "Khai trương", "Kiểm kê", "Giờ nhận"]
-    for i, h in enumerate(col_headers):
+    for i, h in enumerate(['SIÊU THỊ', 'Viết tắt', 'Giờ nhận']):
         c = ws.cell(4, 1 + i, h)
         apply_style(c, sColHdr)
     for i, dn in enumerate(day_names):
-        c = ws.cell(4, 8 + i, dn)
+        c = ws.cell(4, 4 + i, dn)
         apply_style(c, sDayHdr)
 
     # ═══════════════════════════════════════════════
-    # ROW 5+: Store data (cols 1-7 metadata, 8-14 days)
+    # ROW 5+: A=name, B=code, C=shift, D-J=days
     # ═══════════════════════════════════════════════
     for r, s in enumerate(stores, 5):
-        # Col 1: Store name
         c = ws.cell(r, 1, s["name"])
         apply_style(c, sCell)
-        # Col 2: Code
         c = ws.cell(r, 2, s["code"])
         apply_style(c, sCellC)
-        # Col 3: Schedule chia
-        c = ws.cell(r, 3, s.get("schedule_chia", ""))
-        apply_style(c, sCellC)
-        # Col 4: Schedule về
-        c = ws.cell(r, 4, s["schedule_ve"])
-        apply_style(c, sCellC)
-        # Col 5: Opening date
-        if s.get("opening_date"):
-            try:
-                od = datetime.strptime(s["opening_date"], "%d/%m/%Y")
-                c = ws.cell(r, 5, od)
-            except:
-                c = ws.cell(r, 5, s["opening_date"])
-        else:
-            c = ws.cell(r, 5, "")
-        apply_style(c, sCellC)
-        # Col 6: Inventory date
-        if s.get("inventory_date"):
-            try:
-                ki = datetime.strptime(s["inventory_date"], "%d/%m/%Y")
-                c = ws.cell(r, 6, ki)
-            except:
-                c = ws.cell(r, 6, s["inventory_date"])
-        else:
-            c = ws.cell(r, 6, "")
-        apply_style(c, sCellC)
-        # Col 7: Shift
-        c = ws.cell(r, 7, s["shift"])
+        c = ws.cell(r, 3, s["shift"])
         apply_style(c, sCellC)
 
-        # Cols 8-14: Days
         for i, day_val in enumerate(s["days"]):
-            c = ws.cell(r, 8 + i, day_val if day_val else '')
+            c = ws.cell(r, 4 + i, day_val if day_val else '')
             vl = (day_val or '').lower()
             if 'châm' in vl or 'cham' in vl:
                 apply_style(c, sCham)
@@ -535,16 +497,12 @@ def write_excel(stores, week_dates, week_num, week_label):
     # ═══════════════════════════════════════════════
     ws.column_dimensions['A'].width = 48
     ws.column_dimensions['B'].width = 10
-    ws.column_dimensions['C'].width = 18
-    ws.column_dimensions['D'].width = 18
-    ws.column_dimensions['E'].width = 13
-    ws.column_dimensions['F'].width = 13
-    ws.column_dimensions['G'].width = 10
+    ws.column_dimensions['C'].width = 10
     for i in range(7):
-        ws.column_dimensions[get_column_letter(8 + i)].width = 14
+        ws.column_dimensions[get_column_letter(4 + i)].width = 14
 
     # AUTO-FILTER
-    ws.auto_filter.ref = f"A4:N{4 + len(stores)}"
+    ws.auto_filter.ref = f"A4:J{4 + len(stores)}"
 
     # Save
     filename = f"Lịch đi hàng ST W{week_num}.xlsx"

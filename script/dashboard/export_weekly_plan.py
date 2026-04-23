@@ -224,7 +224,12 @@ def compute_even_date_schedule(week_dates):
 
 
 def parse_excel(filepath):
-    """Parse a single weekly plan Excel file."""
+    """Parse a single weekly plan Excel file.
+    
+    Supports two layouts:
+    - OLD (14-col): week label R2:H, dates R3:H-N, headers R4:A-G+H-N, data cols 1-7+8-14
+    - NEW (10-col): week label R2:D, dates R3:D-J, headers R4:A-C+D-J, data cols 1-3+4-10
+    """
     from openpyxl import load_workbook
     
     wb = load_workbook(filepath, data_only=True)
@@ -235,15 +240,49 @@ def parse_excel(filepath):
     
     ws = wb["Lịch về hàng"]
     
-    week_label = str(ws.cell(2, 8).value or "")
+    # ── Detect layout: check if R2:H has TUẦN label (old) or R2:D (new) ──
+    val_h = str(ws.cell(2, 8).value or "")
+    val_d = str(ws.cell(2, 4).value or "")
+    
+    if re.search(r'TUẦN\s+\d+', val_h, re.IGNORECASE):
+        # OLD format: 14-col layout
+        week_label = val_h
+        date_col_start = 8   # H
+        day_col_start = 8    # H
+        data_col_name = 1
+        data_col_code = 2
+        data_col_chia = 3
+        data_col_ve = 4
+        data_col_opening = 5
+        data_col_inv = 6
+        data_col_shift = 7
+        is_new_format = False
+    elif re.search(r'TUẦN\s+\d+', val_d, re.IGNORECASE):
+        # NEW format: 10-col layout
+        week_label = val_d
+        date_col_start = 4   # D
+        day_col_start = 4    # D
+        data_col_name = 1
+        data_col_code = 2
+        data_col_chia = None
+        data_col_ve = None
+        data_col_opening = None
+        data_col_inv = None
+        data_col_shift = 3
+        is_new_format = True
+    else:
+        print(f"  ⚠ Cannot detect layout in {filepath}")
+        wb.close()
+        return None
+    
     wn_match = re.search(r'TUẦN\s+(\d+)', week_label, re.IGNORECASE)
     week_num = int(wn_match.group(1)) if wn_match else 0
     week_key = f"W{week_num}"
     
-    # R3 cols 8-14: dates
+    # R3: dates (7 columns from date_col_start)
     week_dates = []
     week_date_strs = []
-    for c in range(8, 15):
+    for c in range(date_col_start, date_col_start + 7):
         val = ws.cell(3, c).value
         if isinstance(val, (datetime, date)):
             d = val.date() if isinstance(val, datetime) else val
@@ -259,25 +298,25 @@ def parse_excel(filepath):
     
     # R4: day names
     day_names = []
-    for c in range(8, 15):
+    for c in range(day_col_start, day_col_start + 7):
         day_names.append(str(ws.cell(4, c).value or ""))
     
     # R5+: store data
     stores = []
     for r in range(5, ws.max_row + 1):
-        name = ws.cell(r, 1).value
+        name = ws.cell(r, data_col_name).value
         if not name:
             continue
         name = str(name).strip()
-        code = str(ws.cell(r, 2).value or "").strip()
-        schedule_chia = str(ws.cell(r, 3).value or "").strip()
-        schedule_ve = str(ws.cell(r, 4).value or "").strip()
-        opening_raw = ws.cell(r, 5).value
-        inventory_raw = ws.cell(r, 6).value
-        shift = str(ws.cell(r, 7).value or "").strip()
+        code = str(ws.cell(r, data_col_code).value or "").strip()
+        schedule_chia = str(ws.cell(r, data_col_chia).value or "").strip() if data_col_chia else ""
+        schedule_ve = str(ws.cell(r, data_col_ve).value or "").strip() if data_col_ve else ""
+        opening_raw = ws.cell(r, data_col_opening).value if data_col_opening else None
+        inventory_raw = ws.cell(r, data_col_inv).value if data_col_inv else None
+        shift = str(ws.cell(r, data_col_shift).value or "").strip()
         
         days = []
-        for c in range(8, 15):
+        for c in range(day_col_start, day_col_start + 7):
             val = ws.cell(r, c).value
             days.append(str(val).strip() if val else "")
         
