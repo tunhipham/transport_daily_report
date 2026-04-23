@@ -171,7 +171,7 @@ def build_stores(week_dates, inventory):
             else:
                 days.append("")
 
-        # Inventory cross-check
+        # Inventory cross-check: kiểm kê D → mark D and D-1 unconditionally
         inv_dt = inventory.get(code)
         inv_date_str = ""
         if inv_dt:
@@ -180,11 +180,7 @@ def build_stores(week_dates, inventory):
             inv_date_str = inv_dt.strftime("%d/%m/%Y")
             for i, wd in enumerate(week_dates):
                 if wd == inv_dt or wd == inv_dt - timedelta(days=1):
-                    current = days[i]
-                    if current and current.lower() in ("ngày", "đêm"):
-                        days[i] = "Kiểm kê"
-                    elif not current and wd == inv_dt:
-                        days[i] = "Kiểm kê"
+                    days[i] = "Kiểm kê"
 
         stores.append({
             "name": s["name"],

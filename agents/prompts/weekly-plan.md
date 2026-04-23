@@ -6,6 +6,8 @@ Dashboard logistics KFM có 5 tabs. Tab "📅 Lịch Tuần" hiển thị lịch
 
 **Flow**: `master_schedule.json` → `generate_excel.py` → Excel W{nn} → `export_weekly_plan.py` → JSON → deploy
 
+**Thursday Cadence**: 12h check data → 13h generate + send review → user confirm → gửi team
+
 ## 🔴 BẮT BUỘC: Fetch lại lịch kiểm kê mới nhất
 
 **Trước khi chạy BẤT KỲ task nào liên quan**, PHẢI fetch lại data kiểm kê từ nguồn Google Sheets:
@@ -100,6 +102,7 @@ script/
   domains/
     weekly_plan/
       generate_excel.py    # 🤖 Generate Excel W{nn} từ master_schedule + kiểm kê + NSO
+      finalize.py          # 📋 Thu automation: --check (12h) / --send (13h) / --test
     nso/generate.py          # NSO STORES list (opening dates)
   dashboard/
     export_weekly_plan.py    # Parse Excel → JSON (main logic)
@@ -153,6 +156,33 @@ docs/
 
 ### Inject missing stores
 - NSO stores có opening trong tuần nhưng KHÔNG có trong Excel → inject row mới
+
+## Thursday Finalize Automation
+
+Script: `script/domains/weekly_plan/finalize.py`
+
+| Mode | Lệnh | Schedule |
+|------|-------|----------|
+| `--check` | Check data readiness + gửi Telegram reminder | Thu 12:00 |
+| `--send` | Generate Excel + gửi file review qua Telegram | Thu 13:00 |
+| `--test` | Test gửi file Excel mới nhất | Manual |
+
+### Readiness Check (12h)
+- Kiểm tra `master_schedule.json` (stores đủ?)
+- Kiểm tra NSO châm hàng tuần tới (có store nào khai trương?)
+- Fetch kiểm kê từ Google Sheets (entries đủ?)
+- Kiểm tra Excel file đã tồn tại chưa
+- Gửi summary + issues qua Telegram cá nhân
+
+### Generate & Send (13h)
+- Chạy `generate_excel.py --week {nn}` (auto-detect next week)
+- Gửi file Excel qua Telegram cá nhân để review
+- User confirm → `--deliver` gửi team group
+
+### Task Scheduler
+- `WeeklyPlan_12h_Check` — Thu 12:00
+- `WeeklyPlan_13h_Send` — Thu 13:00
+- Config: `config/telegram.json` → key `weekly_plan` → `chat_id: 5782090339` (personal)
 - Tự tính post-châm delivery days theo schedule_ve + shift (áp dụng skip-first-day)
 
 ## Dashboard UI (index.html)
