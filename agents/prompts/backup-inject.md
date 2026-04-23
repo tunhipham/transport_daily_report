@@ -5,6 +5,24 @@ Chạy thủ công sau giờ cutoff khi auto_compose đã miss hoặc lỗi inje
 
 ---
 
+## 🚨 Pre-flight Checklist (BẮT BUỘC)
+
+> [!CAUTION]
+> PHẢI hoàn thành checklist này TRƯỚC KHI chạy bất kỳ lệnh compose/inject nào.
+> KHÔNG được tự suy luận ngày — phải theo đúng rule D+1 bên dưới.
+
+**Trước khi chạy, xác nhận:**
+
+1. **Ngày giao hàng (--date)**:
+   - Hôm nay D = ? → `--date` = **D+1** (ngày mai) cho KRC / ĐÔNG MÁT / THỊT CÁ / DRY Sáng
+   - Ngoại lệ duy nhất: DRY Tối → `--date` = D (cùng ngày)
+   - ⛔ KHÔNG BAO GIỜ dùng ngày hôm nay cho KRC/ĐÔNG MÁT/THỊT CÁ
+2. **Compose order**: compose kho A → inject kho A → rồi mới compose kho B
+   - ⛔ KHÔNG compose nhiều kho liên tiếp rồi mới inject
+3. **Week**: tuần ISO hiện tại (kiểm tra bằng lệnh nếu không chắc)
+
+---
+
 ## ⚠️ Quy tắc quan trọng
 
 ### KHÔNG dùng `--new` flag khi inject

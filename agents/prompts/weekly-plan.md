@@ -38,7 +38,7 @@ elif isinstance(val, date):
 
 | Data | Nguồn | Tính chất |
 |------|-------|-----------|
-| Lịch chia/về/shift | `data/master_schedule.json` + `.xlsx` | 🔒 **CỐ ĐỊNH** — chỉ thay đổi khi NSO mới hoặc đổi tuyến |
+| Lịch về/shift | `data/master_schedule.json` + `.xlsx` | 🔒 **CỐ ĐỊNH** — chỉ thay đổi khi NSO mới hoặc đổi tuyến |
 | Lịch kiểm kê | Google Sheets (INVENTORY_SHEET_URL) | 🔄 **DYNAMIC** — fetch mỗi lần chạy |
 | Lịch về hàng (days) | Excel file W{nn} | 🔄 **DYNAMIC** — có thể thay đổi mỗi tuần |
 | NSO opening dates | `script/domains/nso/generate.py` | ➕ Thêm khi có store mới |
@@ -94,7 +94,7 @@ ANCHOR_START = datetime(2026, 3, 30)  # Monday W14
 
 ```
 data/
-  master_schedule.json     # 🔒 CỐ ĐỊNH — lịch chia/về/shift (từ sheet CHIA)
+  master_schedule.json     # 🔒 CỐ ĐỊNH — lịch về/shift (từ sheet CHIA)
   master_schedule.xlsx     # 🔒 Backup Excel (review/edit bằng tay)
 script/
   dashboard/
@@ -127,6 +127,16 @@ docs/
 ```
 
 ## Key Logic trong export_weekly_plan.py
+
+### A112 Cô Giang — Even-Date Logic
+- `schedule_ve: "Ngày chẵn"` → script tự tính dynamic theo tuần
+- Về hàng vào ngày chẵn (2,4,6,8...) trong tuần, **trừ Chủ Nhật** (kho không giao)
+- Hàm `compute_even_date_schedule()` tính ra "Thứ X-Y-Z" tương ứng
+
+### Đếm Ngày/Đêm (Stats Cards)
+- Đếm **Ngày/Đêm** theo field `shift` (độc lập)
+- Đếm **Châm hàng/Kiểm kê** theo `days[]` (độc lập)
+- Một store có thể vừa Đêm vừa Châm hàng → đếm cả hai
 
 ### Kiểm kê Cross-Check (2 steps)
 1. **Xóa** kiểm kê sai từ Excel gốc (ngày không phải D hoặc D-1)

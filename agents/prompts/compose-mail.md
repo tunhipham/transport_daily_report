@@ -1,183 +1,72 @@
-# Compose Mail — Prompt & Context
+# Compose Mail — Prompt
 
-## Role
 Soạn email lịch giao hàng cho từng kho, inject vào Haraworks internal mail.
 
-## 🔴 BẮT BUỘC: Fetch lại lịch kiểm kê trước mỗi lần compose
-
-Lịch kiểm kê thay đổi liên tục (người input update bất kỳ lúc nào). Script `compose_mail.py` tự fetch mỗi lần chạy.
-**KHÔNG BAO GIỜ** dùng data kiểm kê cũ từ cache hay từ lần chạy trước.
-
-> Cũng áp dụng cho `export_weekly_plan.py` khi làm lịch tuần.
-
 ---
 
-## Rules (QUAN TRỌNG)
+## Rules
 
-1. **D+1**: Mail mỗi kho là lịch giao hàng cho ngày D+1 (ngày mai)
-2. **KSL (DRY) chia 2 mail**: 
-   - Mail Sáng: giờ từ 6h → 15h (hour 6-14)
-   - Mail Tối: giờ từ 15h → 3h sáng hôm sau (hour 15-23, 0-2)
-   - Ngày D sẽ mail: lịch tối ngày D + lịch sáng ngày D+1
-3. **Mỗi week = 1 thread**: W14, W15... mỗi tuần dùng 1 thread email, ngày mới reply vào thread đó
-4. **Store ID sort A→Z**: Cột "Điểm đến" luôn sort alphabetical
-5. **Chỉ soạn DRAFT, KHÔNG BẤM GỬI** cho tới khi user xác nhận
-6. **Không có lịch fix**: User sẽ nói kho nào có data rồi để soạn
-7. **Kiểm kê (DRY only)**: Siêu thị có lịch kiểm kê tổng → không nhận hàng. Script tự fetch và highlight ĐỎ.
+> [!CAUTION]
+> **--date luôn = D+1** (ngày mai) cho KRC / ĐÔNG MÁT / THỊT CÁ / DRY Sáng.
+> Ngoại lệ duy nhất: DRY Tối dùng D (cùng ngày).
+> ⛔ KHÔNG BAO GIỜ tự đổi sang ngày khác — đây là rule cứng, không có ngoại lệ.
+
+1. **D+1**: Mail = lịch giao hàng ngày D+1 (ngày mai)
+2. **DRY chia 2 mail**:
+   - Sáng: hour 6-14 | Tối: hour 15-23, 0-2
+   - Ngày D mail: lịch tối D + lịch sáng D+1
+3. **Thread per week**: W14, W15... mỗi tuần 1 thread, ngày mới reply vào thread đó
+4. **Store sort A→Z**
+5. **Time format**: HH:MM (leading zero)
+6. **Draft only**: KHÔNG bấm Gửi cho tới khi user xác nhận
+7. **Kiểm kê (DRY only)**: Store có kiểm kê ngày X → không nhận hàng ngày X và X-1. Script tự fetch + highlight ĐỎ.
    - Source: [Lịch kiểm kê 2026](https://docs.google.com/spreadsheets/d/1KIXDqGDW60sKNXuHOriT8utPTyhV-pCy11jlf18Zz-0/edit?gid=220196646#gid=220196646)
-8. **Time format**: Giờ luôn HH:MM (leading zero), ví dụ 0:17 → 00:17
-9. **THỊT CÁ — fetch = chốt**: Data THỊT CÁ bình thường chỉ fetch 1 lần là đủ/chính xác. Fetch xong → compose + inject luôn, không cần đợi re-compose.
-10. **ĐÔNG MÁT — cần đủ 2 plan**: Kho ĐÔNG MÁT gồm 2 file source: "KH HÀNG ĐÔNG" + "KH HÀNG MÁT". **Chỉ compose + inject khi đã fetch đủ cả 2 file**. Nếu chỉ có 1 → chờ file còn lại.
+
+⚠ ALWAYS re-fetch inspection data (no cache).
 
 ---
 
-## Thông tin mail
+## Kho-specific Logic
 
-| Kho | Subject | To | Body greeting |
-|-----|---------|-----|---------------|
-| KRC | KẾ HOẠCH GIAO HÀNG KRC W{week} | Nhiều stores | Dear team ST, SCM gửi thông tin kế hoạch giao hàng KHO RCQ ngày {date}. |
-| DRY Sáng | KẾ HOẠCH GIAO HÀNG KHO DRY W{week} | Đoàn Thanh Long | Dear team Siêu Thị, SCM gửi thông tin kế hoạch giao hàng DC Dry Sáng {date}. |
-| DRY Tối | (reply trong thread DRY) | (reply all) | Dear team Siêu Thị, SCM gửi thông tin kế hoạch giao hàng DC Dry Tối {date}. |
-| ĐÔNG MÁT | KẾ HOẠCH GIAO HÀNG KHO ĐÔNG MÁT W{week} | (stores) | Dear team Siêu Thị, SCM gửi thông tin kế hoạch giao hàng Đông Mát ngày {date}. |
-| THỊT CÁ | KẾ HOẠCH GIAO HÀNG KHO ABA THỊT CÁ W{week} | (stores) | Dear team Siêu Thị, SCM gửi thông tin kế hoạch giao hàng Thịt Cá ngày {date}. |
+- **THỊT CÁ**: Fetch 1 lần = final → compose + inject luôn, không cần chờ cutoff.
+- **ĐÔNG MÁT**: Cần đủ 2 file "KH HÀNG ĐÔNG" + "KH HÀNG MÁT". Thiếu 1 → chờ.
+- **DRY / KRC**: Data thay đổi liên tục → re-fetch + re-compose gần cutoff.
 
-### CC List (tất cả các kho)
+---
+
+## Cutoff Schedule
+
+| Kho | Check Window | Cutoff | Mail cho | Ngày nghỉ |
+|-----|-------------|--------|----------|-----------|
+| DRY Tối | 12:00-14:00 | 14:00 | Tối cùng ngày D | CN |
+| DRY Sáng | 15:00-16:30 | 16:30 | Sáng D+1 | CN |
+| ĐÔNG MÁT | 15:00-19:00 | 19:00 | D+1 | Thứ 2 |
+| KRC | 17:00-19:00 | 19:00 | D+1 | — |
+| THỊT CÁ | 17:00-19:00 | 19:00 | D+1 | — |
+
+---
+
+## Email Template
+
+| Kho | Subject | Greeting |
+|-----|---------|----------|
+| KRC | KẾ HOẠCH GIAO HÀNG KRC W{week} | Dear team ST, SCM gửi thông tin kế hoạch giao hàng KHO RCQ ngày {date}. |
+| DRY Sáng | KẾ HOẠCH GIAO HÀNG KHO DRY W{week} | Dear team Siêu Thị, SCM gửi ... DC Dry Sáng {date}. |
+| DRY Tối | (reply thread DRY) | Dear team Siêu Thị, SCM gửi ... DC Dry Tối {date}. |
+| ĐÔNG MÁT | KẾ HOẠCH GIAO HÀNG KHO ĐÔNG MÁT W{week} | Dear team Siêu Thị, SCM gửi ... Đông Mát ngày {date}. |
+| THỊT CÁ | KẾ HOẠCH GIAO HÀNG KHO ABA THỊT CÁ W{week} | Dear team Siêu Thị, SCM gửi ... Thịt Cá ngày {date}. |
+
+### CC (tất cả kho)
 Operations, Operations Training & Development, Operations Excellence, Sales, Delivery, Delivery 1, Regional Sales 1, HCM 001, Đối Tác Seedlog, DC Seedlog (cho DRY)
 
 ### Table columns
 - **KRC, DRY, THỊT CÁ**: Ngày | Điểm đến | Giờ đến dự kiến (+-30')
-- **ĐÔNG MÁT**: Ngày | Điểm đến | Giờ đến dự kiến (+-30') | Loại hàng
+- **ĐÔNG MÁT**: + cột Loại hàng
 
 ---
 
-## Lịch Check Từng Kho
+## Khi lỗi
 
-| Kho | Check Window | Cutoff | Mail cho | Ngày nghỉ | Ghi chú |
-|-----|-------------|--------|----------|-----------|--------|
-| **DRY Tối** | 12:00 - 14:00 | 14:00 | Tối cùng ngày D | Chủ nhật | Data thay đổi liên tục → re-compose |
-| **DRY Sáng** | 15:00 - 16:30 | 16:30 | Sáng ngày D+1 | Chủ nhật | Data thay đổi liên tục → re-compose |
-| **ĐÔNG MÁT** | 15:00 - 19:00 | 19:00 | Ngày D+1 | Thứ 2 | ⚠ Cần đủ cả 2 file (ĐÔNG + MÁT) mới compose |
-| **KRC** | 17:00 - 19:00 | 19:00 | Ngày D+1 | — | Data thay đổi liên tục → re-compose |
-| **THỊT CÁ** | 17:00 - 19:00 | 19:00 | Ngày D+1 | — | ✅ Fetch = chốt → inject luôn |
-
-### Đặc thù từng kho khi compose
-
-- **THỊT CÁ**: Data bình thường fetch 1 lần là chính xác. Fetch xong → compose + inject luôn (không cần đợi cutoff hay re-compose).
-- **ĐÔNG MÁT**: Gồm 2 file source trên Drive: "KH HÀNG ĐÔNG" + "KH HÀNG MÁT". Chỉ compose khi đủ cả 2 file. Nếu 1 file chưa có → chờ.
-- **DRY / KRC**: Data từ Google Sheets, planner update liên tục → cần re-fetch + re-compose gần cutoff.
-
-### Timeline một ngày (ví dụ Thứ 4)
-
-```
-12:00  ─── DRY Tối bắt đầu check ───────────────────────
-14:00  ─── DRY Tối CUTOFF ──────────────────────────────
-
-15:00  ─── DRY Sáng + ĐÔNG MÁT bắt đầu check ─────────
-16:30  ─── DRY Sáng CUTOFF ────────────────────────────
-
-17:00  ─── KRC + THỊT CÁ bắt đầu check ───────────────
-         (THỊT CÁ: fetch đc = inject luôn, ko cần chờ cutoff)
-19:00  ─── KRC + ĐÔNG MÁT + THỊT CÁ CUTOFF ───────────
-         (ĐÔNG MÁT: chỉ inject nếu đủ cả 2 plan ĐÔNG + MÁT)
-
-20:00  ─── Task Scheduler dừng ─────────────────────────
-```
-
----
-
-## Windows Task Scheduler — `AutoComposeMail`
-
-- **Schedule**: Hàng ngày, mỗi 15 phút, 12:00 → 20:00
-- **Config**: `config/auto_compose_task.xml`
-
-```powershell
-schtasks /query /tn "AutoComposeMail" /v /fo LIST
-schtasks /run /tn "AutoComposeMail"
-schtasks /change /tn "AutoComposeMail" /disable
-schtasks /change /tn "AutoComposeMail" /enable
-```
-
----
-
-## First-Run Setup (Inject)
-
-Selenium dùng **profile Edge riêng** (`.edge_automail/`) — không conflict với Edge user.
-
-1. Script mở Edge automation → Haravan SSO login
-2. User login thủ công (mã **SC012433**)
-3. Session lưu vào `.edge_automail/` → các lần sau không cần login lại
-
----
-
-## Data Change Detection
-
-| Loại thay đổi | Cách detect | Action |
-|---------------|-------------|--------|
-| Thêm store mới | So sánh set store IDs | ➕ Re-compose |
-| Bớt store | So sánh set store IDs | ➖ Re-compose |
-| Đổi giờ giao | So sánh gio_den per store | 🔄 Re-compose |
-| Không thay đổi | Hash giống nhau | ✓ Skip |
-
----
-
-## Files
-
-| File | Purpose |
-|------|---------|
-| `script/compose/auto_compose.py` | Orchestrator: watch mode, scheduled compose |
-| `script/compose/inject_haraworks.py` | Selenium: inject HTML vào Haraworks CKEditor |
-| `script/compose/compose_mail.py` | Generate HTML email body |
-| `script/domains/performance/fetch_weekly.py` | Fetch data từ Google Sheets + Drive |
-| `config/mail_schedule.json` | Config lịch compose + Drive sources |
-| `config/auto_compose_task.xml` | XML định nghĩa Windows Task |
-
----
-
-## Troubleshooting
-
-| Vấn đề | Giải pháp |
-|--------|-----------|
-| Table hiện raw HTML | Chạy inject lại — sẽ reply mới, xóa reply lỗi |
-| ĐÔNG MÁT chỉ có ĐÔNG | Re-fetch → re-compose → re-inject |
-| Session hết hạn | `Remove-Item $HOME\.edge_automail\ -Recurse -Force` → chạy lại |
-| Edge bị lock | `taskkill /f /im msedgedriver.exe` + xóa lockfile |
-| Data thiếu / #N/A | Re-fetch data rồi chạy lại |
-| DRY bị skip | `python auto_compose.py --reset` |
-| Inject sai data (kho A inject data kho B) | Generic `_mail_body.html` bị ghi đè bởi kho compose sau. **Compose kho nào thì inject ngay** hoặc compose kho cuối cùng trước khi inject. |
-
----
-
-## Injection Method
-
-### PRIMARY: JS base64 + `setData()` (session-independent)
-
-- Encode HTML → base64 → gửi qua `execute_script()` in chunks
-- Decode trong browser → gọi `ckeditorInstance.setData(html)`
-- **Không phụ thuộc clipboard** → hoạt động từ mọi session (terminal, Task Scheduler, Antigravity)
-
-### FALLBACK: Clipboard paste (Ctrl+V)
-
-- Copy HTML vào OS clipboard (CF_HTML format) → `Ctrl+V` trong CKEditor
-- **Chỉ hoạt động khi run cùng desktop session** (Task Scheduler OK, Antigravity terminal FAIL)
-
-> ⚠️ **Backup từ terminal**: Luôn dùng JS base64 method (method 1). Clipboard paste sẽ fail vì khác session.
-
----
-
-## ⚠️ Compose Order (Backup)
-
-Khi compose backup nhiều kho:
-- `compose_mail.py` ghi cả file generic `_mail_body.html` lẫn file kho-specific `_mail_{kho}_body.html`
-- `inject_haraworks.py` ưu tiên file **mới nhất** giữa generic vs kho-specific
-- **Nếu compose KRC rồi compose ĐÔNG MÁT** → generic file = ĐÔNG MÁT → inject KRC dùng nhầm data
-
-**Giải pháp**: Compose kho nào xong → inject ngay → rồi mới compose kho tiếp.
-
----
-
-## Notes
-
-- Haraworks login: SC012433
-- CKEditor: `[role="textbox"][contenteditable="true"]`
-- CKEditor injection: `ckeditorInstance.setData(html)` (CK5 API)
-- **An toàn**: Script KHÔNG BAO GIỜ click nút Gửi. Chỉ tạo draft.
+Script lỗi hoặc inject bất thường →
+đọc `agents/reference/compose-mail-detail.md` để hiểu injection method, Edge setup,
+compose order, và data change detection trước khi debug.

@@ -6,89 +6,41 @@ description: Daily report automation - download data and generate summary report
 
 // turbo-all
 
-## Data Sources
+## ⚠ Required
 
-| Source | Method | Backup file (`data/`) |
-|--------|--------|----------------------|
-| KRC | Online (Google Sheets) | `krc_DDMMYYYY.xlsx` |
-| KFM (KSL-Sáng/Tối) | Online (Google Sheets) | `kfm_DDMMYYYY.xlsx` |
-| KH MEAT | Online (Google Drive) | `kh_meat_DDMMYYYY.xlsx` |
-| KH HÀNG ĐÔNG | Online (Google Drive) | `kh_hàng_đông_DDMMYYYY.xlsx` |
-| KH HÀNG MÁT | Online (Google Drive) | `kh_hàng_mát_DDMMYYYY.xlsx` |
-| Master data | Online (Google Sheets) | `master_data.xlsx` |
-| Transfer | Online (Google Drive) | `transfer_DDMMYYYY.xlsx` |
-| Yêu cầu KSL | Online (Google Drive) | `yeu_cau_chuyen_hang_thuong_DDMMYYYY.xlsx` |
+Read `agents/prompts/daily-report.md` trước khi chạy.
 
-## Backup System
+## Run
 
-- **Auto-save**: Mỗi lần fetch online thành công → tự động lưu raw data vào `data/`
-- **Auto-fallback**: Nếu online lỗi (SSL, timeout, rate limit) → tự động dùng backup nếu có
-- **Dùng chung**: Các task khác (compose_mail, du_kien_giao...) có thể đọc data từ `data/` mà không cần fetch lại
-- Backup files đặt tên theo ngày, cho phép nhiều ngày cùng tồn tại
-
-## ⚠ MANDATORY: Read roles & prompts FIRST
-Before doing ANYTHING:
-1. Read `agents/role.md` — nguyên tắc chung, phạm vi, quy ước output
-2. Read `agents/prompts/daily-report.md` — data sources, KPI definitions, kho schedule
-
-## Prerequisites
-
-- Python packages: `openpyxl`, `requests`, `playwright`
-- Working directory: `G:\My Drive\DOCS\transport_daily_report`
-
-## Steps
-
-1. Generate report (ALL data fetched online automatically):
 ```
 python -u script/domains/daily/generate.py --send
 ```
-Hoặc chỉ định ngày cụ thể:
+Hoặc chỉ định ngày:
 ```
 python -u script/domains/daily/generate.py --date DD/MM/YYYY --send
 ```
 
-2. Review output — report hiển thị bảng tổng hợp + charts:
-   - Summary cards: Tổng Tấn, Tổng Xe, Tổng Siêu Thị, Tổng Items
-   - Bảng chính: SL Siêu thị, SL Items, SL Xe, Sản lượng (Tấn)
-   - KPI: Tấn/Xe, Items/Siêu Thị, Siêu Thị/Xe, KG/Siêu Thị
-   - Donut chart: % Đóng góp sản lượng
-   - Trend chart: Sản lượng theo kho (lịch sử 30 ngày)
-   - **Telegram**: Gửi 5 ảnh PNG + 1 tin nhắn thông báo dashboard đã cập nhật (không gửi file HTML)
-   - **Auto-deploy**: Khi dùng `--send`, sau Telegram sẽ tự động deploy dashboard lên GitHub Pages (~1-2 phút)
+## Expected Output
 
-3. Deploy dashboard (nếu không dùng `--send`, hoặc auto-deploy lỗi):
+- Summary cards: Tổng Tấn, Xe, Siêu thị, Items
+- KPI table per kho (5 kho)
+- Charts: 5 PNG → Telegram
+- Telegram: tin nhắn thông báo + dashboard link
+- Auto-deploy dashboard lên GitHub Pages
+
+## Validation
+
+- THỊT CÁ, KRC: always present (7/7)
+- ĐÔNG MÁT: no Monday
+- KSL: no Sunday (except small trips)
+- Missing data = warning → check source
+
+## Deploy (nếu auto-deploy lỗi)
+
 ```
 python -u script/dashboard/deploy.py --domain daily
 ```
 
-4. Push script changes to GitHub (nếu có thay đổi script):
-```
-git -C "G:\My Drive\DOCS\transport_daily_report" add -A
-git -C "G:\My Drive\DOCS\transport_daily_report" status
-git -C "G:\My Drive\DOCS\transport_daily_report" commit -m "mô tả thay đổi"
-git -C "G:\My Drive\DOCS\transport_daily_report" push
-```
+## Troubleshooting
 
-## Lịch Giao Hàng Theo Kho
-
-| Kho | Lịch giao | Ghi chú |
-|---|---|---|
-| **THỊT CÁ** | DAILY (7/7) | Ngày nào cũng có trip |
-| **KRC** | DAILY (7/7) | Ngày nào cũng có trip |
-| **ĐÔNG MÁT** | 6/7 — **Không giao Thứ 2** | Thứ 2 không có trip |
-| **KSL (DRY)** | 6/7 — **Không giao CN** | Ngoại lệ: CN có 1-3 chuyến khai trương (chủ yếu KSL-Tối) |
-
-> Dùng bảng này để validate data: nếu ngày thường mà thiếu kho nào → check lại nguồn.
-
-## Notes
-
-- Script lấy ALL data online, **không cần** download file thủ công
-- KFM Google Sheets: https://docs.google.com/spreadsheets/d/1LkJFJhOQ8F2WEB3uCk7kA2Phvu8IskVi3YBfVr7pBx0/edit
-- KRC Google Sheets: https://docs.google.com/spreadsheets/d/1tWamqjpOI2j2MrYW3Ah6ptmT524CAlQvEP8fCkxfuII/edit
-- KH Google Drive: https://drive.google.com/drive/folders/1th0myHfLtdz3uTBFf2EuQ6G1GywjufYE
-- Transfer Google Drive: https://drive.google.com/drive/folders/17Z_UPMDywWFplcg0fx3XSG87vSsG8LHb
-- Yeu cau Google Drive: https://drive.google.com/drive/folders/1DpDon0QHhDRoX7_ZnEygwKlXsbcPGp-t
-- Local sync paths: `G:\My Drive\DOCS\DAILY\transfer`, `G:\My Drive\DOCS\DAILY\yeu_cau_chuyen_hang_thuong`
-- History: `output/state/history.json` (tối đa 365 ngày, dùng cho trend chart)
-- Nếu Google Sheets bị rate limit, retry tự động hoặc chạy lại sau vài phút
-
+Script lỗi? → Đọc `agents/reference/daily-report-detail.md` trước khi sửa code.

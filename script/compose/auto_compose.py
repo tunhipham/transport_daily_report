@@ -490,7 +490,7 @@ def inject_to_haraworks(kho, session, date_str, week):
     try:
         result = subprocess.run(
             cmd, capture_output=True, text=True,
-            encoding='utf-8', errors='replace', timeout=120
+            encoding='utf-8', errors='replace', timeout=240
         )
         if result.returncode == 0:
             log.info(f"  ✅ Haraworks injection successful (draft saved)")
@@ -504,7 +504,7 @@ def inject_to_haraworks(kho, session, date_str, week):
                     log.warning(f"     {l}")
             return False, result.stdout
     except subprocess.TimeoutExpired:
-        log.error(f"  ❌ Haraworks injection timed out (2 min)")
+        log.error(f"  ❌ Haraworks injection timed out (4 min)")
         return False, "timeout"
     except Exception as e:
         log.error(f"  ❌ Haraworks injection error: {e}")

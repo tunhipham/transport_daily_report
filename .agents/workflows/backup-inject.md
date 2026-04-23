@@ -16,6 +16,15 @@ description: Manual fetch + compose + inject after cutoff hours (backup procedur
 
 Khi **đã qua cutoff** mà cần inject lại (data trễ, lỗi inject...).
 
+## 🚨 Pre-flight (BẮT BUỘC — trước khi chạy bất kỳ lệnh nào)
+
+> [!CAUTION]
+> Xác nhận ngày TRƯỚC KHI chạy. KHÔNG tự suy luận.
+
+- **KRC / ĐÔNG MÁT / THỊT CÁ / DRY Sáng** → `--date` = **D+1** (ngày mai)
+- **DRY Tối** → `--date` = D (cùng ngày)
+- ⛔ Compose kho A → inject kho A → rồi mới compose kho B. KHÔNG compose nhiều kho rồi inject.
+
 ## Steps
 
 ### 1. Check status

@@ -16,7 +16,7 @@ Before doing ANYTHING:
 ## Rules
 
 1. **Weekly cadence**: Làm vào thứ 5 hàng tuần, review lại thứ 6/7 cho tuần W+1
-2. **Lịch cố định**: Lịch chia/về/shift cố định trong `data/master_schedule.json`. Chỉ thay đổi khi user confirm
+2. **Lịch cố định**: Lịch về/shift cố định trong `data/master_schedule.json`. Chỉ thay đổi khi user confirm
 3. **NSO châm hàng**: Khai trương = 4 ngày liên tiếp châm hàng (D→D+3), sau đó về lịch daily
 4. **NSO dời lịch**: Store có `original_date` → bỏ ra khỏi tuần cũ, chỉ tính tuần mới
 5. **Kiểm kê**: Tự động fetch từ Google Sheets, đánh dấu D và D-1. Xóa kiểm kê sai từ Excel gốc
@@ -49,7 +49,7 @@ STORES = [
 ```python
 NSO_SCHEDULE = {
     ...
-    "A999": {"schedule_chia": "Thứ 3-5-7", "schedule_ve": "Thứ 2-4-6", "shift": "Đêm",
+    "A999": {"schedule_ve": "Thứ 2-4-6", "shift": "Đêm",
              "name_full": "Tên Siêu Thị"},
 }
 ```

@@ -65,9 +65,9 @@ def get_mail_key(kho, session):
 def get_html_body_path(kho, session):
     """Get path to the composed HTML body file.
     
-    Prefers the NEWER file between kho-specific and generic to avoid
-    using stale kho-specific files from auto_compose when compose_mail
-    was run manually (which only writes to generic _mail_body.html).
+    ALWAYS prefers kho-specific file to prevent cross-kho contamination.
+    Generic file is only used as fallback when kho-specific doesn't exist
+    (e.g. compose_mail was run manually without --kho).
     """
     suffix = f"_{kho}"
     if session:
@@ -76,20 +76,13 @@ def get_html_body_path(kho, session):
     kho_path = os.path.join(MAIL_DIR, f"_mail{suffix}_body.html")
     generic_path = os.path.join(MAIL_DIR, "_mail_body.html")
 
-    kho_exists = os.path.exists(kho_path)
-    generic_exists = os.path.exists(generic_path)
-
-    if kho_exists and generic_exists:
-        # Use whichever was modified more recently
-        kho_mtime = os.path.getmtime(kho_path)
-        generic_mtime = os.path.getmtime(generic_path)
-        if generic_mtime > kho_mtime:
-            print(f"  ℹ Using generic _mail_body.html (newer than kho-specific)")
-            return generic_path
+    if os.path.exists(kho_path):
         return kho_path
-    elif kho_exists:
-        return kho_path
+    elif os.path.exists(generic_path):
+        print(f"  ⚠ Kho-specific file not found, using generic _mail_body.html")
+        return generic_path
     else:
+        print(f"  ❌ No HTML body found for {kho}")
         return generic_path
 
 

@@ -2565,7 +2565,7 @@ def main():
             mid = send_telegram_photo(img_path, f"{caption}\n{sec_label}")
             if mid:
                 sent_msg_ids.append(mid)
-        dashboard_text = f"📊 Dashboard đã cập nhật: {date_str}\n🔗 https://tunhipham.github.io/transport_daily_report/"
+        dashboard_text = f"📊 Dashboard đã cập nhật: {date_str}\n🔗 https://tunhipham.github.io/transport_daily_report/\n⏱ Refresh sau 1-2 phút để xem dữ liệu mới nhất"
         mid = send_telegram_text(dashboard_text)
         if mid:
             sent_msg_ids.append(mid)

@@ -4,64 +4,43 @@ description: Generate or modify the monthly performance report (on-time, route, 
 
 # Performance Report Workflow
 
-## ⚠ MANDATORY: Read roles & prompts FIRST
-Before doing ANYTHING:
-1. Read `agents/role.md` — nguyên tắc chung, phạm vi, quy ước output
-2. Read `agents/prompts/performance-report.md` — KPI definitions, data model, kho mapping, known gotchas
-3. Understand the 4 KPIs: SLA, Plan, Route, Completion
+// turbo-all
 
-## ⚠ MANDATORY: Backup BEFORE editing
+## ⚠ Required
+
+Read `agents/prompts/performance-report.md` trước khi chạy.
+
+## Backup (trước khi sửa code)
+
 ```powershell
 $ts = Get-Date -Format "yyyyMMdd_HHmm"
-Copy-Item "script\domains\performance\generate.py" "G:\My Drive\DOCS\transport_daily_report\backups\generate_performance_report_$ts.py"
+Copy-Item "script\domains\performance\generate.py" "backups\generate_performance_report_$ts.py"
 ```
 
-## ⚠ IMPORTANT: Doc & workflow files
-- ALL docs, workflows, notes → save to `G:\My Drive\DOCS\transport_daily_report\docs\`
-- Do NOT create .md files locally — always save directly to Drive
-- Backups → `G:\My Drive\DOCS\transport_daily_report\backups\`
+## Run
 
-## Steps to generate report
-
-// turbo
-1. Fetch latest monthly plan (only for newest month):
+1. Fetch latest monthly plan:
 ```powershell
 python -u script/domains/performance/fetch_monthly.py --month 4 --year 2026
 ```
 
-2. Run the report generation script (cache locks old data automatically):
+2. Generate report:
 ```powershell
 python -u script/domains/performance/generate.py --months 3,4 --year 2026
 ```
 
-3. Deploy to dashboard:
+3. Deploy:
 ```powershell
 python -u script/dashboard/deploy.py --domain performance
 ```
 
-## Key architecture notes
+## Validation
 
-### Kho mapping (KHO_COLORS)
-- KRC, THỊT CÁ, ĐÔNG MÁT, ĐÔNG, MÁT, KSL-Sáng, KSL-Tối
-
-### Sub-kho classification (ĐÔNG MÁT → ĐÔNG / MÁT)
-Based on "Loại rổ" (col S in trip data):
-- `Tote ABA đông mát` → **ĐÔNG**
-- `Rổ ABA đông mát` / `Thùng Carton, Bịch nguyên` → **MÁT**
-
-### Weekly tables — Ontime logic per table
-| Table | % On Time uses | Extra SLA row? |
-|---|---|---|
-| THỊT CÁ | **SLA window** (03:00-06:00) | No |
-| ĐÔNG MÁT | Plan (arrival ≤ planned) | Yes (% On Time SLA) |
-| HÀNG ĐÔNG | Plan (arrival ≤ planned) | Yes (% On Time SLA) |
-| HÀNG MÁT | Plan (arrival ≤ planned) | Yes (% On Time SLA) |
-
-### CSS sticky columns
-2 cột đầu (KHO + Chỉ Tiêu) freeze khi scroll ngang.
-
-## Verification after generation
-- Script now auto-verifies: no "DRY" kho, planned_time coverage, etc.
-- Review ⚠ warnings in output and report to user
+- Check all KPIs present: SLA, Plan, Completion
+- Review ⚠ warnings in output
+- Verify no missing kho
 - Check weekly tables: color gradient, SLA rows, sticky columns
-- ĐÔNG MÁT plan ontime ~80% is correct (data verified 2026-04-09)
+
+## Troubleshooting
+
+Script lỗi? → Đọc `agents/reference/performance-report-detail.md` trước khi sửa code.
