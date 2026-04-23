@@ -309,7 +309,15 @@ def apply_nso(stores, week_dates):
 # WRITE EXCEL
 # ═══════════════════════════════════════════════
 def write_excel(stores, week_dates, week_num, week_label):
-    """Write Lịch đi hàng ST W{nn}.xlsx matching dashboard 'Xuất Excel' format."""
+    """Write Lịch đi hàng ST W{nn}.xlsx matching dashboard styling + export_weekly_plan layout.
+    
+    Layout must match export_weekly_plan.py expectations:
+    - R2 col H (8): week label
+    - R3 cols H-N (8-14): dates
+    - R4 cols A-G: column headers, cols H-N: day names
+    - R5+ cols 1-7: name,code,schedule_chia,schedule_ve,opening,inventory,shift
+    - R5+ cols 8-14: days
+    """
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from openpyxl.utils import get_column_letter
@@ -336,7 +344,7 @@ def write_excel(stores, week_dates, week_num, week_label):
         right=Side(style='thin'),
     )
 
-    # R1: Title row — dark navy blue
+    # Title row — dark navy blue
     sTitle = {
         'font': Font(bold=True, size=13, color='FFFFFF'),
         'fill': PatternFill(start_color='1F3864', end_color='1F3864', fill_type='solid'),
@@ -353,7 +361,7 @@ def write_excel(stores, week_dates, week_num, week_label):
         'alignment': Alignment(horizontal='center', vertical='center'),
     }
 
-    # R2: Date header — dark red
+    # Date header — dark red
     sDateHdr = {
         'font': Font(bold=True, size=10, color='FFFFFF'),
         'fill': PatternFill(start_color='C00000', end_color='C00000', fill_type='solid'),
@@ -361,7 +369,7 @@ def write_excel(stores, week_dates, week_num, week_label):
         'border': thick_border,
     }
 
-    # R3: Day name headers — yellow
+    # Day name headers — yellow
     sDayHdr = {
         'font': Font(bold=True, size=10),
         'fill': PatternFill(start_color='FFD966', end_color='FFD966', fill_type='solid'),
@@ -369,7 +377,7 @@ def write_excel(stores, week_dates, week_num, week_label):
         'border': thick_border,
     }
 
-    # R3: Column headers (A-C) — light blue
+    # Column headers — light blue
     sColHdr = {
         'font': Font(bold=True, size=10),
         'fill': PatternFill(start_color='D9E2F3', end_color='D9E2F3', fill_type='solid'),
@@ -388,28 +396,24 @@ def write_excel(stores, week_dates, week_num, week_label):
         'alignment': Alignment(horizontal='center', vertical='center'),
         'border': thin_border,
     }
-    # Châm hàng — orange
     sCham = {
         'font': Font(bold=True, size=10, color='C65911'),
         'fill': PatternFill(start_color='FBE5D6', end_color='FBE5D6', fill_type='solid'),
         'alignment': Alignment(horizontal='center', vertical='center'),
         'border': thin_border,
     }
-    # Kiểm kê — pink/red
     sKK = {
         'font': Font(bold=True, size=10, color='FF0000'),
         'fill': PatternFill(start_color='FCE4EC', end_color='FCE4EC', fill_type='solid'),
         'alignment': Alignment(horizontal='center', vertical='center'),
         'border': thin_border,
     }
-    # Ngày — white bg
     sNgay = {
         'font': Font(size=10),
         'fill': PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid'),
         'alignment': Alignment(horizontal='center', vertical='center'),
         'border': thin_border,
     }
-    # Đêm — white bg
     sDem = {
         'font': Font(size=10),
         'fill': PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid'),
@@ -418,7 +422,6 @@ def write_excel(stores, week_dates, week_num, week_label):
     }
 
     def apply_style(cell, style_dict):
-        """Apply style dict to openpyxl cell."""
         for attr, val in style_dict.items():
             setattr(cell, attr, val)
 
@@ -428,63 +431,93 @@ def write_excel(stores, week_dates, week_num, week_label):
     ws.row_dimensions[1].height = 8
 
     # ═══════════════════════════════════════════════
-    # ROW 2: Title row — dark navy blue with merged cells
+    # ROW 2: Title (col A-B merged) + count (col C) + week label (col H-N merged)
     # ═══════════════════════════════════════════════
     ws.row_dimensions[2].height = 28
     ws.merge_cells('A2:B2')
     c = ws.cell(2, 1, 'LỊCH VỀ HÀNG SIÊU THỊ')
     apply_style(c, sTitle)
-    c = ws.cell(2, 2)
-    apply_style(c, sTitle)
+    apply_style(ws.cell(2, 2), sTitle)
     c = ws.cell(2, 3, len(stores))
     apply_style(c, sCount)
-
-    # Merge D2:J2 for week label
-    ws.merge_cells('D2:J2')
-    c = ws.cell(2, 4, week_label)
+    # Fill navy blue across cols D-G
+    for col in range(4, 8):
+        apply_style(ws.cell(2, col, ''), sWeek)
+    # Week label in col H (where export_weekly_plan reads it)
+    ws.merge_cells('H2:N2')
+    c = ws.cell(2, 8, week_label)
     apply_style(c, sWeek)
-    for col in range(5, 11):
+    for col in range(9, 15):
         apply_style(ws.cell(2, col), sWeek)
 
     # ═══════════════════════════════════════════════
-    # ROW 3: Date headers — dark red
+    # ROW 3: Date headers in cols H-N (where export reads them)
     # ═══════════════════════════════════════════════
     ws.row_dimensions[3].height = 22
-    for col in range(1, 4):
+    # Fill red across A-G
+    for col in range(1, 8):
         apply_style(ws.cell(3, col, ''), sDateHdr)
+    # Dates in cols H(8) through N(14)
     for i, wd in enumerate(week_dates):
-        c = ws.cell(3, 4 + i, wd.strftime('%d/%m/%Y'))
+        c = ws.cell(3, 8 + i, datetime(wd.year, wd.month, wd.day))
         apply_style(c, sDateHdr)
 
     # ═══════════════════════════════════════════════
-    # ROW 4: Column headers
+    # ROW 4: Column headers (A-G) + day names (H-N)
     # ═══════════════════════════════════════════════
     ws.row_dimensions[4].height = 26
-    col_headers = ['SIÊU THỊ', 'Viết tắt', 'Giờ nhận']
+    col_headers = ["SIÊU THỊ", "Viết tắt", "Lịch chia hàng ST", "Lịch về hàng ST",
+                    "Khai trương", "Kiểm kê", "Giờ nhận"]
     for i, h in enumerate(col_headers):
         c = ws.cell(4, 1 + i, h)
         apply_style(c, sColHdr)
     for i, dn in enumerate(day_names):
-        c = ws.cell(4, 4 + i, dn)
+        c = ws.cell(4, 8 + i, dn)
         apply_style(c, sDayHdr)
 
     # ═══════════════════════════════════════════════
-    # ROW 5+: Store data
+    # ROW 5+: Store data (cols 1-7 metadata, 8-14 days)
     # ═══════════════════════════════════════════════
     for r, s in enumerate(stores, 5):
-        # A: Store name
+        # Col 1: Store name
         c = ws.cell(r, 1, s["name"])
         apply_style(c, sCell)
-        # B: Code
+        # Col 2: Code
         c = ws.cell(r, 2, s["code"])
         apply_style(c, sCellC)
-        # C: Shift
-        c = ws.cell(r, 3, s["shift"])
+        # Col 3: Schedule chia
+        c = ws.cell(r, 3, s.get("schedule_chia", ""))
+        apply_style(c, sCellC)
+        # Col 4: Schedule về
+        c = ws.cell(r, 4, s["schedule_ve"])
+        apply_style(c, sCellC)
+        # Col 5: Opening date
+        if s.get("opening_date"):
+            try:
+                od = datetime.strptime(s["opening_date"], "%d/%m/%Y")
+                c = ws.cell(r, 5, od)
+            except:
+                c = ws.cell(r, 5, s["opening_date"])
+        else:
+            c = ws.cell(r, 5, "")
+        apply_style(c, sCellC)
+        # Col 6: Inventory date
+        if s.get("inventory_date"):
+            try:
+                ki = datetime.strptime(s["inventory_date"], "%d/%m/%Y")
+                c = ws.cell(r, 6, ki)
+            except:
+                c = ws.cell(r, 6, s["inventory_date"])
+        else:
+            c = ws.cell(r, 6, "")
+        apply_style(c, sCellC)
+        # Col 7: Shift
+        c = ws.cell(r, 7, s["shift"])
         apply_style(c, sCellC)
 
-        # D-J: Days (7 columns)
+        # Cols 8-14: Days
         for i, day_val in enumerate(s["days"]):
-            c = ws.cell(r, 4 + i, day_val if day_val else '')
+            c = ws.cell(r, 8 + i, day_val if day_val else '')
             vl = (day_val or '').lower()
             if 'châm' in vl or 'cham' in vl:
                 apply_style(c, sCham)
@@ -498,18 +531,20 @@ def write_excel(stores, week_dates, week_num, week_label):
                 apply_style(c, sCellC)
 
     # ═══════════════════════════════════════════════
-    # COLUMN WIDTHS (matching dashboard)
+    # COLUMN WIDTHS
     # ═══════════════════════════════════════════════
     ws.column_dimensions['A'].width = 48
     ws.column_dimensions['B'].width = 10
-    ws.column_dimensions['C'].width = 10
+    ws.column_dimensions['C'].width = 18
+    ws.column_dimensions['D'].width = 18
+    ws.column_dimensions['E'].width = 13
+    ws.column_dimensions['F'].width = 13
+    ws.column_dimensions['G'].width = 10
     for i in range(7):
-        ws.column_dimensions[get_column_letter(4 + i)].width = 14
+        ws.column_dimensions[get_column_letter(8 + i)].width = 14
 
-    # ═══════════════════════════════════════════════
-    # AUTO-FILTER on header row
-    # ═══════════════════════════════════════════════
-    ws.auto_filter.ref = f"A4:J{4 + len(stores)}"
+    # AUTO-FILTER
+    ws.auto_filter.ref = f"A4:N{4 + len(stores)}"
 
     # Save
     filename = f"Lịch đi hàng ST W{week_num}.xlsx"
