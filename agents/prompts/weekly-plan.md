@@ -3,7 +3,8 @@
 ## Bối cảnh
 
 Dashboard logistics KFM có 5 tabs. Tab "📅 Lịch Tuần" hiển thị lịch giao hàng siêu thị theo tuần.
-Mỗi tuần tạo 1 file Excel `Lịch đi hàng ST W{nn}.xlsx`, export thành JSON, deploy lên GitHub Pages.
+
+**Flow**: `master_schedule.json` → `generate_excel.py` → Excel W{nn} → `export_weekly_plan.py` → JSON → deploy
 
 ## 🔴 BẮT BUỘC: Fetch lại lịch kiểm kê mới nhất
 
@@ -38,9 +39,9 @@ elif isinstance(val, date):
 
 | Data | Nguồn | Tính chất |
 |------|-------|-----------|
-| Lịch về/shift | `data/master_schedule.json` + `.xlsx` | 🔒 **CỐ ĐỊNH** — chỉ thay đổi khi NSO mới hoặc đổi tuyến |
+| Lịch về/shift | `data/master_schedule.json` | 🔒 **CỐ ĐỊNH** — chỉ thay đổi khi NSO mới hoặc đổi tuyến |
 | Lịch kiểm kê | Google Sheets (INVENTORY_SHEET_URL) | 🔄 **DYNAMIC** — fetch mỗi lần chạy |
-| Lịch về hàng (days) | Excel file W{nn} | 🔄 **DYNAMIC** — có thể thay đổi mỗi tuần |
+| Lịch về hàng (days) | 🤖 Auto-generate từ master_schedule | Script `generate_excel.py` tự tạo Excel |
 | NSO opening dates | `script/domains/nso/generate.py` | ➕ Thêm khi có store mới |
 
 ## Auto-Watch Kiểm Kê
@@ -95,35 +96,25 @@ ANCHOR_START = datetime(2026, 3, 30)  # Monday W14
 ```
 data/
   master_schedule.json     # 🔒 CỐ ĐỊNH — lịch về/shift (từ sheet CHIA)
-  master_schedule.xlsx     # 🔒 Backup Excel (review/edit bằng tay)
 script/
+  domains/
+    weekly_plan/
+      generate_excel.py    # 🤖 Generate Excel W{nn} từ master_schedule + kiểm kê + NSO
+    nso/generate.py          # NSO STORES list (opening dates)
   dashboard/
     export_weekly_plan.py    # Parse Excel → JSON (main logic)
     auto_inventory_watch.py  # 🔄 Auto-watch kiểm kê (thứ 2, mỗi 1h)
-    auto_inventory_watch.bat # Batch launcher cho Task Scheduler
-    export_data.py           # Export daily/performance/inventory/nso
     deploy.py                # Git push (supports --domain weekly_plan)
   compose/
     compose_mail.py          # Email composition (cũng fetch kiểm kê)
-  domains/
-    nso/generate.py          # NSO STORES list (opening dates)
   lib/
     sources.py               # INVENTORY_SHEET_URL
     telegram.py              # send_telegram_text, delete_telegram_message
-config/
-  telegram.json              # Bot config (key: weekly_plan)
-  auto_inventory_watch_task.xml  # Task Scheduler XML
 output/
   artifacts/
-    weekly transport plan/   # Source Excel files (W14, W15, W16, W17...)
-  state/
-    inventory_watch_state.json  # Watch state (last msg_id)
-    inventory_watch.lock        # Lock file
-  logs/
-    inventory_watch.log         # Watch log
+    weekly transport plan/   # Generated Excel files (W14, W15, ...)
 docs/
   data/weekly_plan.json      # Output JSON cho dashboard
-  index.html                 # Dashboard SPA
 ```
 
 ## Key Logic trong export_weekly_plan.py
@@ -151,13 +142,19 @@ docs/
 - Tránh false positive khi 2 stores trùng code (vd: A179)
 - `_name_matches()` check ít nhất 50% từ có nghĩa khớp
 
+### Skip-First-Day Rule (NSO)
+- Sau D+3 (ngày châm hàng cuối), ngày đầu tiên matching schedule_ve bị **SKIP**
+- Delivery bắt đầu từ ngày **thứ 2** của lịch daily
+- VD: A164 KT 23/04 (T5), schedule_ve=2-4-6, D+3=26/04 (CN)
+  → T2 27/04 là ngày daily đầu → **SKIP**
+  → T4 29/04 là ngày daily thứ 2 → **bắt đầu về hàng**
+
 ### Cleanup false châm hàng  
 - Sau khi apply NSO, script strip "Châm hàng" từ stores KHÔNG phải NSO hợp lệ
-- Xử lý case Excel gốc có châm hàng nhầm (user quên bỏ)
 
 ### Inject missing stores
 - NSO stores có opening trong tuần nhưng KHÔNG có trong Excel → inject row mới
-- Tự tính post-châm delivery days theo schedule_ve + shift
+- Tự tính post-châm delivery days theo schedule_ve + shift (áp dụng skip-first-day)
 
 ## Dashboard UI (index.html)
 

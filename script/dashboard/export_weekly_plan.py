@@ -414,10 +414,19 @@ def apply_nso_cham_hang(week_data, cham_hang):
             matched_store = new_store
             is_injected = True
         
-        # Apply châm hàng + post-châm schedule
+        # Apply châm hàng + post-châm schedule (with skip-first-day rule)
         schedule_ve = nso.get("schedule_ve", "") or matched_store.get("schedule_ve", "")
         shift = nso.get("shift", "") or matched_store.get("shift", "Đêm")
         delivery_weekdays = parse_schedule_days(schedule_ve)
+        
+        # Skip-first-day: find the first delivery day after D+3 to skip
+        d3 = opening + timedelta(days=3)
+        skip_date = None
+        for delta_scan in range(4, 30):
+            candidate = opening + timedelta(days=delta_scan)
+            if candidate.weekday() in delivery_weekdays:
+                skip_date = candidate
+                break
         
         for i, wd in enumerate(week_dates):
             if wd is None:
@@ -428,9 +437,11 @@ def apply_nso_cham_hang(week_data, cham_hang):
             if 0 <= delta <= 3:
                 # D to D+3: mark as Châm hàng
                 matched_store["days"][i] = "Châm hàng"
-            elif delta > 3 and is_injected:
-                # Post-châm for injected stores: set delivery days
-                if wd.weekday() in delivery_weekdays:
+            elif delta > 3:
+                if wd == skip_date:
+                    # SKIP first delivery day after châm hàng
+                    matched_store["days"][i] = ""
+                elif wd.weekday() in delivery_weekdays:
                     matched_store["days"][i] = shift
     
     # Cleanup: remove false "Châm hàng" from stores that are NOT valid NSO matches

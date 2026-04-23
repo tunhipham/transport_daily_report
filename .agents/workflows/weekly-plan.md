@@ -25,12 +25,16 @@ Before doing ANYTHING:
 
 ## Workflow
 
-### 1. Chuẩn bị file Excel tuần mới
+### 1. Generate file Excel tuần mới
 
-User tạo file `Lịch đi hàng ST W{nn}.xlsx` trong:
+Script tự tạo file `Lịch đi hàng ST W{nn}.xlsx` từ `master_schedule.json` + kiểm kê + NSO:
+
+// turbo
+```powershell
+python script/domains/weekly_plan/generate_excel.py --week {nn}
 ```
-output/artifacts/weekly transport plan/
-```
+
+Output: `output/artifacts/weekly transport plan/Lịch đi hàng ST W{nn}.xlsx`
 
 ### 2. Cập nhật NSO stores (nếu có khai trương mới)
 
@@ -104,6 +108,11 @@ D+4+  = về lịch daily theo schedule_ve
 **NSO dời lịch**: Nếu `original_date` khác `opening_date`:
 - Bỏ châm hàng khỏi tuần gốc
 - Chỉ áp dụng châm hàng cho tuần mới
+
+**Skip-first-day**: Sau D+3, ngày đầu tiên của lịch daily bị SKIP:
+- Tìm ngày đầu tiên matching schedule_ve sau D+3 → skip
+- Delivery bắt đầu từ ngày thứ 2 matching
+- VD: KT 23/04, daily 2-4-6 → skip T2 27/04 → bắt đầu T4 29/04
 
 ## Excel Export Format
 
@@ -205,6 +214,7 @@ schtasks /create /tn "KFM_InventoryWatch" /xml "config\auto_inventory_watch_task
 | Vấn đề | Giải pháp |
 |--------|-----------|
 | NSO không hiện châm hàng | Check code trong 3 nơi: NSO STORES + NSO_SCHEDULE + master_schedule.json |
+| NSO ngày đầu sau châm bị skip sai | Check skip-first-day logic: `generate_excel.py` và `export_weekly_plan.py` |
 | Kiểm kê sai/thiếu | Re-export (script fetch lại mới nhất). Check date normalization |
 | Excel bị UUID filename | Dùng `XLSX.writeFile()` thay vì blob URL |
 | Dashboard data cũ | Hard refresh — JSON fetch đã có cache-bust `?t=timestamp` |
