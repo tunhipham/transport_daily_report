@@ -53,6 +53,76 @@
       --g3: linear-gradient(135deg, #10b981, #06b6d4);
       --shadow: 0 4px 24px rgba(0, 0, 0, .4);
       --radius: 14px;
+      --topbar-bg: rgba(11, 15, 26, .85);
+      --chart-grid: rgba(148, 163, 184, .06);
+      --chart-text: #94a3b8;
+      --chart-bar-total: rgba(255, 255, 255, 0.15);
+      --chart-bar-total-border: rgba(255, 255, 255, 0.3);
+      --chart-line-total: rgba(255, 255, 255, 0.7);
+      --tooltip-bg: rgba(17, 24, 39, 0.95);
+      --tooltip-title: #f0c060;
+      --tooltip-body: #d8dbe0;
+      --tooltip-border: rgba(148, 163, 184, .15);
+      --hover-row: rgba(30, 41, 59, .5);
+      --input-bg: rgba(30, 41, 59, .8);
+      --cal-cell-bg: rgba(30, 41, 59, .35);
+      --cal-cell-hover: rgba(30, 41, 59, .6);
+      --pill-hover: rgba(255, 255, 255, .06);
+      --pill-active-bg: rgba(99, 102, 241, .18);
+      --thead-bg: rgba(99, 102, 241, .1);
+      --filter-row-bg: rgba(30, 41, 59, .5);
+    }
+
+    [data-theme="light"] {
+      --bg: #f0f2f5;
+      --bg2: #e5e7eb;
+      --bg3: #ffffff;
+      --bg4: #d1d5db;
+      --surface: rgba(255, 255, 255, .95);
+      --surface2: rgba(245, 247, 250, .92);
+      --bd: rgba(0, 0, 0, .08);
+      --bd2: rgba(0, 0, 0, .15);
+      --t1: #1e293b;
+      --t2: #475569;
+      --t3: #64748b;
+      --t4: #94a3b8;
+      --ac: #4f46e5;
+      --acl: #4338ca;
+      --acs: #6366f1;
+      --grn: #059669;
+      --grnl: #10b981;
+      --org: #d97706;
+      --orgl: #b45309;
+      --red: #dc2626;
+      --redl: #ef4444;
+      --pur: #7c3aed;
+      --purl: #a855f7;
+      --blu: #2563eb;
+      --blul: #3b82f6;
+      --cyan: #0891b2;
+      --cyanl: #06b6d4;
+      --g1: linear-gradient(135deg, #4f46e5, #7c3aed);
+      --g2: linear-gradient(135deg, #0891b2, #2563eb);
+      --g3: linear-gradient(135deg, #059669, #0891b2);
+      --shadow: 0 4px 24px rgba(0, 0, 0, .1);
+      --topbar-bg: rgba(255, 255, 255, .9);
+      --chart-grid: rgba(0, 0, 0, .06);
+      --chart-text: #64748b;
+      --chart-bar-total: rgba(0, 0, 0, 0.08);
+      --chart-bar-total-border: rgba(0, 0, 0, 0.15);
+      --chart-line-total: rgba(0, 0, 0, 0.45);
+      --tooltip-bg: rgba(255, 255, 255, 0.97);
+      --tooltip-title: #1e293b;
+      --tooltip-body: #475569;
+      --tooltip-border: rgba(0, 0, 0, .1);
+      --hover-row: rgba(99, 102, 241, .04);
+      --input-bg: rgba(241, 245, 249, .9);
+      --cal-cell-bg: rgba(241, 245, 249, .6);
+      --cal-cell-hover: rgba(226, 232, 240, .8);
+      --pill-hover: rgba(0, 0, 0, .04);
+      --pill-active-bg: rgba(79, 70, 229, .12);
+      --thead-bg: rgba(79, 70, 229, .08);
+      --filter-row-bg: rgba(241, 245, 249, .7);
     }
 
     html {
@@ -73,7 +143,7 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(11, 15, 26, .85);
+      background: var(--topbar-bg);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--bd);
       padding: 0 2rem
@@ -135,6 +205,30 @@
       gap: .8rem;
       font-size: .75rem;
       color: var(--t3)
+    }
+
+    /* ═══ THEME TOGGLE ═══ */
+    .theme-toggle {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--bd2);
+      background: transparent;
+      color: var(--t2);
+      cursor: pointer;
+      font-size: 1.15rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .25s;
+      flex-shrink: 0
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--ac);
+      color: var(--t1);
+      background: var(--pill-active-bg);
+      transform: scale(1.08)
     }
 
     .meta .dot {
@@ -374,7 +468,7 @@
 
     .filter-bar select,
     .filter-bar input[type="date"] {
-      background: rgba(30, 41, 59, .8);
+      background: var(--input-bg);
       border: 1px solid var(--bd2);
       color: var(--t1);
       padding: .4rem .7rem;
@@ -392,6 +486,10 @@
 
     .filter-bar input[type="date"]::-webkit-calendar-picker-indicator {
       filter: invert(1) brightness(.7)
+    }
+
+    [data-theme="light"] .filter-bar input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: none
     }
 
     .fbtn {
@@ -448,7 +546,7 @@
     }
 
     thead th {
-      background: rgba(99, 102, 241, .1);
+      background: var(--thead-bg);
       color: var(--acl);
       font-weight: 600;
       padding: .65rem .75rem;
@@ -464,7 +562,7 @@
     }
 
     tbody tr:hover td {
-      background: rgba(30, 41, 59, .5)
+      background: var(--hover-row)
     }
 
     .tc {
@@ -654,7 +752,7 @@
     }
 
     .cal-hd {
-      background: rgba(99, 102, 241, .12);
+      background: var(--thead-bg);
       color: var(--acl);
       font-weight: 600;
       font-size: .72rem;
@@ -665,14 +763,14 @@
 
     .cal-cell {
       min-height: 72px;
-      background: rgba(30, 41, 59, .35);
+      background: var(--cal-cell-bg);
       border-radius: 5px;
       padding: .25rem .3rem;
       transition: background .2s
     }
 
     .cal-cell:hover {
-      background: rgba(30, 41, 59, .6)
+      background: var(--cal-cell-hover)
     }
 
     .cal-cell.empty {
@@ -726,7 +824,7 @@
     .tbl-filter {
       width: 100%;
       padding: 4px 6px;
-      background: rgba(30, 41, 59, .6);
+      background: var(--input-bg);
       border: 1px solid var(--bd2);
       border-radius: 5px;
       color: var(--t2);
@@ -809,12 +907,12 @@
     }
 
     .pill:hover {
-      background: rgba(255, 255, 255, .06);
+      background: var(--pill-hover);
       color: var(--t2)
     }
 
     .pill.active {
-      background: rgba(99, 102, 241, .18);
+      background: var(--pill-active-bg);
       color: var(--acl);
       border-color: rgba(99, 102, 241, .3);
       font-weight: 600
@@ -833,7 +931,7 @@
     }
 
     .weekly-table thead th {
-      background: rgba(99, 102, 241, .1);
+      background: var(--thead-bg);
       color: var(--acl);
       font-weight: 600
     }
@@ -874,7 +972,7 @@
 
     th.sortable:hover {
       color: var(--t1);
-      background: rgba(99, 102, 241, .18)
+      background: var(--pill-active-bg)
     }
 
     th.sortable::after {
@@ -910,7 +1008,7 @@
     }
 
     .glossary-table th {
-      background: rgba(99, 102, 241, .1);
+      background: var(--thead-bg);
       color: var(--acl);
       font-weight: 600;
       padding: .55rem .75rem;
@@ -932,7 +1030,7 @@
     }
 
     .glossary-table tbody tr:hover td {
-      background: rgba(30, 41, 59, .5)
+      background: var(--hover-row)
     }
 
     /* ═══ RESPONSIVE ═══ */
@@ -1011,9 +1109,9 @@
     /* ═══ WEEKLY TRANSPORT PLAN TAB ═══ */
     .wk-filter-bar { display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; padding:1rem 1.25rem; background:var(--surface); border:1px solid var(--bd); border-radius:14px; backdrop-filter:blur(12px) }
     .wk-filter-bar label { color:var(--t2); font-size:.82rem; font-weight:600; white-space:nowrap }
-    .wk-filter-bar select { background:rgba(30,41,59,.8); border:1px solid var(--bd2); color:var(--t1); padding:.45rem .75rem; border-radius:8px; font-family:inherit; font-size:.85rem; outline:none; transition:border-color .2s; cursor:pointer }
+    .wk-filter-bar select { background:var(--input-bg); border:1px solid var(--bd2); color:var(--t1); padding:.45rem .75rem; border-radius:8px; font-family:inherit; font-size:.85rem; outline:none; transition:border-color .2s; cursor:pointer }
     .wk-filter-bar select:focus { border-color:var(--ac) }
-    .wk-filter-bar .wk-search { background:rgba(30,41,59,.8); border:1px solid var(--bd2); color:var(--t1); padding:.45rem .75rem; border-radius:8px; font-family:inherit; font-size:.85rem; outline:none; flex:1; min-width:200px; transition:border-color .2s }
+    .wk-filter-bar .wk-search { background:var(--input-bg); border:1px solid var(--bd2); color:var(--t1); padding:.45rem .75rem; border-radius:8px; font-family:inherit; font-size:.85rem; outline:none; flex:1; min-width:200px; transition:border-color .2s }
     .wk-filter-bar .wk-search:focus { border-color:var(--ac) }
     .wk-filter-bar .wk-search::placeholder { color:var(--t3) }
     .wk-export-btn { background:linear-gradient(135deg,#10b981,#059669); color:#fff; border:none; padding:.5rem 1.2rem; border-radius:8px; font-family:inherit; font-size:.82rem; font-weight:600; cursor:pointer; transition:opacity .2s,transform .2s; display:flex; align-items:center; gap:.4rem }
@@ -1071,6 +1169,7 @@
         <div class="tab" data-tab="nso" id="tab-nso">🏪 NSO</div>
         <div class="tab" data-tab="weekly_plan" id="tab-weekly_plan">📅 Lịch Tuần</div>
       </div>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Chuyển giao diện Sáng / Tối">🌙</button>
       <div class="meta">
         <span class="dot"></span>
         <span id="lastUpdated">Loading...</span>
@@ -1127,6 +1226,63 @@
   </div>
 
   <script>
+    // ═══════════════════════════════════════════════
+    // THEME TOGGLE
+    // ═══════════════════════════════════════════════
+    (function initTheme() {
+      const saved = localStorage.getItem('kfm-theme');
+      if (saved === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        const btn = document.getElementById('themeToggle');
+        if (btn) btn.textContent = '☀️';
+      }
+    })();
+
+    function getThemeColors() {
+      const s = getComputedStyle(document.documentElement);
+      return {
+        chartText: s.getPropertyValue('--chart-text').trim(),
+        chartGrid: s.getPropertyValue('--chart-grid').trim(),
+        tooltipBg: s.getPropertyValue('--tooltip-bg').trim(),
+        tooltipTitle: s.getPropertyValue('--tooltip-title').trim(),
+        tooltipBody: s.getPropertyValue('--tooltip-body').trim(),
+        tooltipBorder: s.getPropertyValue('--tooltip-border').trim(),
+        barTotal: s.getPropertyValue('--chart-bar-total').trim(),
+        barTotalBorder: s.getPropertyValue('--chart-bar-total-border').trim(),
+        lineTotal: s.getPropertyValue('--chart-line-total').trim(),
+      };
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isLight = html.getAttribute('data-theme') === 'light';
+      const btn = document.getElementById('themeToggle');
+      if (isLight) {
+        html.removeAttribute('data-theme');
+        localStorage.setItem('kfm-theme', 'dark');
+        if (btn) btn.textContent = '🌙';
+      } else {
+        html.setAttribute('data-theme', 'light');
+        localStorage.setItem('kfm-theme', 'light');
+        if (btn) btn.textContent = '☀️';
+      }
+      // Re-apply Chart.js defaults
+      const tc = getThemeColors();
+      Chart.defaults.color = tc.chartText;
+      Chart.defaults.borderColor = tc.chartGrid;
+      // Re-render loaded tabs by destroying and re-loading
+      Object.keys(loaded).forEach(name => {
+        const data = loaded[name];
+        if (data) {
+          switch (name) {
+            case 'daily': renderDaily(data); break;
+            case 'performance': renderPerformance(data); break;
+            case 'inventory': renderInventory(data); break;
+          }
+        }
+      });
+    }
+
     // ═══════════════════════════════════════════════
     // TAB NAVIGATION
     // ═══════════════════════════════════════════════
@@ -1413,10 +1569,11 @@
       const data = window._dailyData;
       const KHOS = data.kho_list;
       const COLORS = data.kho_colors;
+      const tc = getThemeColors();
       const ds = [];
       ds.push({
         type: 'bar', label: 'TOTAL', data: filteredData.map(h => h[totalKey]),
-        backgroundColor: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.3)',
+        backgroundColor: tc.barTotal, borderColor: tc.barTotalBorder,
         borderWidth: 1, borderRadius: 3, order: 2, barPercentage: 0.6, categoryPercentage: 0.8
       });
       KHOS.forEach(kho => {
@@ -1428,31 +1585,34 @@
       });
       ds.push({
         type: 'line', label: 'TOTAL (avg)', data: filteredData.map(h => h[totalKey]),
-        borderColor: 'rgba(255,255,255,0.7)', borderWidth: 2, borderDash: [6, 3],
+        borderColor: tc.lineTotal, borderWidth: 2, borderDash: [6, 3],
         pointRadius: 0, tension: 0.15, fill: false, order: 0
       });
       return ds;
     }
-    const dailyChartOpts = {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: {
-          position: 'bottom', labels: {
-            color: '#94a3b8', font: { size: 11, weight: '600' }, usePointStyle: true, padding: 12,
-            filter: item => item.text !== 'TOTAL (avg)'
+    function dailyGetChartOpts() {
+      const tc = getThemeColors();
+      return {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'bottom', labels: {
+              color: tc.chartText, font: { size: 11, weight: '600' }, usePointStyle: true, padding: 12,
+              filter: item => item.text !== 'TOTAL (avg)'
+            }
+          },
+          tooltip: {
+            backgroundColor: tc.tooltipBg, titleColor: tc.tooltipTitle, bodyColor: tc.tooltipBody,
+            borderColor: tc.tooltipBorder, borderWidth: 1, padding: 10
           }
         },
-        tooltip: {
-          backgroundColor: 'rgba(17,24,39,0.95)', titleColor: '#f0c060', bodyColor: '#d8dbe0',
-          borderColor: 'rgba(148,163,184,.15)', borderWidth: 1, padding: 10
+        scales: {
+          x: { ticks: { color: tc.chartText, font: { size: 11, weight: '600' }, maxRotation: 45, autoSkip: true, maxTicksLimit: 20 }, grid: { color: tc.chartGrid } },
+          y: { ticks: { color: tc.chartText, font: { size: 11, weight: '600' } }, grid: { color: tc.chartGrid }, beginAtZero: true }
         }
-      },
-      scales: {
-        x: { ticks: { color: '#94a3b8', font: { size: 11, weight: '600' }, maxRotation: 45, autoSkip: true, maxTicksLimit: 20 }, grid: { color: 'rgba(148,163,184,.06)' } },
-        y: { ticks: { color: '#94a3b8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(148,163,184,.06)' }, beginAtZero: true }
-      }
-    };
+      };
+    }
 
     function dailyInitCharts(days) {
       const data = window._dailyData;
@@ -1476,7 +1636,7 @@
         if (!canvas) return;
         dailyCharts[id] = new Chart(canvas, {
           type: 'bar', data: { labels, datasets: dailyMkDS(filtered, mk, tk) },
-          options: JSON.parse(JSON.stringify(dailyChartOpts))
+          options: dailyGetChartOpts()
         });
       });
       // Weekly charts
@@ -1534,13 +1694,14 @@
         ['weeklyChartItems', 'sl_items', 'total_items'],
         ['weeklyChartXe', 'sl_xe', 'total_xe']
       ];
+      const tc = getThemeColors();
       configs.forEach(([id, mk, tk]) => {
         const canvas = document.getElementById(id);
         if (!canvas) return;
         const ds = [];
         ds.push({
           type: 'bar', label: 'TOTAL', data: wData.map(w => w[tk]),
-          backgroundColor: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.3)',
+          backgroundColor: tc.barTotal, borderColor: tc.barTotalBorder,
           borderWidth: 1, borderRadius: 3, order: 2, barPercentage: 0.6, categoryPercentage: 0.8
         });
         KHOS.forEach(kho => {
@@ -1552,12 +1713,12 @@
         });
         ds.push({
           type: 'line', label: 'TOTAL (avg)', data: wData.map(w => w[tk]),
-          borderColor: 'rgba(255,255,255,0.7)', borderWidth: 2, borderDash: [6, 3],
+          borderColor: tc.lineTotal, borderWidth: 2, borderDash: [6, 3],
           pointRadius: 0, tension: 0.15, fill: false, order: 0
         });
         weeklyCharts[id] = new Chart(canvas, {
           type: 'bar', data: { labels: wLabels, datasets: ds },
-          options: JSON.parse(JSON.stringify(dailyChartOpts))
+          options: dailyGetChartOpts()
         });
       });
 
@@ -1645,7 +1806,7 @@
           if (!canvas) return;
           dailyCharts[id] = new Chart(canvas, {
             type: 'bar', data: { labels, datasets: dailyMkDS(filtered, mk, tk) },
-            options: JSON.parse(JSON.stringify(dailyChartOpts))
+            options: dailyGetChartOpts()
           });
         });
         dailyInitWeeklyCharts(filtered);
@@ -1787,10 +1948,11 @@
       perfRenderCardsForDate(isoDates.length - 1);
 
       // Build filter pills & init charts
-      Chart.defaults.color = '#94a3b8';
-      Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+      const tc = getThemeColors();
+      Chart.defaults.color = tc.chartText;
+      Chart.defaults.borderColor = tc.chartGrid;
 
-      const TT = { backgroundColor: 'rgba(17,24,39,0.95)', titleColor: '#E0E0E0', bodyColor: '#CCC', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, cornerRadius: 8, padding: 10 };
+      const TT = { backgroundColor: tc.tooltipBg, titleColor: tc.tooltipTitle, bodyColor: tc.tooltipBody, borderColor: tc.tooltipBorder, borderWidth: 1, cornerRadius: 8, padding: 10 };
       window._perfTT = TT;
       window._perfChartInstances = {};
 
@@ -1849,7 +2011,7 @@
             plugins: { tooltip: window._perfTT, ...ann },
             scales: {
               x: { stacked: true, grid: { display: false } },
-              y: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { precision: 0 } },
+              y: { stacked: true, grid: { color: tc.chartGrid }, ticks: { precision: 0 } },
               y1: { position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false }, ticks: { stepSize: 20 } },
             }
           }
@@ -2096,10 +2258,11 @@
       // Render trend charts
       if (trend && trend.dates) {
         const tLabels = trend.dates.map(d => d.substring(0, 5));
+        const invTC = getThemeColors();
         const invOpts = {
           responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-          plugins: { tooltip: { backgroundColor: 'rgba(17,24,39,0.95)', titleColor: '#f0c060', bodyColor: '#d8dbe0', borderColor: 'rgba(148,163,184,.15)', borderWidth: 1, padding: 10 } },
-          scales: { x: { grid: { display: false } }, y: { min: 90, max: 100, grid: { color: 'rgba(148,163,184,.06)' }, ticks: { callback: v => v + '%' } }, y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0 } } }
+          plugins: { tooltip: { backgroundColor: invTC.tooltipBg, titleColor: invTC.tooltipTitle, bodyColor: invTC.tooltipBody, borderColor: invTC.tooltipBorder, borderWidth: 1, padding: 10 } },
+          scales: { x: { grid: { display: false } }, y: { min: 90, max: 100, grid: { color: invTC.chartGrid }, ticks: { callback: v => v + '%' } }, y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0 } } }
         };
 
         function invCombo(canvasId, kfmData, abaData, accData, label) {
@@ -2211,7 +2374,7 @@
   <div class="table-wrap"><table>
     <thead>
       <tr><th class="tc" style="width:45px">STT</th><th>Tên Siêu Thị</th><th class="tc" style="width:70px">Code</th><th class="tc" style="width:105px">Ngày KT</th><th class="tc" style="width:250px">Trạng Thái</th></tr>
-      <tr style="background:rgba(30,41,59,.5)">
+      <tr style="background:var(--filter-row-bg)">
         <td></td>
         <td><input type="text" class="tbl-filter" id="nsoFltName" placeholder="Tìm tên..." oninput="nsoInlineFilter()"></td>
         <td><input type="text" class="tbl-filter" id="nsoFltCode" placeholder="Code" oninput="nsoInlineFilter()" style="text-align:center"></td>
