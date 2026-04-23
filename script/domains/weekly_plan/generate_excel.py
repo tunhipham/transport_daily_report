@@ -281,16 +281,11 @@ def apply_nso(stores, week_dates):
         if not matched.get("opening_date"):
             matched["opening_date"] = opening.strftime("%d/%m/%Y")
 
-        # ─── Compute skip-first-day: find the first delivery day after D+3 ───
-        # This is the day that should be SKIPPED
-        d3 = opening + timedelta(days=3)
-        skip_date = None
-        # Scan from D+4 onwards to find first matching delivery day
-        for delta in range(4, 30):  # scan up to 30 days out
-            candidate = opening + timedelta(days=delta)
-            if candidate.weekday() in delivery_weekdays:
-                skip_date = candidate
-                break
+        # ─── Skip D+4 rule: only skip if D+4 is a delivery day ───
+        # If D+4 falls on a delivery day → skip it (giảm tải 1 ngày)
+        # If D+4 is NOT a delivery day → natural gap already exists, no skip
+        d4 = opening + timedelta(days=4)
+        skip_date = d4 if d4.weekday() in delivery_weekdays else None
 
         # Apply châm hàng + post-châm with skip
         for i, wd in enumerate(week_dates):
@@ -299,8 +294,8 @@ def apply_nso(stores, week_dates):
             if 0 <= delta <= 3:
                 matched["days"][i] = "Châm hàng"
             elif delta > 3:
-                if wd == skip_date:
-                    # SKIP first delivery day after châm hàng
+                if skip_date and wd == skip_date:
+                    # SKIP D+4 (giảm tải ngay sau châm hàng)
                     matched["days"][i] = ""
                 elif wd.weekday() in delivery_weekdays:
                     matched["days"][i] = shift

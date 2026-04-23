@@ -142,12 +142,11 @@ docs/
 - Tránh false positive khi 2 stores trùng code (vd: A179)
 - `_name_matches()` check ít nhất 50% từ có nghĩa khớp
 
-### Skip-First-Day Rule (NSO)
-- Sau D+3 (ngày châm hàng cuối), ngày đầu tiên matching schedule_ve bị **SKIP**
-- Delivery bắt đầu từ ngày **thứ 2** của lịch daily
-- VD: A164 KT 23/04 (T5), schedule_ve=2-4-6, D+3=26/04 (CN)
-  → T2 27/04 là ngày daily đầu → **SKIP**
-  → T4 29/04 là ngày daily thứ 2 → **bắt đầu về hàng**
+### Skip D+4 Rule (NSO)
+- Sau D+3, chỉ skip **D+4** nếu D+4 là ngày delivery (giảm tải 1 ngày)
+- Nếu D+4 **không phải** ngày delivery → đã có gap tự nhiên → không skip
+- VD1: A164 KT 23/04, daily 2-4-6 → D+4=T2 27/04 IS daily → **skip** → bắt đầu T4
+- VD2: A163 KT 25/04, daily 3-5-7 → D+4=T4 29/04 NOT daily → **ko skip** → T5 30/04 về bt
 
 ### Cleanup false châm hàng  
 - Sau khi apply NSO, script strip "Châm hàng" từ stores KHÔNG phải NSO hợp lệ

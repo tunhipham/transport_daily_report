@@ -109,10 +109,10 @@ D+4+  = về lịch daily theo schedule_ve
 - Bỏ châm hàng khỏi tuần gốc
 - Chỉ áp dụng châm hàng cho tuần mới
 
-**Skip-first-day**: Sau D+3, ngày đầu tiên của lịch daily bị SKIP:
-- Tìm ngày đầu tiên matching schedule_ve sau D+3 → skip
-- Delivery bắt đầu từ ngày thứ 2 matching
-- VD: KT 23/04, daily 2-4-6 → skip T2 27/04 → bắt đầu T4 29/04
+**Skip D+4**: Sau D+3, chỉ skip D+4 nếu D+4 là ngày delivery:
+- D+4 IS delivery day → skip (giảm tải 1 ngày sau châm hàng)
+- D+4 NOT delivery day → đã có gap tự nhiên → không skip
+- VD: KT 25/04, daily 3-5-7 → D+4=T4→ NOT daily → T5 30/04 về bt
 
 ## Excel Export Format
 

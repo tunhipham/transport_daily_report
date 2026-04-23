@@ -419,14 +419,11 @@ def apply_nso_cham_hang(week_data, cham_hang):
         shift = nso.get("shift", "") or matched_store.get("shift", "Đêm")
         delivery_weekdays = parse_schedule_days(schedule_ve)
         
-        # Skip-first-day: find the first delivery day after D+3 to skip
-        d3 = opening + timedelta(days=3)
-        skip_date = None
-        for delta_scan in range(4, 30):
-            candidate = opening + timedelta(days=delta_scan)
-            if candidate.weekday() in delivery_weekdays:
-                skip_date = candidate
-                break
+        # Skip D+4 rule: only skip if D+4 is a delivery day
+        # If D+4 falls on a delivery day → skip (giảm tải 1 ngày)
+        # If D+4 is NOT a delivery day → natural gap, no skip
+        d4 = opening + timedelta(days=4)
+        skip_date = d4 if d4.weekday() in delivery_weekdays else None
         
         for i, wd in enumerate(week_dates):
             if wd is None:
