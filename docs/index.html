@@ -962,6 +962,34 @@
       font-weight: 600
     }
 
+    /* ── Light theme: override server-generated inline dark styles in perf weekly tables ── */
+    [data-theme="light"] .wt-kho-cell,
+    [data-theme="light"] .wt-metric-cell,
+    [data-theme="light"] .wt-kho,
+    [data-theme="light"] .wt-metric {
+      background: var(--bg3) !important;
+      color: var(--t1) !important
+    }
+
+    [data-theme="light"] .weekly-table thead td {
+      background: var(--bg2) !important;
+      color: var(--t3) !important
+    }
+
+    [data-theme="light"] .weekly-table th,
+    [data-theme="light"] .weekly-table td {
+      border-color: var(--bd) !important
+    }
+
+    [data-theme="light"] .wt-day-cell {
+      color: var(--t1) !important
+    }
+
+    [data-theme="light"] .wt-total-cell {
+      background: rgba(79, 70, 229, .06) !important;
+      color: var(--t1) !important
+    }
+
     /* ═══ SORT HEADERS ═══ */
     th.sortable {
       cursor: pointer;
@@ -1124,14 +1152,14 @@
     /* Weekly Schedule Table */
     .wk-table-wrap { overflow-x:auto; overflow-y:auto; max-height:75vh; border-radius:12px; border:1px solid var(--bd) }
     .wk-table { width:100%; border-collapse:collapse; font-size:.82rem; min-width:900px }
-    .wk-table thead th { background:#1a1f35; color:var(--ac-light); font-weight:600; padding:.6rem .5rem; text-align:center; white-space:nowrap; border-bottom:2px solid var(--bd); position:sticky; top:0; z-index:2 }
+    .wk-table thead th { background:var(--bg3); color:var(--acl); font-weight:600; padding:.6rem .5rem; text-align:center; white-space:nowrap; border-bottom:2px solid var(--bd); position:sticky; top:0; z-index:2 }
     .wk-table thead th:nth-child(1) { width:40px }
     .wk-table thead th:nth-child(2) { text-align:left; min-width:280px }
     .wk-table thead th:nth-child(3) { width:65px }
     .wk-table thead th:nth-child(4) { width:60px }
     .wk-table tbody td { padding:.45rem .4rem; border-bottom:1px solid var(--bd); text-align:center; transition:background .2s; vertical-align:middle }
     .wk-table tbody td:nth-child(2) { text-align:left; font-size:.8rem }
-    .wk-table tbody tr:hover td { background:rgba(99,102,241,.06) }
+    .wk-table tbody tr:hover td { background:var(--hover-row) }
 
     /* Cell status pills */
     .wk-cell { display:inline-block; padding:.2rem .5rem; border-radius:6px; font-size:.73rem; font-weight:600; white-space:nowrap; min-width:52px }
@@ -1144,8 +1172,8 @@
     /* Legend */
     .wk-legend { display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1rem; padding:.6rem 1rem; background:var(--surface); border:1px solid var(--bd); border-radius:10px }
     .wk-legend-item { display:flex; align-items:center; gap:.35rem; font-size:.75rem; color:var(--t2); cursor:pointer; padding:.3rem .7rem; border-radius:6px; border:1px solid transparent; transition:all .2s }
-    .wk-legend-item:hover { background:rgba(255,255,255,.06); border-color:var(--bd) }
-    .wk-legend-item.active { background:rgba(255,255,255,.1); border-color:var(--ac); color:var(--t1) }
+    .wk-legend-item:hover { background:var(--pill-hover); border-color:var(--bd) }
+    .wk-legend-item.active { background:var(--pill-active-bg); border-color:var(--ac); color:var(--t1) }
     .wk-legend-dot { width:12px; height:12px; border-radius:4px; flex-shrink:0 }
     .wk-legend-dot.lg-all { background:rgba(255,255,255,.3); border:1px solid rgba(255,255,255,.5) }
     .wk-legend-dot.lg-ngay { background:rgba(250,204,21,.4); border:1px solid rgba(250,204,21,.6) }
