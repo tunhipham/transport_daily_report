@@ -24,7 +24,8 @@ def load_telegram_config(config_path, domain=None):
     Supports both flat format {"bot_token":..., "chat_id":...}
     and hierarchical format {"daily": {"bot_token":..., "chat_id":...}, ...}.
     If domain is specified, reads from that key in hierarchical config.
-    Returns (bot_token, chat_id) tuple. Both None if file missing."""
+    Returns (bot_token, chat_id) tuple. Both None if file missing.
+    Note: For multi-group support, use load_telegram_config_multi() instead."""
     if not os.path.exists(config_path):
         print(f"  ⚠ Telegram config not found: {config_path}")
         return None, None
@@ -33,8 +34,31 @@ def load_telegram_config(config_path, domain=None):
     # Hierarchical format: {"daily": {...}, "inventory": {...}}
     if domain and domain in cfg:
         cfg = cfg[domain]
-    # Flat format fallback: {"bot_token": ..., "chat_id": ...}
-    return cfg.get("bot_token"), cfg.get("chat_id")
+    bot_token = cfg.get("bot_token")
+    # Support both "chat_ids" (array) and legacy "chat_id" (string)
+    chat_id = cfg.get("chat_id")
+    if chat_id is None:
+        chat_ids = cfg.get("chat_ids", [])
+        chat_id = chat_ids[0] if chat_ids else None
+    return bot_token, chat_id
+
+
+def load_telegram_config_multi(config_path, domain=None):
+    """Load bot_token and ALL chat_ids from a JSON config file.
+    Returns (bot_token, chat_ids_list) tuple."""
+    if not os.path.exists(config_path):
+        print(f"  ⚠ Telegram config not found: {config_path}")
+        return None, []
+    with open(config_path, "r", encoding="utf-8") as f:
+        cfg = json.load(f)
+    if domain and domain in cfg:
+        cfg = cfg[domain]
+    bot_token = cfg.get("bot_token")
+    chat_ids = cfg.get("chat_ids")
+    if chat_ids is None:
+        chat_id = cfg.get("chat_id")
+        chat_ids = [chat_id] if chat_id else []
+    return bot_token, chat_ids
 
 
 def send_telegram_photo(photo_path, caption, bot_token, chat_id, fallback_document=True):

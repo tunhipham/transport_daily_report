@@ -309,9 +309,10 @@ def apply_nso(stores, week_dates):
 # WRITE EXCEL
 # ═══════════════════════════════════════════════
 def write_excel(stores, week_dates, week_num, week_label):
-    """Write Lịch đi hàng ST W{nn}.xlsx with sheet 'Lịch về hàng'."""
+    """Write Lịch đi hàng ST W{nn}.xlsx matching dashboard 'Xuất Excel' format."""
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
 
     wb = Workbook()
     ws = wb.active
@@ -319,62 +320,196 @@ def write_excel(stores, week_dates, week_num, week_label):
 
     day_names = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"]
 
-    # ── R2: Week label (col H) ──
-    ws.cell(2, 8, week_label)
+    # ═══════════════════════════════════════════════
+    # STYLE CONSTANTS (matching dashboard JS export)
+    # ═══════════════════════════════════════════════
+    thin_border = Border(
+        top=Side(style='thin', color='D0D0D0'),
+        bottom=Side(style='thin', color='D0D0D0'),
+        left=Side(style='thin', color='D0D0D0'),
+        right=Side(style='thin', color='D0D0D0'),
+    )
+    thick_border = Border(
+        top=Side(style='thin'),
+        bottom=Side(style='thin'),
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+    )
 
-    # ── R3: Title + count + dates ──
-    ws.cell(3, 1, "LỊCH VỀ HÀNG SIÊU THỊ ")
-    ws.cell(3, 2, len(stores))
+    # R1: Title row — dark navy blue
+    sTitle = {
+        'font': Font(bold=True, size=13, color='FFFFFF'),
+        'fill': PatternFill(start_color='1F3864', end_color='1F3864', fill_type='solid'),
+        'alignment': Alignment(horizontal='center', vertical='center'),
+    }
+    sCount = {
+        'font': Font(bold=True, size=12, color='FFFFFF'),
+        'fill': PatternFill(start_color='1F3864', end_color='1F3864', fill_type='solid'),
+        'alignment': Alignment(horizontal='center', vertical='center'),
+    }
+    sWeek = {
+        'font': Font(bold=True, size=11, color='FFFFFF'),
+        'fill': PatternFill(start_color='1F3864', end_color='1F3864', fill_type='solid'),
+        'alignment': Alignment(horizontal='center', vertical='center'),
+    }
+
+    # R2: Date header — dark red
+    sDateHdr = {
+        'font': Font(bold=True, size=10, color='FFFFFF'),
+        'fill': PatternFill(start_color='C00000', end_color='C00000', fill_type='solid'),
+        'alignment': Alignment(horizontal='center', vertical='center'),
+        'border': thick_border,
+    }
+
+    # R3: Day name headers — yellow
+    sDayHdr = {
+        'font': Font(bold=True, size=10),
+        'fill': PatternFill(start_color='FFD966', end_color='FFD966', fill_type='solid'),
+        'alignment': Alignment(horizontal='center', vertical='center', wrap_text=True),
+        'border': thick_border,
+    }
+
+    # R3: Column headers (A-C) — light blue
+    sColHdr = {
+        'font': Font(bold=True, size=10),
+        'fill': PatternFill(start_color='D9E2F3', end_color='D9E2F3', fill_type='solid'),
+        'alignment': Alignment(horizontal='center', vertical='center', wrap_text=True),
+        'border': thick_border,
+    }
+
+    # Data cells
+    sCell = {
+        'font': Font(size=10),
+        'alignment': Alignment(vertical='center'),
+        'border': thin_border,
+    }
+    sCellC = {
+        'font': Font(size=10),
+        'alignment': Alignment(horizontal='center', vertical='center'),
+        'border': thin_border,
+    }
+    # Châm hàng — orange
+    sCham = {
+        'font': Font(bold=True, size=10, color='C65911'),
+        'fill': PatternFill(start_color='FBE5D6', end_color='FBE5D6', fill_type='solid'),
+        'alignment': Alignment(horizontal='center', vertical='center'),
+        'border': thin_border,
+    }
+    # Kiểm kê — pink/red
+    sKK = {
+        'font': Font(bold=True, size=10, color='FF0000'),
+        'fill': PatternFill(start_color='FCE4EC', end_color='FCE4EC', fill_type='solid'),
+        'alignment': Alignment(horizontal='center', vertical='center'),
+        'border': thin_border,
+    }
+    # Ngày — white bg
+    sNgay = {
+        'font': Font(size=10),
+        'fill': PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid'),
+        'alignment': Alignment(horizontal='center', vertical='center'),
+        'border': thin_border,
+    }
+    # Đêm — white bg
+    sDem = {
+        'font': Font(size=10),
+        'fill': PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid'),
+        'alignment': Alignment(horizontal='center', vertical='center'),
+        'border': thin_border,
+    }
+
+    def apply_style(cell, style_dict):
+        """Apply style dict to openpyxl cell."""
+        for attr, val in style_dict.items():
+            setattr(cell, attr, val)
+
+    # ═══════════════════════════════════════════════
+    # ROW 1: Empty
+    # ═══════════════════════════════════════════════
+    ws.row_dimensions[1].height = 8
+
+    # ═══════════════════════════════════════════════
+    # ROW 2: Title row — dark navy blue with merged cells
+    # ═══════════════════════════════════════════════
+    ws.row_dimensions[2].height = 28
+    ws.merge_cells('A2:B2')
+    c = ws.cell(2, 1, 'LỊCH VỀ HÀNG SIÊU THỊ')
+    apply_style(c, sTitle)
+    c = ws.cell(2, 2)
+    apply_style(c, sTitle)
+    c = ws.cell(2, 3, len(stores))
+    apply_style(c, sCount)
+
+    # Merge D2:J2 for week label
+    ws.merge_cells('D2:J2')
+    c = ws.cell(2, 4, week_label)
+    apply_style(c, sWeek)
+    for col in range(5, 11):
+        apply_style(ws.cell(2, col), sWeek)
+
+    # ═══════════════════════════════════════════════
+    # ROW 3: Date headers — dark red
+    # ═══════════════════════════════════════════════
+    ws.row_dimensions[3].height = 22
+    for col in range(1, 4):
+        apply_style(ws.cell(3, col, ''), sDateHdr)
     for i, wd in enumerate(week_dates):
-        ws.cell(3, 8 + i, datetime(wd.year, wd.month, wd.day))
+        c = ws.cell(3, 4 + i, wd.strftime('%d/%m/%Y'))
+        apply_style(c, sDateHdr)
 
-    # ── R4: Column headers ──
-    headers = ["SIÊU THỊ", "Viết tắt", "Lịch chia hàng ST", "Lịch về hàng ST",
-               "Khai trương", "Kiểm kê", "Giờ nhận"] + day_names
-    for c, h in enumerate(headers, 1):
-        ws.cell(4, c, h)
+    # ═══════════════════════════════════════════════
+    # ROW 4: Column headers
+    # ═══════════════════════════════════════════════
+    ws.row_dimensions[4].height = 26
+    col_headers = ['SIÊU THỊ', 'Viết tắt', 'Giờ nhận']
+    for i, h in enumerate(col_headers):
+        c = ws.cell(4, 1 + i, h)
+        apply_style(c, sColHdr)
+    for i, dn in enumerate(day_names):
+        c = ws.cell(4, 4 + i, dn)
+        apply_style(c, sDayHdr)
 
-    # ── R5+: Store data ──
+    # ═══════════════════════════════════════════════
+    # ROW 5+: Store data
+    # ═══════════════════════════════════════════════
     for r, s in enumerate(stores, 5):
-        ws.cell(r, 1, s["name"])
-        ws.cell(r, 2, s["code"])
-        ws.cell(r, 3, s.get("schedule_chia", ""))
-        ws.cell(r, 4, s["schedule_ve"])
+        # A: Store name
+        c = ws.cell(r, 1, s["name"])
+        apply_style(c, sCell)
+        # B: Code
+        c = ws.cell(r, 2, s["code"])
+        apply_style(c, sCellC)
+        # C: Shift
+        c = ws.cell(r, 3, s["shift"])
+        apply_style(c, sCellC)
 
-        # Opening date
-        if s.get("opening_date"):
-            try:
-                od = datetime.strptime(s["opening_date"], "%d/%m/%Y")
-                ws.cell(r, 5, od)
-            except:
-                ws.cell(r, 5, s["opening_date"])
-
-        # Inventory date
-        if s.get("inventory_date"):
-            try:
-                ki = datetime.strptime(s["inventory_date"], "%d/%m/%Y")
-                ws.cell(r, 6, ki)
-            except:
-                ws.cell(r, 6, s["inventory_date"])
-
-        # Shift (col 7)
-        ws.cell(r, 7, s["shift"])
-
-        # Days (cols 8-14)
+        # D-J: Days (7 columns)
         for i, day_val in enumerate(s["days"]):
-            if day_val:
-                ws.cell(r, 8 + i, day_val)
+            c = ws.cell(r, 4 + i, day_val if day_val else '')
+            vl = (day_val or '').lower()
+            if 'châm' in vl or 'cham' in vl:
+                apply_style(c, sCham)
+            elif 'kiểm' in vl or 'kiem' in vl:
+                apply_style(c, sKK)
+            elif vl == 'ngày':
+                apply_style(c, sNgay)
+            elif vl == 'đêm':
+                apply_style(c, sDem)
+            else:
+                apply_style(c, sCellC)
 
-    # Column widths
-    ws.column_dimensions['A'].width = 45
+    # ═══════════════════════════════════════════════
+    # COLUMN WIDTHS (matching dashboard)
+    # ═══════════════════════════════════════════════
+    ws.column_dimensions['A'].width = 48
     ws.column_dimensions['B'].width = 10
-    ws.column_dimensions['C'].width = 20
-    ws.column_dimensions['D'].width = 20
-    ws.column_dimensions['E'].width = 14
-    ws.column_dimensions['F'].width = 14
-    ws.column_dimensions['G'].width = 10
-    for c in range(8, 15):
-        ws.column_dimensions[chr(64 + c)].width = 14
+    ws.column_dimensions['C'].width = 10
+    for i in range(7):
+        ws.column_dimensions[get_column_letter(4 + i)].width = 14
+
+    # ═══════════════════════════════════════════════
+    # AUTO-FILTER on header row
+    # ═══════════════════════════════════════════════
+    ws.auto_filter.ref = f"A4:J{4 + len(stores)}"
 
     # Save
     filename = f"Lịch đi hàng ST W{week_num}.xlsx"

@@ -71,6 +71,8 @@
 
 Gửi Telegram: **5 ảnh PNG** (Bảng KPI, Đóng góp, Trend Sản lượng, Trend Items, Trend Xe) + **1 tin nhắn text** thông báo dashboard đã cập nhật kèm link + note refresh 1-2p. Không gửi file HTML.
 
+**Multi-group**: Gửi đồng thời tới tất cả `chat_ids` trong `config/telegram.json` → `daily.chat_ids[]`. Message IDs tracked per-group (key: `{date_tag}_{chat_id}`) để hỗ trợ xóa khi gửi lại.
+
 | Thông số | Daily SVG | Weekly SVG |
 |----------|-----------|------------|
 | **viewBox** | `0 0 760 340` | `0 0 760 340` |

@@ -1964,7 +1964,7 @@ def export_report_image(html_content, output_path):
 # ──────────────────────────────────────────
 
 from lib.telegram import (
-    load_telegram_config as _load_tg_config,
+    load_telegram_config_multi as _load_tg_config_multi,
     send_telegram_photo as _send_tg_photo,
     send_telegram_document as _send_tg_doc,
     send_telegram_text as _send_tg_text,
@@ -1978,7 +1978,8 @@ TELEGRAM_CONFIG = os.path.join(BASE, "config", "telegram.json")
 SENT_MSGS_FILE = os.path.join(BASE, "output", "state", "sent_messages.json")
 
 def load_telegram_config():
-    return _load_tg_config(TELEGRAM_CONFIG, domain="daily")
+    """Load bot_token and ALL chat_ids for daily domain."""
+    return _load_tg_config_multi(TELEGRAM_CONFIG, domain="daily")
 
 def _load_sent_messages():
     return _load_sent(SENT_MSGS_FILE)
@@ -1987,33 +1988,49 @@ def _save_sent_messages(data):
     _save_sent(SENT_MSGS_FILE, data)
 
 def delete_telegram_messages(date_tag):
-    """Delete all previously sent Telegram messages for a given date_tag."""
-    bot_token, chat_id = load_telegram_config()
-    if not bot_token or not chat_id:
+    """Delete all previously sent Telegram messages for a given date_tag (all groups)."""
+    bot_token, chat_ids = load_telegram_config()
+    if not bot_token or not chat_ids:
         return
-    delete_messages_by_tag(SENT_MSGS_FILE, date_tag, bot_token, chat_id)
+    for chat_id in chat_ids:
+        delete_messages_by_tag(SENT_MSGS_FILE, f"{date_tag}_{chat_id}", bot_token, chat_id)
 
 def send_telegram_photo(image_path, caption=""):
-    """Send photo to Telegram. Returns message_id on success, None on failure."""
-    bot_token, chat_id = load_telegram_config()
-    if not bot_token or not chat_id:
+    """Send photo to ALL Telegram groups. Returns list of message_ids."""
+    bot_token, chat_ids = load_telegram_config()
+    if not bot_token or not chat_ids:
         print("  ❌ Telegram chưa cấu hình!")
-        return None
-    return _send_tg_photo(image_path, caption, bot_token, chat_id, fallback_document=True)
+        return []
+    msg_ids = []
+    for chat_id in chat_ids:
+        mid = _send_tg_photo(image_path, caption, bot_token, chat_id, fallback_document=True)
+        if mid:
+            msg_ids.append((chat_id, mid))
+    return msg_ids
 
 def send_telegram_document(file_path, caption=""):
-    """Send document to Telegram. Returns message_id on success, None on failure."""
-    bot_token, chat_id = load_telegram_config()
-    if not bot_token or not chat_id:
-        return None
-    return _send_tg_doc(file_path, caption, bot_token, chat_id)
+    """Send document to ALL Telegram groups. Returns list of message_ids."""
+    bot_token, chat_ids = load_telegram_config()
+    if not bot_token or not chat_ids:
+        return []
+    msg_ids = []
+    for chat_id in chat_ids:
+        mid = _send_tg_doc(file_path, caption, bot_token, chat_id)
+        if mid:
+            msg_ids.append((chat_id, mid))
+    return msg_ids
 
 def send_telegram_text(text):
-    """Send text message to Telegram. Returns message_id on success, None on failure."""
-    bot_token, chat_id = load_telegram_config()
-    if not bot_token or not chat_id:
-        return None
-    return _send_tg_text(text, bot_token, chat_id)
+    """Send text message to ALL Telegram groups. Returns list of message_ids."""
+    bot_token, chat_ids = load_telegram_config()
+    if not bot_token or not chat_ids:
+        return []
+    msg_ids = []
+    for chat_id in chat_ids:
+        mid = _send_tg_text(text, bot_token, chat_id)
+        if mid:
+            msg_ids.append((chat_id, mid))
+    return msg_ids
 
 
 # ──────────────────────────────────────────
@@ -2560,22 +2577,26 @@ def main():
 
         caption = f"📊 Báo cáo xuất kho {date_str} — Tổng: {result['total_tons']:.2f} tấn, {result['total_xe']} xe, {result['total_sthi']} ST"
         section_labels = ["📋 Bảng KPI", "🍩 % Đóng góp", "📈 Trend Sản lượng", "📦 Trend Items", "🚛 Trend Xe"]
-        sent_msg_ids = []
+        # Collect all (chat_id, msg_id) pairs for tracking
+        all_sent = []
         for img_path, sec_label in zip(section_paths, section_labels):
-            mid = send_telegram_photo(img_path, f"{caption}\n{sec_label}")
-            if mid:
-                sent_msg_ids.append(mid)
+            pairs = send_telegram_photo(img_path, f"{caption}\n{sec_label}")
+            all_sent.extend(pairs)
         dashboard_text = f"📊 Dashboard đã cập nhật: {date_str}\n🔗 https://tunhipham.github.io/transport_daily_report/\n⏱ Refresh sau 1-2 phút để xem dữ liệu mới nhất"
-        mid = send_telegram_text(dashboard_text)
-        if mid:
-            sent_msg_ids.append(mid)
+        pairs = send_telegram_text(dashboard_text)
+        all_sent.extend(pairs)
 
-        # Save sent message IDs for future deletion
-        if sent_msg_ids:
+        # Save sent message IDs per-group for future deletion
+        if all_sent:
             sent_data = _load_sent_messages()
-            sent_data[date_tag] = sent_msg_ids
+            for chat_id, mid in all_sent:
+                key = f"{date_tag}_{chat_id}"
+                if key not in sent_data:
+                    sent_data[key] = []
+                sent_data[key].append(mid)
             _save_sent_messages(sent_data)
-            print(f"  💾 Đã lưu {len(sent_msg_ids)} message IDs (có thể xóa khi gửi lại)")
+            n_groups = len(set(cid for cid, _ in all_sent))
+            print(f"  💾 Đã lưu {len(all_sent)} message IDs ({n_groups} group(s))")
     else:
         print(f"\n📌 Review report:")
         for sp in section_paths:

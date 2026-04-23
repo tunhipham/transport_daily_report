@@ -24,8 +24,8 @@ python -u script/domains/daily/generate.py --date DD/MM/YYYY --send
 
 - Summary cards: Tổng Tấn, Xe, Siêu thị, Items
 - KPI table per kho (5 kho)
-- Charts: 5 PNG → Telegram
-- Telegram: tin nhắn thông báo + dashboard link
+- Charts: 5 PNG → Telegram (gửi tới **tất cả groups** trong `daily.chat_ids[]`)
+- Telegram: tin nhắn thông báo + dashboard link (multi-group)
 - Auto-deploy dashboard lên GitHub Pages
 
 ## Validation

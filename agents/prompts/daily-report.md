@@ -49,6 +49,7 @@ TOTAL = SUM tất cả 5 kho, KPI tính trên tổng (không phải TB các kho)
 - Dashboard HTML interactive (1 file self-contained)
 - 5 PNG gửi Telegram: Bảng KPI, Đóng góp, Trend Sản lượng, Trend Items, Trend Xe
 - 1 tin nhắn text: thông báo dashboard đã cập nhật + link + note refresh 1-2p
+- **Gửi tất cả groups** cấu hình trong `config/telegram.json` → `daily.chat_ids[]`
 - History: `output/state/history.json` (tối đa 30 ngày)
 - So sánh: vs hôm qua + vs cùng thứ tuần trước → `▲ +X%` / `▼ -X%`
 
