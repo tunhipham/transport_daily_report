@@ -22,7 +22,7 @@ sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 MASTER_DIR = os.path.join(REPO_ROOT, "data", "nso")
 MASTER_FILE = os.path.join(MASTER_DIR, "nso_master.xlsx")
-OUTPUT_DIR = os.path.join(REPO_ROOT, "output", "nso")
+OUTPUT_DIR = os.path.join(REPO_ROOT, "output", "state", "nso")
 OLD_JSON = os.path.join(REPO_ROOT, "data", "nso_stores.json")
 
 # Column order for Stores sheet

@@ -56,9 +56,11 @@ transport_daily_report/
 │   └── shared/                   Cross-domain shared data
 │
 ├── output/                     ← 📤 OUTPUT (gitignored)
-│   ├── artifacts/{daily,inventory,nso}/
+│   ├── artifacts/{daily,inventory,nso,performance,weekly transport plan}/
+│   ├── mail/                    Compose email temp files
+│   ├── logs/                    Inject screenshots + process logs
 │   ├── dashboard/                Multi-tab centralized dashboard
-│   └── state/                    Telegram message tracking
+│   └── state/                    Domain state + Telegram tracking
 │
 ├── config/                     ← ⚙️ CONFIG
 │   ├── telegram.json               Daily bot config

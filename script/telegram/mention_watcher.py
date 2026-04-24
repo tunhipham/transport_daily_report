@@ -20,7 +20,7 @@ import time
 # ── Setup logging to file (critical for pythonw which has no console) ──
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
-LOG_FILE = os.path.join(REPO_ROOT, "output", "mention_watcher.log")
+LOG_FILE = os.path.join(REPO_ROOT, "output", "logs", "mention_watcher.log")
 
 os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
 

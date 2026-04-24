@@ -402,6 +402,40 @@
       color: var(--t4)
     }
 
+    /* ═══ INSIGHT BADGES ═══ */
+    .insight-bar {
+      display: flex;
+      gap: .6rem;
+      flex-wrap: wrap;
+      padding: .8rem 1rem;
+      margin-top: .5rem;
+    }
+
+    .ibadge {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      background: var(--surface);
+      border: 1px solid var(--bd);
+      border-radius: 8px;
+      padding: .4rem .8rem;
+      font-size: .78rem;
+    }
+
+    .ibadge-lbl {
+      color: var(--t3);
+      font-weight: 500;
+    }
+
+    .ibadge-val {
+      font-weight: 700;
+    }
+
+    .ibadge-sub {
+      color: var(--t4);
+      font-size: .7rem;
+    }
+
     /* ═══ CHART CONTAINERS ═══ */
     .chart-grid {
       display: grid;
@@ -2253,85 +2287,346 @@
       const el = document.getElementById('inv-content');
       el.style.display = 'block';
 
-      const target = data.target_day;
+      const dailyAll = data.daily_all || [];
+      const weeks = data.weeks || {};
+      const availWeeks = data.available_weeks || [];
+      const discData = data.discrepancy || [];
       const trend = data.trend;
       const cats = ['ĐÔNG', 'MÁT', 'TCNK'];
       const catLabels = { 'ĐÔNG': 'Hàng Đông', 'MÁT': 'Hàng Mát', 'TCNK': 'TCNK' };
       const catColors = { 'ĐÔNG': '#60a5fa', 'MÁT': '#34d399', 'TCNK': '#fbbf24' };
 
-      // Stats
-      const totalAcc = data.overall_accuracy || {};
-      let html = `<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
-    <div class="stat-card"><div class="value" style="color:var(--grn)">${fPct(totalAcc.item)}</div><div class="label">Chính xác Item</div></div>
-    <div class="stat-card"><div class="value" style="color:var(--blu)">${fPct(totalAcc.sku)}</div><div class="label">Chính xác SKU</div></div>
-    <div class="stat-card"><div class="value" style="color:var(--org)">${fPct(totalAcc.kg)}</div><div class="label">Chính xác KG</div></div>
-    <div class="stat-card"><div class="value" style="color:var(--pur)">${fN(target.total_sku || 0)}</div><div class="label">Tổng SKU</div></div>
-  </div>`;
+      // Helpers
+      const latestDay = dailyAll.length ? dailyAll[dailyAll.length - 1] : null;
+      const latestWeek = availWeeks.length ? availWeeks[availWeeks.length - 1] : '';
+      const dailyByIso = {};
+      dailyAll.forEach(d => { dailyByIso[d.iso] = d; });
+      const discByIso = {};
+      discData.forEach(d => { discByIso[d.iso] = d; });
 
-      // Summary table
-      html += `<div class="section"><div class="section-header"><span class="icon">📋</span><h2>Tổng Hợp Đối Soát — ${target.date_str}</h2></div>
-  <div class="table-wrap"><table>
-    <thead><tr><th>Phân Loại</th><th class="tr">SKU</th><th class="tr">Item KFM</th><th class="tr">Item ABA</th><th class="tr">KG KFM</th><th class="tr">KG ABA</th></tr></thead>
-    <tbody>`;
-      let tSKU = 0, tIK = 0, tIA = 0, tKK = 0, tKA = 0;
-      cats.forEach(cat => {
-        const cs = target.categories[cat] || {};
-        tSKU += cs.sku || 0; tIK += cs.item_KFM || 0; tIA += cs.item_ABA || 0; tKK += cs.kg_KFM || 0; tKA += cs.kg_ABA || 0;
-        html += `<tr>
-      <td class="kho-cell"><span class="dot" style="background:${catColors[cat]}"></span>${catLabels[cat]}</td>
-      <td class="tr number">${(cs.sku || 0).toLocaleString()}</td>
-      <td class="tr number">${(cs.item_KFM || 0).toLocaleString()}</td>
-      <td class="tr number">${(cs.item_ABA || 0).toLocaleString()}</td>
-      <td class="tr number">${(cs.kg_KFM || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-      <td class="tr number">${(cs.kg_ABA || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-    </tr>`;
-      });
-      html += `<tr class="total-row"><td>TỔNG</td><td class="tr number">${tSKU.toLocaleString()}</td><td class="tr number">${tIK.toLocaleString()}</td><td class="tr number">${tIA.toLocaleString()}</td><td class="tr number">${tKK.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td><td class="tr number">${tKA.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td></tr>`;
-      html += `</tbody></table></div></div>`;
+      // ── Build HTML skeleton ──
+      let html = '';
 
-      // Trend charts
+      // Section 1: KPI Cards
+      html += `<div id="invKpiCards"></div>`;
+
+      // Section 2: Báo Cáo Tồn Kho
+      html += `<div class="section">
+        <div class="section-header"><span class="icon">📊</span><h2>Báo Cáo Tồn Kho</h2></div>
+        <div class="filter-bar" id="invBctkFilter">
+          <label>📅 Tuần:</label>
+          <select id="invBctkWeek" onchange="invBctkChange()">
+            ${availWeeks.map(w => `<option value="${w}"${w === latestWeek ? ' selected' : ''}>${w}</option>`).join('')}
+          </select>
+          <label style="margin-left:.8rem">Từ:</label>
+          <input type="date" id="invBctkFrom" onchange="invBctkChange()">
+          <label>Đến:</label>
+          <input type="date" id="invBctkTo" onchange="invBctkChange()">
+          <button class="fbtn" onclick="invBctkReset()" title="Xóa filter">↺ Reset</button>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr>
+            <th class="tc">Thứ</th><th class="tc">Ngày</th>
+            <th class="tc">Tỷ Lệ Tồn Kho Chính Xác</th>
+            <th class="tr">Lệch Dương</th><th class="tr">Lệch Âm</th>
+            <th class="tr">Tổng Lệch</th><th class="tr">Tồn KDB</th>
+          </tr></thead>
+          <tbody id="invBctkBody"></tbody>
+          <tfoot id="invBctkFoot"></tfoot>
+        </table></div>
+      </div>`;
+
+      // Section 3: Thống Kê Sản Lượng Theo Phân Nhóm
+      html += `<div class="section">
+        <div class="section-header"><span class="icon">📋</span><h2>Thống Kê Sản Lượng Theo Phân Nhóm</h2></div>
+        <div class="filter-bar" id="invSlFilter">
+          <label>📅 Ngày:</label>
+          <select id="invSlDate" onchange="invSlChange()">
+            ${dailyAll.map(d => `<option value="${d.iso}"${d === latestDay ? ' selected' : ''}>${d.date}</option>`).join('')}
+          </select>
+          <label style="margin-left:.8rem">Tuần:</label>
+          <select id="invSlWeek" onchange="invSlWeekChange()">
+            <option value="">— Chọn ngày —</option>
+            ${availWeeks.map(w => `<option value="${w}">${w}</option>`).join('')}
+          </select>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Phân Loại</th><th class="tr">SKU</th><th class="tr">Item KFM</th><th class="tr">Item ABA</th><th class="tr">KG KFM</th><th class="tr">KG ABA</th></tr></thead>
+          <tbody id="invSlBody"></tbody>
+        </table></div>
+      </div>`;
+
+      // Section 4: Trend Charts
       if (trend && trend.dates) {
-        html += `<div class="chart-grid">
-      <div class="chart-box"><div class="chart-title">Trend Chính Xác Item</div><div class="chart-wrap"><canvas id="invChartItem"></canvas></div></div>
-      <div class="chart-box"><div class="chart-title">Trend Chính Xác SKU</div><div class="chart-wrap"><canvas id="invChartSKU"></canvas></div></div>
-      <div class="chart-box"><div class="chart-title">Trend Chính Xác KG</div><div class="chart-wrap"><canvas id="invChartKG"></canvas></div></div>
-      <div class="chart-box"><div class="chart-title">Tỷ Trọng KG theo Phân Loại</div><div id="invPie" class="donut-section" style="min-height:200px"></div></div>
-    </div>`;
+        html += `<div class="section">
+          <div class="section-header"><span class="icon">📈</span><h2>Biểu Đồ Xu Hướng</h2></div>
+          <div class="filter-bar" id="invChartFilter">
+            <label>📅 Tuần:</label>
+            <select id="invChartWeek" onchange="invChartWeekChange()">
+              <option value="">Tất cả</option>
+              ${availWeeks.map(w => `<option value="${w}">${w}</option>`).join('')}
+            </select>
+            <label style="margin-left:.8rem">Từ:</label>
+            <input type="date" id="invChartFrom" onchange="invChartRangeChange()">
+            <label>Đến:</label>
+            <input type="date" id="invChartTo" onchange="invChartRangeChange()">
+            <button class="fbtn" onclick="invChartReset()" title="Xóa filter">↺ Reset</button>
+          </div>
+          <div class="chart-box" style="margin-bottom:1rem"><div class="chart-title">Trend Chính Xác Item</div><div class="chart-wrap" style="height:280px"><canvas id="invChartItem"></canvas></div><div id="invInsightItem" class="insight-bar"></div></div>
+          <div class="chart-box" style="margin-bottom:1rem"><div class="chart-title">Trend Chính Xác SKU</div><div class="chart-wrap" style="height:280px"><canvas id="invChartSKU"></canvas></div><div id="invInsightSKU" class="insight-bar"></div></div>
+          <div class="chart-box" style="margin-bottom:1rem"><div class="chart-title">Trend Chính Xác KG</div><div class="chart-wrap" style="height:280px"><canvas id="invChartKG"></canvas></div><div id="invInsightKG" class="insight-bar"></div></div>
+          <div class="chart-box"><div class="chart-title">Tỷ Trọng KG theo Phân Loại</div><div id="invPie" class="donut-section" style="min-height:200px"></div></div>
+        </div>`;
       }
+
+      // Section 5: Chi Tiết Mã Bị Lệch
+      html += `<div class="section">
+        <div class="section-header"><span class="icon">🔍</span><h2>Chi Tiết Mã Bị Lệch</h2></div>
+        <div class="filter-bar">
+          <label>📅 Ngày:</label>
+          <select id="invDiscDate" onchange="invDiscChange()">
+            ${dailyAll.map(d => `<option value="${d.iso}"${d === latestDay ? ' selected' : ''}>${d.date}</option>`).join('')}
+          </select>
+          <label style="margin-left:.8rem">Tuần:</label>
+          <select id="invDiscWeek" onchange="invDiscWeekChange()">
+            <option value="">— Chọn ngày —</option>
+            ${availWeeks.map(w => `<option value="${w}">${w}</option>`).join('')}
+          </select>
+          <span class="filter-info" id="invDiscCount"></span>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr>
+            <th class="tc" style="width:40px">STT</th><th class="tc">Ngày</th><th>Barcode</th><th>Tên Hàng</th>
+            <th class="tc">ĐVT</th><th class="tr">Tồn KFM</th><th class="tr">Tồn ABA</th>
+            <th class="tr">Thừa</th><th class="tr">Thiếu</th>
+            <th class="tc" style="width:50px">Ngày Lệch</th><th>Ghi Chú</th>
+          </tr></thead>
+          <tbody id="invDiscBody"></tbody>
+          <tfoot id="invDiscFoot"></tfoot>
+        </table></div>
+      </div>`;
 
       el.innerHTML = html;
 
-      // Render trend charts
-      if (trend && trend.dates) {
-        const tLabels = trend.dates.map(d => d.substring(0, 5));
+      // ══════════════════════════════════════════════
+      // Section 1: KPI Cards — render from a day object
+      // ══════════════════════════════════════════════
+      function renderKpiCards(day) {
+        if (!day) return;
+        document.getElementById('invKpiCards').innerHTML = `<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+          <div class="stat-card"><div class="value" style="color:var(--grn)">${fPct(day.acc_item)}</div><div class="label">Chính xác Item</div></div>
+          <div class="stat-card"><div class="value" style="color:var(--blu)">${fPct(day.acc_sku)}</div><div class="label">Chính xác SKU</div></div>
+          <div class="stat-card"><div class="value" style="color:var(--org)">${fPct(day.acc_kg)}</div><div class="label">Chính xác KG</div></div>
+          <div class="stat-card"><div class="value" style="color:var(--pur)">${fN(day.total_sku || 0)}</div><div class="label">Tổng SKU</div></div>
+        </div>`;
+      }
+
+      // ══════════════════════════════════════════════
+      // Section 2: Báo Cáo Tồn Kho
+      // ══════════════════════════════════════════════
+      function renderBctk(filteredDays) {
+        const tbody = document.getElementById('invBctkBody');
+        const tfoot = document.getElementById('invBctkFoot');
+        let rows = '';
+        let accSum = 0, accCount = 0;
+        filteredDays.forEach(d => {
+          const accColor = d.acc_item >= 99.9 ? 'var(--grn)' : d.acc_item >= 99.5 ? 'var(--org)' : 'var(--red)';
+          rows += `<tr>
+            <td class="tc">${d.thu}</td><td class="tc">${d.date}</td>
+            <td class="tc" style="color:${accColor};font-weight:700">${d.acc_item.toFixed(2)}%</td>
+            <td class="tr number">${d.lech_duong}</td><td class="tr number">${d.lech_am}</td>
+            <td class="tr number">${d.tong_lech}</td><td class="tr number">${d.ton_kdb.toLocaleString()}</td>
+          </tr>`;
+          accSum += d.acc_item; accCount++;
+        });
+        tbody.innerHTML = rows;
+        if (accCount > 0) {
+          const avg = Math.floor(accSum / accCount * 100) / 100;
+          tfoot.innerHTML = `<tr class="total-row"><td colspan="2" style="font-style:italic;color:var(--grn)">Trung bình tỷ lệ tồn kho chính xác</td>
+            <td class="tc" style="color:var(--grn);font-weight:700;font-style:italic">${avg.toFixed(2)}%</td>
+            <td colspan="4"></td></tr>`;
+        } else {
+          tfoot.innerHTML = '';
+        }
+      }
+
+      function getBctkDays() {
+        const wk = document.getElementById('invBctkWeek').value;
+        const from = document.getElementById('invBctkFrom').value;
+        const to = document.getElementById('invBctkTo').value;
+        let days = dailyAll;
+        if (from || to) {
+          days = days.filter(d => {
+            if (from && d.iso < from) return false;
+            if (to && d.iso > to) return false;
+            return true;
+          });
+        } else if (wk && weeks[wk]) {
+          const wkDates = new Set(weeks[wk]);
+          days = days.filter(d => wkDates.has(d.iso));
+        }
+        return days;
+      }
+
+      window.invBctkChange = function() { renderBctk(getBctkDays()); };
+      window.invBctkReset = function() {
+        document.getElementById('invBctkWeek').value = latestWeek;
+        document.getElementById('invBctkFrom').value = '';
+        document.getElementById('invBctkTo').value = '';
+        renderBctk(getBctkDays());
+      };
+
+      // ══════════════════════════════════════════════
+      // Section 3: Thống Kê Sản Lượng Theo Phân Nhóm
+      // ══════════════════════════════════════════════
+      function renderSlTable(day) {
+        if (!day) return;
+        const tbody = document.getElementById('invSlBody');
+        let rows = '';
+        let tSKU = 0, tIK = 0, tIA = 0, tKK = 0, tKA = 0;
+        cats.forEach(cat => {
+          const cs = day.categories[cat] || {};
+          tSKU += cs.sku || 0; tIK += cs.item_KFM || 0; tIA += cs.item_ABA || 0;
+          tKK += cs.kg_KFM || 0; tKA += cs.kg_ABA || 0;
+          rows += `<tr>
+            <td class="kho-cell"><span class="dot" style="background:${catColors[cat]}"></span>${catLabels[cat]}</td>
+            <td class="tr number">${(cs.sku || 0).toLocaleString()}</td>
+            <td class="tr number">${(cs.item_KFM || 0).toLocaleString()}</td>
+            <td class="tr number">${(cs.item_ABA || 0).toLocaleString()}</td>
+            <td class="tr number">${(cs.kg_KFM || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+            <td class="tr number">${(cs.kg_ABA || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+          </tr>`;
+        });
+        rows += `<tr class="total-row"><td>TỔNG</td>
+          <td class="tr number">${tSKU.toLocaleString()}</td><td class="tr number">${tIK.toLocaleString()}</td>
+          <td class="tr number">${tIA.toLocaleString()}</td>
+          <td class="tr number">${tKK.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+          <td class="tr number">${tKA.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+        </tr>`;
+        tbody.innerHTML = rows;
+        // Update KPI cards to match selected date
+        renderKpiCards(day);
+      }
+
+      window.invSlChange = function() {
+        const iso = document.getElementById('invSlDate').value;
+        document.getElementById('invSlWeek').value = '';
+        renderSlTable(dailyByIso[iso] || latestDay);
+      };
+      window.invSlWeekChange = function() {
+        const wk = document.getElementById('invSlWeek').value;
+        if (wk && weeks[wk]) {
+          const wkDates = weeks[wk];
+          const lastIso = wkDates[wkDates.length - 1];
+          document.getElementById('invSlDate').value = lastIso;
+          renderSlTable(dailyByIso[lastIso] || latestDay);
+        }
+      };
+
+      // ══════════════════════════════════════════════
+      // Section 4: Trend Charts + Insight Badges
+      // ══════════════════════════════════════════════
+      let invCharts = {};
+
+      // Insight badge builder
+      function invBadge(label, cur, prev) {
+        if (prev == null) return `<div class="ibadge"><span class="ibadge-lbl">${label}</span><span class="ibadge-val" style="color:var(--t3)">N/A</span></div>`;
+        const diff = Math.round((cur - prev) * 100) / 100;
+        const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—';
+        const color = diff > 0 ? 'var(--grn)' : diff < 0 ? 'var(--red)' : 'var(--t3)';
+        const sign = diff > 0 ? '+' : '';
+        return `<div class="ibadge"><span class="ibadge-lbl">${label}</span><span class="ibadge-val" style="color:${color}">${arrow} ${sign}${diff.toFixed(2)}%</span><span class="ibadge-sub">${prev.toFixed(2)}% → ${cur.toFixed(2)}%</span></div>`;
+      }
+
+      function renderInsights(accArr, startIdx, endIdx, elId) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        const visibleDays = dailyAll.slice(startIdx, endIdx);
+        if (!visibleDays.length) { el.innerHTML = ''; return; }
+
+        const lastDay = visibleDays[visibleDays.length - 1];
+        const accKey = elId === 'invInsightItem' ? 'acc_item' : elId === 'invInsightSKU' ? 'acc_sku' : 'acc_kg';
+        const curVal = lastDay[accKey];
+        const avg = visibleDays.reduce((s, d) => s + d[accKey], 0) / visibleDays.length;
+
+        // v/s hôm qua
+        const dayIdx = dailyAll.indexOf(lastDay);
+        const prevDay = dayIdx > 0 ? dailyAll[dayIdx - 1] : null;
+        const prevVal = prevDay ? prevDay[accKey] : null;
+
+        // v/s LFL (same weekday last week)
+        const lflIdx = dayIdx - 7;
+        const lflDay = lflIdx >= 0 ? dailyAll[lflIdx] : null;
+        const lflVal = lflDay ? lflDay[accKey] : null;
+
+        let badges = '';
+        badges += invBadge('v/s Hôm qua', curVal, prevVal);
+        badges += invBadge('v/s LFL', curVal, lflVal);
+        badges += invBadge('v/s TB', curVal, Math.round(avg * 100) / 100);
+
+        // v/s tuần trước (only if week filter is active)
+        const wk = document.getElementById('invChartWeek')?.value;
+        if (wk && weeks[wk]) {
+          const wkIdx = availWeeks.indexOf(wk);
+          if (wkIdx > 0) {
+            const prevWk = availWeeks[wkIdx - 1];
+            const prevWkDates = new Set(weeks[prevWk]);
+            const prevWkDays = dailyAll.filter(d => prevWkDates.has(d.iso));
+            if (prevWkDays.length) {
+              const prevWkAvg = prevWkDays.reduce((s, d) => s + d[accKey], 0) / prevWkDays.length;
+              badges += invBadge(`v/s ${prevWk}`, Math.round(avg * 100) / 100, Math.round(prevWkAvg * 100) / 100);
+            }
+          }
+        }
+
+        el.innerHTML = badges;
+      }
+
+      function renderCharts(startIdx, endIdx) {
+        if (!trend || !trend.dates) return;
+        const start = startIdx || 0;
+        const end = endIdx || trend.dates.length;
+        const tLabels = trend.dates.slice(start, end).map(d => d.substring(0, 5));
         const invTC = getThemeColors();
+
+        Object.values(invCharts).forEach(c => { try { c.destroy(); } catch(e) {} });
+        invCharts = {};
+
         const invOpts = {
           responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
           plugins: { tooltip: { backgroundColor: invTC.tooltipBg, titleColor: invTC.tooltipTitle, bodyColor: invTC.tooltipBody, borderColor: invTC.tooltipBorder, borderWidth: 1, padding: 10 } },
           scales: { x: { grid: { display: false } }, y: { min: 90, max: 100, grid: { color: invTC.chartGrid }, ticks: { callback: v => v + '%' } }, y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0 } } }
         };
 
-        function invCombo(canvasId, kfmData, abaData, accData, label) {
-          new Chart(document.getElementById(canvasId), {
+        function invCombo(canvasId, kfmData, abaData, accData) {
+          const canvas = document.getElementById(canvasId);
+          if (!canvas) return null;
+          return new Chart(canvas, {
             data: {
               labels: tLabels, datasets: [
-                { type: 'bar', label: 'KFM', data: kfmData, backgroundColor: 'rgba(96,165,250,0.6)', borderRadius: 3, yAxisID: 'y1', order: 2 },
-                { type: 'bar', label: 'ABA (khớp)', data: abaData, backgroundColor: 'rgba(52,211,153,0.6)', borderRadius: 3, yAxisID: 'y1', order: 2 },
-                { type: 'line', label: '% Chính xác', data: accData, borderColor: '#f472b6', backgroundColor: '#f472b633', borderWidth: 2.5, pointRadius: 3, tension: .3, yAxisID: 'y', order: 1, spanGaps: true }
+                { type: 'bar', label: 'KFM', data: kfmData.slice(start, end), backgroundColor: 'rgba(96,165,250,0.6)', borderRadius: 3, yAxisID: 'y1', order: 2 },
+                { type: 'bar', label: 'ABA (khớp)', data: abaData.slice(start, end), backgroundColor: 'rgba(52,211,153,0.6)', borderRadius: 3, yAxisID: 'y1', order: 2 },
+                { type: 'line', label: '% Chính xác', data: accData.slice(start, end), borderColor: '#f472b6', backgroundColor: '#f472b633', borderWidth: 2.5, pointRadius: 3, tension: .3, yAxisID: 'y', order: 1, spanGaps: true }
               ]
             },
             options: JSON.parse(JSON.stringify(invOpts))
           });
         }
 
-        invCombo('invChartItem', trend.item_kfm, trend.item_aba, trend.item_acc, 'Item');
-        invCombo('invChartSKU', trend.sku_kfm, trend.sku_aba, trend.sku_acc, 'SKU');
-        invCombo('invChartKG', trend.kg_kfm, trend.kg_aba, trend.kg_acc, 'KG');
+        invCharts.item = invCombo('invChartItem', trend.item_kfm, trend.item_aba, trend.item_acc);
+        invCharts.sku = invCombo('invChartSKU', trend.sku_kfm, trend.sku_aba, trend.sku_acc);
+        invCharts.kg = invCombo('invChartKG', trend.kg_kfm, trend.kg_aba, trend.kg_acc);
+
+        // Insights
+        renderInsights(trend.item_acc, start, end, 'invInsightItem');
+        renderInsights(trend.sku_acc, start, end, 'invInsightSKU');
+        renderInsights(trend.kg_acc, start, end, 'invInsightKG');
 
         // Pie
+        const pieDay = dailyAll[end - 1] || latestDay;
         const pieEl = document.getElementById('invPie');
-        if (pieEl) {
-          const vals = cats.map(c => target.categories[c]?.kg_KFM || 0);
+        if (pieEl && pieDay) {
+          const vals = cats.map(c => pieDay.categories[c]?.kg_KFM || 0);
           const total = vals.reduce((a, b) => a + b, 0);
           if (total > 0) {
             let stops = [], legs = '', cum = 0;
@@ -2345,6 +2640,144 @@
           }
         }
       }
+
+      function getChartRange() {
+        const wk = document.getElementById('invChartWeek')?.value;
+        const from = document.getElementById('invChartFrom')?.value;
+        const to = document.getElementById('invChartTo')?.value;
+        if (from || to) {
+          let si = 0, ei = trend.dates.length;
+          if (from) { const isos = dailyAll.map(d => d.iso); si = isos.findIndex(d => d >= from); if (si < 0) si = 0; }
+          if (to) { const isos = dailyAll.map(d => d.iso); ei = isos.findIndex(d => d > to); if (ei < 0) ei = trend.dates.length; }
+          return [si, ei];
+        }
+        if (wk && weeks[wk]) {
+          const wkDates = new Set(weeks[wk]);
+          const isos = dailyAll.map(d => d.iso);
+          let si = isos.findIndex(d => wkDates.has(d));
+          let ei = isos.length;
+          for (let i = isos.length - 1; i >= 0; i--) { if (wkDates.has(isos[i])) { ei = i + 1; break; } }
+          if (si < 0) si = 0;
+          return [si, ei];
+        }
+        return [0, trend.dates.length];
+      }
+
+      window.invChartWeekChange = function() {
+        document.getElementById('invChartFrom').value = '';
+        document.getElementById('invChartTo').value = '';
+        const [s, e] = getChartRange();
+        renderCharts(s, e);
+      };
+      window.invChartRangeChange = function() {
+        document.getElementById('invChartWeek').value = '';
+        const [s, e] = getChartRange();
+        renderCharts(s, e);
+      };
+      window.invChartReset = function() {
+        document.getElementById('invChartWeek').value = '';
+        document.getElementById('invChartFrom').value = '';
+        document.getElementById('invChartTo').value = '';
+        renderCharts(0, trend.dates.length);
+      };
+
+      // ══════════════════════════════════════════════
+      // Section 5: Chi Tiết Mã Bị Lệch
+      // ══════════════════════════════════════════════
+      function getDiscWeekDates() {
+        const wk = document.getElementById('invDiscWeek')?.value;
+        if (wk && weeks[wk]) return weeks[wk];
+        return null;
+      }
+
+      function renderDiscTable(isoOrWeek) {
+        const tbody = document.getElementById('invDiscBody');
+        const tfoot = document.getElementById('invDiscFoot');
+        const countEl = document.getElementById('invDiscCount');
+        const wkDates = getDiscWeekDates();
+
+        // Collect items: single day or full week
+        let allItems = [];
+        const targetDates = wkDates ? wkDates : (isoOrWeek ? [isoOrWeek] : []);
+        targetDates.forEach(iso => {
+          const dayDisc = discByIso[iso];
+          if (dayDisc && dayDisc.items) {
+            const dateLabel = dailyByIso[iso]?.date || iso;
+            dayDisc.items.forEach(it => {
+              allItems.push({ ...it, dateLabel, iso });
+            });
+          }
+        });
+
+        if (!allItems.length) {
+          tbody.innerHTML = '<tr><td colspan="11" class="tc" style="padding:1.5rem;color:var(--t3)">Không có mã lệch</td></tr>';
+          tfoot.innerHTML = '';
+          countEl.textContent = '0 mã lệch';
+          return;
+        }
+
+        // Count days per barcode within this selection
+        const bcDays = {};
+        const bcDateSet = {};
+        allItems.forEach(it => {
+          if (!bcDateSet[it.barcode]) bcDateSet[it.barcode] = new Set();
+          bcDateSet[it.barcode].add(it.iso);
+        });
+        Object.keys(bcDateSet).forEach(bc => { bcDays[bc] = bcDateSet[bc].size; });
+
+        // Get unique SKU count
+        const uniqueBarcodes = new Set(allItems.map(it => it.barcode));
+        const totalSKU = dailyAll.length ? dailyAll[dailyAll.length - 1].total_sku : 0;
+
+        let rows = '';
+        allItems.forEach((it, i) => {
+          const thuaColor = it.thua > 0 ? 'color:var(--grn);font-weight:600' : '';
+          const thieuColor = it.thieu > 0 ? 'color:var(--red);font-weight:600' : '';
+          const dayCount = bcDays[it.barcode] || 1;
+          const dayCountColor = dayCount >= 3 ? 'color:var(--red);font-weight:700' : dayCount >= 2 ? 'color:var(--org);font-weight:600' : '';
+          rows += `<tr>
+            <td class="tc">${i + 1}</td>
+            <td class="tc" style="font-size:.78rem;white-space:nowrap">${it.dateLabel}</td>
+            <td class="number" style="font-size:.78rem">${it.barcode}</td>
+            <td style="max-width:240px">${it.ten_hang}</td>
+            <td class="tc">${it.dvt}</td>
+            <td class="tr number">${(it.ton_KFM ?? '').toLocaleString()}</td>
+            <td class="tr number">${(it.ton_ABA ?? '').toLocaleString()}</td>
+            <td class="tr number" style="${thuaColor}">${it.thua || ''}</td>
+            <td class="tr number" style="${thieuColor}">${it.thieu || ''}</td>
+            <td class="tc" style="${dayCountColor}">${dayCount}</td>
+            <td></td>
+          </tr>`;
+        });
+        tbody.innerHTML = rows;
+        countEl.textContent = `${allItems.length} mã lệch`;
+        tfoot.innerHTML = `<tr class="total-row"><td colspan="11" style="color:var(--org)">⚠ Tổng số mã lệch: <strong>${uniqueBarcodes.size}</strong> / ${totalSKU.toLocaleString()} SKU</td></tr>`;
+      }
+
+      window.invDiscChange = function() {
+        document.getElementById('invDiscWeek').value = '';
+        const iso = document.getElementById('invDiscDate').value;
+        renderDiscTable(iso);
+      };
+      window.invDiscWeekChange = function() {
+        const wk = document.getElementById('invDiscWeek').value;
+        if (wk && weeks[wk]) {
+          const wkDates = weeks[wk];
+          document.getElementById('invDiscDate').value = wkDates[wkDates.length - 1];
+          renderDiscTable(null);
+        }
+      };
+
+      // ══════════════════════════════════════════════
+      // INITIAL RENDER
+      // ══════════════════════════════════════════════
+      if (latestDay) {
+        renderKpiCards(latestDay);
+        renderSlTable(latestDay);
+      }
+      renderBctk(getBctkDays());
+      renderCharts(0, trend?.dates?.length || 0);
+      renderDiscTable(latestDay?.iso || '');
     }
 
     // ═══════════════════════════════════════════════

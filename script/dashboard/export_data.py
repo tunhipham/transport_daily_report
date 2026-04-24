@@ -271,6 +271,78 @@ def export_inventory():
             'kg_ABA': round(cs['kg_ABA'], 2),
         }
 
+    # ── NEW: daily_all — per-day stats for all available days ──
+    daily_all = []
+    days_by_date = {d['date'].strftime('%Y-%m-%d'): d for d in all_days}
+    thu_names = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
+
+    for ds in daily_stats:
+        iso_str = ds['date'].strftime('%Y-%m-%d')
+        weekday_idx = ds['date'].weekday()  # 0=Mon
+        t = ds['totals']
+        day_obj = {
+            'date': ds['date_str'],
+            'iso': iso_str,
+            'thu': thu_names[weekday_idx],
+            'acc_item': acc_precise(t['item_lech'], t['item_KFM']),
+            'acc_sku': acc_precise(t['sku_lech'], t['sku']),
+            'acc_kg': acc_precise(t['kg_lech'], t['kg_KFM']),
+            'lech_duong': t['lech_duong'],
+            'lech_am': t['lech_am'],
+            'tong_lech': t['tong_lech'],
+            'ton_kdb': t['item_KFM'],
+            'total_sku': t['sku'],
+            'categories': {},
+        }
+        for cat in cats:
+            c = ds['categories'][cat]
+            day_obj['categories'][cat] = {
+                'sku': c['sku'],
+                'item_KFM': c['item_KFM'],
+                'item_ABA': c['item_ABA'],
+                'kg_KFM': round(c['kg_KFM'], 2),
+                'kg_ABA': round(c['kg_ABA'], 2),
+            }
+        daily_all.append(day_obj)
+
+    # ── NEW: weeks — group days by ISO week ──
+    weeks_map = defaultdict(list)
+    for ds in daily_stats:
+        iso_year, iso_week, _ = ds['date'].isocalendar()
+        wk_key = f"W{iso_week}-{iso_year}"
+        iso_str = ds['date'].strftime('%Y-%m-%d')
+        weeks_map[wk_key].append(iso_str)
+    # Sort weeks and build ordered list
+    available_weeks = sorted(weeks_map.keys(),
+                             key=lambda w: (int(w.split('-')[1]), int(w.split('-')[0][1:])))
+    weeks_data = {wk: sorted(weeks_map[wk]) for wk in available_weeks}
+
+    # ── NEW: discrepancy — per-day item-level discrepancies ──
+    discrepancy_data = []
+    for ds in daily_stats:
+        iso_str = ds['date'].strftime('%Y-%m-%d')
+        day_raw = days_by_date.get(iso_str)
+        if not day_raw:
+            continue
+        disc_items = []
+        for it in day_raw['items']:
+            if it['ton_KFM'] != it['ton_ABA']:
+                disc_items.append({
+                    'barcode': it['barcode'],
+                    'ten_hang': it['ten_hang'],
+                    'dvt': it['dvt'],
+                    'ton_KFM': it['ton_KFM'],
+                    'ton_ABA': it['ton_ABA'],
+                    'thua': it['chenh_lech_thua'] or 0,
+                    'thieu': it['chenh_lech_thieu'] or 0,
+                })
+        if disc_items:
+            discrepancy_data.append({
+                'date': ds['date_str'],
+                'iso': iso_str,
+                'items': disc_items,
+            })
+
     data = {
         "_updated": NOW_STR,
         "target_day": target_serial,
@@ -287,12 +359,16 @@ def export_inventory():
             "kg_aba": trend_kg_aba,
             "kg_acc": trend_kg_acc,
         },
+        "daily_all": daily_all,
+        "weeks": weeks_data,
+        "available_weeks": available_weeks,
+        "discrepancy": discrepancy_data,
     }
 
     out_path = os.path.join(DOCS_DATA, "inventory.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False)
-    print(f"  ✅ {out_path} ({len(daily_stats)} days, {os.path.getsize(out_path):,} bytes)")
+    print(f"  ✅ {out_path} ({len(daily_stats)} days, {len(discrepancy_data)} disc days, {os.path.getsize(out_path):,} bytes)")
     return True
 
 
@@ -402,8 +478,8 @@ def export_nso():
         "week_range": f"{fmt_ddmm(mon)} → {fmt_ddmm(sun)}",
     }
 
-    # Write to output/nso/ first
-    nso_output_dir = os.path.join(BASE, "output", "nso")
+    # Write to output/state/nso/ first
+    nso_output_dir = os.path.join(BASE, "output", "state", "nso")
     os.makedirs(nso_output_dir, exist_ok=True)
     nso_output_path = os.path.join(nso_output_dir, "nso.json")
     with open(nso_output_path, "w", encoding="utf-8") as f:

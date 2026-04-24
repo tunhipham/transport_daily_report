@@ -271,9 +271,28 @@ def _make_table(rows, headers, flagged_stores=None):
     return html
 
 
+def _add_minutes(gio_str, minutes):
+    """Add minutes to a time string like '3:05' or '22:30'. Returns formatted HH:MM."""
+    if not gio_str or gio_str in ("#N/A", ""):
+        return gio_str
+    try:
+        parts = gio_str.strip().split(":")
+        h, m = int(parts[0]), int(parts[1]) if len(parts) > 1 else 0
+        total_min = h * 60 + m + minutes
+        # Wrap around 24h
+        total_min = total_min % (24 * 60)
+        new_h = total_min // 60
+        new_m = total_min % 60
+        return f"{new_h:02d}:{new_m:02d}"
+    except (ValueError, IndexError):
+        return gio_str
+
+
 def _make_table_dong_mat(rows):
-    """Generate HTML table for ĐÔNG MÁT (4 columns with loại hàng)."""
-    headers = ["Ngày", "Điểm đến", "Giờ đến dự kiến (+-30')", "Loại hàng"]
+    """Generate HTML table for ĐÔNG MÁT (4 columns with loại hàng).
+    Time displayed = gio_den + 90 minutes (estimated delivery at store).
+    """
+    headers = ["Ngày", "Điểm đến", "Giờ giao dự kiến (+- 1 tiếng)", "Loại hàng"]
     style = 'style="border-collapse:collapse;border:1px solid #000;font-family:Arial,sans-serif;font-size:12px"'
     td_style_base = 'border:1px solid #000;padding:4px 8px;text-align:center'
     th_style = 'style="border:1px solid #000;padding:4px 8px;text-align:center;background:#4472C4;color:white;font-weight:bold"'
@@ -290,7 +309,8 @@ def _make_table_dong_mat(rows):
             row_td = f'style="{td_style_base}"'
 
         loai = r.get("loai_hang", "")
-        gio = _format_time_hhmm(r["gio_den"])
+        gio = _add_minutes(r["gio_den"], 90)  # +90 min offset
+        gio = _format_time_hhmm(gio)
         html += f'<tr><td {row_td}>{_safe_date(r["date"])}</td><td {row_td}>{r["diem_den"]}</td><td {row_td}>{gio}</td><td {row_td}>{loai}</td></tr>\n'
 
     html += '</tbody></table>'
