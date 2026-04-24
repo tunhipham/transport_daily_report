@@ -2373,7 +2373,14 @@
       });
       // Filter calendar events the same way
       const allCalEvents = data.calendar_events || [];
-      const calEvents = allCalEvents.filter(ev => daysDiff(ev.date) <= 3);
+      const calEvents = allCalEvents.filter(ev => {
+        const delta = daysDiff(ev.date);
+        if (delta > 3) return false;
+        // Re-compute type based on current date (same logic as stores)
+        if (delta < 0) { ev.type = 'upcoming'; }
+        else if (delta >= 0 && delta <= 3 && ev.type !== 'reschedule') { ev.type = 'opening'; }
+        return true;
+      });
       // Recalculate stats from filtered data
       const stats = {
         total: stores.length,
