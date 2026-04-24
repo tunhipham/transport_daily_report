@@ -1128,94 +1128,126 @@ def watch_loop(config, state, poll_interval_min, dry_run=False, no_inject=False)
                 key = state_key(kho, session)
                 watch_key = f"{key}_watch"
 
-                # Get kho state
-                kho_state = state[today_str].get(key, {
-                    "status": "not_started",
-                    "compose_count": 0,
-                    "rows": 0,
-                    "data_hash": "",
-                    "prev_rows_snapshot": [],
-                })
-                watch_state = state[today_str].get(watch_key, {
-                    "files_detected": False,
-                    "last_check": "",
-                    "sources_status": {},
-                })
+                try:
+                    # Get kho state
+                    kho_state = state[today_str].get(key, {
+                        "status": "not_started",
+                        "compose_count": 0,
+                        "rows": 0,
+                        "data_hash": "",
+                        "prev_rows_snapshot": [],
+                    })
+                    watch_state = state[today_str].get(watch_key, {
+                        "files_detected": False,
+                        "last_check": "",
+                        "sources_status": {},
+                    })
 
-                # Skip if already final
-                if kho_state.get("status") == "final":
-                    continue
-
-                # Check delivery day exclusion
-                delivery_date = get_delivery_date(kho, session, now)
-                skip_days = sched.get("skip_delivery_days", [])
-                if should_skip_delivery(kho, delivery_date, skip_days):
-                    continue
-
-                delivery_str = format_date_vn(delivery_date)
-
-                # Check Drive sources
-                drive_sources = sched.get("drive_sources", [])
-                if not drive_sources:
-                    continue
-
-                log.info(f"  🔍 {label} — checking sources for {delivery_str}...")
-                result = check_drive_sources(sched, delivery_str)
-
-                for src_name, src_result in result["sources"].items():
-                    icon = "✅" if src_result["found"] else "❌"
-                    log.info(f"     {icon} {src_name}: {src_result['detail']}")
-
-                watch_state["last_check"] = now.strftime("%H:%M:%S")
-                watch_state["sources_status"] = {
-                    name: info["found"] for name, info in result["sources"].items()
-                }
-
-                if not result["ready"]:
-                    log.info(f"     ⏳ Chưa đủ file — chờ poll tiếp")
-                    state[today_str][watch_key] = watch_state
-                    continue
-
-                # Files detected!
-                was_detected_before = watch_state.get("files_detected", False)
-                watch_state["files_detected"] = True
-                state[today_str][watch_key] = watch_state
-
-                if not was_detected_before:
-                    log.info(f"  🆕 {label}: ĐỦ FILE! Fetching & composing...")
-                else:
-                    # Already detected before — re-check for data changes
-                    log.info(f"  🔄 {label}: Re-checking for changes...")
-
-                # Fetch data
-                if not dry_run:
-                    fetch_success = fetch_latest_data(week, week_start)
-                    if not fetch_success:
-                        log.warning(f"  ⚠ Fetch failed for {label}, will retry next poll")
+                    # Skip if already final
+                    if kho_state.get("status") == "final":
                         continue
 
-                    # Compose
-                    kho_state = process_kho(
-                        sched, week, now, state[today_str],
-                        dry_run=False,
-                        force=True,  # bypass time window
-                    )
-                    state[today_str][key] = kho_state
+                    # Check delivery day exclusion
+                    delivery_date = get_delivery_date(kho, session, now)
+                    skip_days = sched.get("skip_delivery_days", [])
+                    if should_skip_delivery(kho, delivery_date, skip_days):
+                        continue
 
-                    if kho_state.get("status") in ("composed", "final"):
-                        any_composed = True
-                        log.info(f"  ✅ {label}: Composed! {kho_state.get('rows', 0)} rows")
-                        log.info(f"     → HTML: output/_mail_{kho}{'_' + session if session else ''}_body.html")
+                    delivery_str = format_date_vn(delivery_date)
 
-                        # Auto-inject into Haraworks ONLY on FINAL compose
-                        kho_state = maybe_inject_final(
-                            kho, session, kho_state, delivery_str, week,
-                            dry_run=dry_run, no_inject=no_inject
+                    # ── Catch-up: past cutoff but not final → force compose ──
+                    if is_past_cutoff(sched["cutoff_time"], now):
+                        if kho_state.get("status") in ("not_started", "waiting_data", "composed"):
+                            log.info(f"  🔄 {label}: CATCH-UP (past cutoff {sched['cutoff_time']})")
+                            if not dry_run:
+                                fetch_success = fetch_latest_data(week, week_start)
+                                if not fetch_success:
+                                    log.warning(f"  ⚠ Fetch failed for {label} catch-up, will retry")
+                                else:
+                                    kho_state = process_kho(
+                                        sched, week, now, state[today_str],
+                                        dry_run=False, force=True,
+                                    )
+                                    if kho_state.get("status") in ("composed", "backfill"):
+                                        kho_state["status"] = "final"
+                                    kho_state = maybe_inject_final(
+                                        kho, session, kho_state, delivery_str, week,
+                                        dry_run=dry_run, no_inject=no_inject
+                                    )
+                                    state[today_str][key] = kho_state
+                                    any_composed = True
+                                    save_state(state)
+                        continue  # Past cutoff — don't check Drive sources
+
+                    # Check Drive sources
+                    drive_sources = sched.get("drive_sources", [])
+                    if not drive_sources:
+                        continue
+
+                    log.info(f"  🔍 {label} — checking sources for {delivery_str}...")
+                    result = check_drive_sources(sched, delivery_str)
+
+                    for src_name, src_result in result["sources"].items():
+                        icon = "✅" if src_result["found"] else "❌"
+                        log.info(f"     {icon} {src_name}: {src_result['detail']}")
+
+                    watch_state["last_check"] = now.strftime("%H:%M:%S")
+                    watch_state["sources_status"] = {
+                        name: info["found"] for name, info in result["sources"].items()
+                    }
+
+                    if not result["ready"]:
+                        log.info(f"     ⏳ Chưa đủ file — chờ poll tiếp")
+                        state[today_str][watch_key] = watch_state
+                        continue
+
+                    # Files detected!
+                    was_detected_before = watch_state.get("files_detected", False)
+                    watch_state["files_detected"] = True
+                    state[today_str][watch_key] = watch_state
+
+                    if not was_detected_before:
+                        log.info(f"  🆕 {label}: ĐỦ FILE! Fetching & composing...")
+                    else:
+                        # Already detected before — re-check for data changes
+                        log.info(f"  🔄 {label}: Re-checking for changes...")
+
+                    # Fetch data
+                    if not dry_run:
+                        fetch_success = fetch_latest_data(week, week_start)
+                        if not fetch_success:
+                            log.warning(f"  ⚠ Fetch failed for {label}, will retry next poll")
+                            continue
+
+                        # Compose
+                        kho_state = process_kho(
+                            sched, week, now, state[today_str],
+                            dry_run=False,
+                            force=True,  # bypass time window
                         )
                         state[today_str][key] = kho_state
-                        save_state(state)  # Save immediately after inject
-                else:
-                    log.info(f"  🏃 DRY RUN — would fetch & compose {label}")
+
+                        if kho_state.get("status") in ("composed", "final"):
+                            any_composed = True
+                            log.info(f"  ✅ {label}: Composed! {kho_state.get('rows', 0)} rows")
+                            log.info(f"     → HTML: output/_mail_{kho}{'_' + session if session else ''}_body.html")
+
+                            # Auto-inject into Haraworks ONLY on FINAL compose
+                            kho_state = maybe_inject_final(
+                                kho, session, kho_state, delivery_str, week,
+                                dry_run=dry_run, no_inject=no_inject
+                            )
+                            state[today_str][key] = kho_state
+                            save_state(state)  # Save immediately after inject
+                    else:
+                        log.info(f"  🏃 DRY RUN — would fetch & compose {label}")
+
+                except Exception as kho_err:
+                    log.error(f"  ❌ {label}: Error during watch — {kho_err}")
+                    import traceback
+                    log.error(traceback.format_exc())
+                    log.info(f"     ↪ Skipping {label}, will retry next poll")
+                    continue
 
             # Save state after each poll
             save_state(state)
