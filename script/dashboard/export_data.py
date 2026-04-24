@@ -335,6 +335,7 @@ def export_inventory():
                     'ton_ABA': it['ton_ABA'],
                     'thua': it['chenh_lech_thua'] or 0,
                     'thieu': it['chenh_lech_thieu'] or 0,
+                    'ghi_chu': it.get('ghi_chu', ''),
                 })
         if disc_items:
             discrepancy_data.append({
