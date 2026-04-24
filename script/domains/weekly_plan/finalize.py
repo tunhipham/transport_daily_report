@@ -221,6 +221,46 @@ def generate_and_send():
         print("\n❌ Failed to send Excel to Telegram")
 
 
+def deliver_to_group(week_override=None):
+    """14:00 Thursday: Send Excel to SCM - NCP group."""
+    # Load config
+    with open(TELEGRAM_CFG, "r", encoding="utf-8") as f:
+        cfg = json.load(f)
+    wp_cfg = cfg.get("weekly_plan", {})
+    bot_token = wp_cfg.get("bot_token")
+    group_chat_id = wp_cfg.get("group_chat_id")
+    personal_chat_id = wp_cfg.get("chat_id")
+    
+    if not bot_token or not group_chat_id:
+        print("❌ Telegram config missing (bot_token or group_chat_id)")
+        return
+    
+    week_num = week_override or get_next_week_info()[0]
+    
+    # Find Excel file
+    excel_path = os.path.join(PLAN_DIR, f"Lịch đi hàng ST W{week_num}.xlsx")
+    if not os.path.exists(excel_path):
+        print(f"❌ Excel file not found: {excel_path}")
+        return
+    
+    file_size = os.path.getsize(excel_path)
+    print(f"📤 Delivering W{week_num} to SCM - NCP group ({file_size:,} bytes)...")
+    
+    caption = f"SCM gửi lịch về hàng W{week_num}"
+    
+    mid = send_telegram_document(excel_path, caption, bot_token, group_chat_id)
+    if mid:
+        print(f"✅ Delivered to group! (msg_id={mid})")
+        # Also notify personal chat
+        if personal_chat_id:
+            send_telegram_text(
+                f"✅ Lịch về hàng W{week_num} đã gửi group SCM - NCP",
+                bot_token, personal_chat_id
+            )
+    else:
+        print("❌ Failed to deliver to group")
+
+
 def test_send():
     """Test: send current week's Excel file to Telegram."""
     bot_token, chat_id = load_telegram_config(TELEGRAM_CFG, domain="weekly_plan")
@@ -259,12 +299,16 @@ if __name__ == "__main__":
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--check", action="store_true", help="12h: Check readiness + send reminder")
     group.add_argument("--send", action="store_true", help="13h: Generate Excel + send for review")
-    group.add_argument("--test", action="store_true", help="Test: send latest Excel to Telegram")
+    group.add_argument("--deliver", action="store_true", help="14h: Send Excel to SCM-NCP group")
+    group.add_argument("--test", action="store_true", help="Test: send latest Excel to personal chat")
+    parser.add_argument("--week", type=int, help="Override week number")
     args = parser.parse_args()
     
     if args.check:
         send_readiness_check()
     elif args.send:
         generate_and_send()
+    elif args.deliver:
+        deliver_to_group(week_override=args.week)
     elif args.test:
         test_send()

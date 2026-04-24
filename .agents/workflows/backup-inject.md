@@ -33,10 +33,12 @@ python -u script/compose/auto_compose.py --status
 ```
 Chỉ backup kho có status `composed` (chưa inject).
 
-### 2. Fetch data mới nhất
+### 2. Fetch data ngày cần giao
 ```
-python -u script/domains/performance/fetch_weekly.py --week W{week} --start DD/MM/YYYY
+python -u script/domains/performance/fetch_weekly.py --week W{week} --date DD/MM/YYYY
 ```
+> ℹ️ `--date` = ngày cần lấy data (D+1). `--week` chỉ để xác định tên file JSON + thread mail.
+> Không dùng `--start` (fetch cả tuần) — chỉ fetch đúng ngày cần.
 
 ### 3. Compose + Inject tuần tự (từng kho)
 

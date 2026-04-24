@@ -2576,11 +2576,13 @@ def main():
         delete_telegram_messages(date_tag)
 
         caption = f"📊 Báo cáo xuất kho {date_str} — Tổng: {result['total_tons']:.2f} tấn, {result['total_xe']} xe, {result['total_sthi']} ST"
+        first_caption = f"📊 Báo cáo sản lượng và lưu lượng xe xuất kho ngày {date_str}\n{caption}"
         section_labels = ["📋 Bảng KPI", "🍩 % Đóng góp", "📈 Trend Sản lượng", "📦 Trend Items", "🚛 Trend Xe"]
         # Collect all (chat_id, msg_id) pairs for tracking
         all_sent = []
-        for img_path, sec_label in zip(section_paths, section_labels):
-            pairs = send_telegram_photo(img_path, f"{caption}\n{sec_label}")
+        for i, (img_path, sec_label) in enumerate(zip(section_paths, section_labels)):
+            img_caption = f"{first_caption}\n{sec_label}" if i == 0 else f"{caption}\n{sec_label}"
+            pairs = send_telegram_photo(img_path, img_caption)
             all_sent.extend(pairs)
         dashboard_text = f"📊 Dashboard đã cập nhật: {date_str}\n🔗 https://tunhipham.github.io/transport_daily_report/\n⏱ Refresh sau 1-2 phút để xem dữ liệu mới nhất"
         pairs = send_telegram_text(dashboard_text)

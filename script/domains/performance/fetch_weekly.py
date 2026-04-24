@@ -297,6 +297,7 @@ def main():
     default_week, default_start = calc_current_week()
     week_num = default_week
     start_str = default_start
+    single_date_str = None
 
     if "--week" in sys.argv:
         idx = sys.argv.index("--week")
@@ -304,33 +305,74 @@ def main():
     if "--start" in sys.argv:
         idx = sys.argv.index("--start")
         start_str = sys.argv[idx + 1]
+    if "--date" in sys.argv:
+        idx = sys.argv.index("--date")
+        single_date_str = sys.argv[idx + 1]
 
-    parts = start_str.split("/")
-    start_date = datetime(int(parts[2]), int(parts[1]), int(parts[0]))
-    end_date = start_date + timedelta(days=6)  # Mon-Sun
+    # Determine date range
+    if single_date_str:
+        # Single-date mode: only fetch data for this one date
+        parts = single_date_str.split("/")
+        start_date = datetime(int(parts[2]), int(parts[1]), int(parts[0]))
+        end_date = start_date  # same day
 
-    print("=" * 60)
-    print(f"  KẾ HOẠCH GIAO HÀNG - {week_num}")
-    print(f"  {format_date_vn(start_date)} → {format_date_vn(end_date)}")
-    print("=" * 60)
+        print("=" * 60)
+        print(f"  KẾ HOẠCH GIAO HÀNG - {week_num}")
+        print(f"  📅 Single date: {format_date_vn(start_date)}")
+        print("=" * 60)
+    else:
+        # Full-week mode (original behavior)
+        parts = start_str.split("/")
+        start_date = datetime(int(parts[2]), int(parts[1]), int(parts[0]))
+        end_date = start_date + timedelta(days=6)  # Mon-Sun
+
+        print("=" * 60)
+        print(f"  KẾ HOẠCH GIAO HÀNG - {week_num}")
+        print(f"  {format_date_vn(start_date)} → {format_date_vn(end_date)}")
+        print("=" * 60)
 
     data, warnings = fetch_week_data(start_date, end_date)
 
     for w in warnings:
         print(f"  ⚠️ {w}")
 
-    # Save JSON
+    # Save JSON — merge into existing file when using --date
     state_dir = os.path.join(OUTPUT, "state")
     os.makedirs(state_dir, exist_ok=True)
     out_path = os.path.join(state_dir, f"weekly_plan_{week_num}.json")
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump({
-            "week": week_num,
-            "start": format_date_vn(start_date),
-            "end": format_date_vn(end_date),
-            "data": data,
-            "warnings": warnings,
-        }, f, ensure_ascii=False, indent=2)
+
+    if single_date_str and os.path.exists(out_path):
+        # Merge mode: load existing, remove old rows for fetched date(s),
+        # then append fresh rows — preserving data for other dates
+        with open(out_path, "r", encoding="utf-8") as f:
+            existing = json.load(f)
+
+        fetched_dates = set()
+        current = start_date
+        while current <= end_date:
+            fetched_dates.add(format_date_vn(current))
+            current += timedelta(days=1)
+
+        for kho in data:
+            old_rows = existing.get("data", {}).get(kho, [])
+            # Keep rows from dates we did NOT re-fetch
+            kept = [r for r in old_rows if r.get("date") not in fetched_dates]
+            kept.extend(data[kho])
+            existing.setdefault("data", {})[kho] = kept
+
+        existing["warnings"] = warnings
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(existing, f, ensure_ascii=False, indent=2)
+    else:
+        # Full write (new file or full-week mode)
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump({
+                "week": week_num,
+                "start": format_date_vn(start_date),
+                "end": format_date_vn(end_date),
+                "data": data,
+                "warnings": warnings,
+            }, f, ensure_ascii=False, indent=2)
 
     print(f"\n📊 Summary:")
     for kho, rows in data.items():

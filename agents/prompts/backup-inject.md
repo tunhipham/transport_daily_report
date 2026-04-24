@@ -51,7 +51,8 @@ Dùng `;` thay vì `&&` khi nối lệnh.
 
 - **DRY Tối**: date = ngày hôm nay (D) — lịch tối cùng ngày
 - **DRY Sáng / KRC / ĐÔNG MÁT / THỊT CÁ**: date = ngày mai (D+1)
-- **Week**: tuần ISO hiện tại (W15, W16...)
+- **Week**: tuần ISO hiện tại (W15, W16...) — chỉ dùng để xác định thread mail
+- **Fetch**: dùng `--date DD/MM/YYYY` (chỉ fetch ngày đó), KHÔNG dùng `--start` (fetch cả tuần)
 
 ---
 
