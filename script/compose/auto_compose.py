@@ -391,34 +391,57 @@ def format_diff(diff):
 #  Fetch data
 # ══════════════════════════════════════════════════════════════════════
 
+def _run_fetch_subprocess(cmd, label="fetch", timeout=300):
+    """Run a fetch subprocess with isolation flags to prevent cascading crashes."""
+    try:
+        # CREATE_NO_WINDOW + BELOW_NORMAL_PRIORITY to isolate from parent
+        creation_flags = 0
+        if sys.platform == 'win32':
+            creation_flags = subprocess.CREATE_NO_WINDOW | 0x00004000  # BELOW_NORMAL_PRIORITY
+        result = subprocess.run(
+            cmd, capture_output=True, text=True,
+            encoding='utf-8', errors='replace', timeout=timeout,
+            creationflags=creation_flags if sys.platform == 'win32' else 0,
+        )
+        if result.returncode == 0:
+            log.info(f"  ✅ {label} — success")
+            return True
+        else:
+            log.warning(f"  ⚠ {label} returned code {result.returncode}")
+            if result.stderr:
+                log.warning(f"     {result.stderr[:200]}")
+            return False
+    except subprocess.TimeoutExpired:
+        log.error(f"  ❌ {label} timed out")
+        return False
+    except Exception as e:
+        log.error(f"  ❌ {label} error: {e}")
+        return False
+
+
 def fetch_latest_data(week, week_start):
-    """Re-fetch all data by running fetch_weekly_plan.py."""
+    """Re-fetch all data by running fetch_weekly_plan.py (full week)."""
     cmd = [
         sys.executable,
         os.path.join(BASE, "script", "domains", "performance", "fetch_weekly.py"),
         "--week", week,
         "--start", week_start,
     ]
-    log.info("  🔄 Fetching latest data from sources...")
-    try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True,
-            encoding='utf-8', errors='replace', timeout=600
-        )
-        if result.returncode == 0:
-            log.info("  ✅ Data fetched successfully")
-            return True
-        else:
-            log.warning(f"  ⚠ Fetch returned code {result.returncode}")
-            if result.stderr:
-                log.warning(f"     {result.stderr[:200]}")
-            return False
-    except subprocess.TimeoutExpired:
-        log.error("  ❌ Fetch timed out (10 min)")
-        return False
-    except Exception as e:
-        log.error(f"  ❌ Fetch error: {e}")
-        return False
+    log.info("  🔄 Fetching latest data (full week)...")
+    return _run_fetch_subprocess(cmd, "Fetch (full week)", timeout=600)
+
+
+def fetch_single_date(delivery_date_str):
+    """Fetch data for a single delivery date only — lighter and less crash-prone.
+    Used by watch mode instead of full-week fetch.
+    """
+    cmd = [
+        sys.executable,
+        os.path.join(BASE, "script", "domains", "performance", "fetch_weekly.py"),
+        "--date", delivery_date_str,
+    ]
+    log.info(f"  🔄 Fetching data for {delivery_date_str}...")
+    return _run_fetch_subprocess(cmd, f"Fetch ({delivery_date_str})", timeout=180)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -1160,7 +1183,7 @@ def watch_loop(config, state, poll_interval_min, dry_run=False, no_inject=False)
                         if kho_state.get("status") in ("not_started", "waiting_data", "composed"):
                             log.info(f"  🔄 {label}: CATCH-UP (past cutoff {sched['cutoff_time']})")
                             if not dry_run:
-                                fetch_success = fetch_latest_data(week, week_start)
+                                fetch_success = fetch_single_date(delivery_str)
                                 if not fetch_success:
                                     log.warning(f"  ⚠ Fetch failed for {label} catch-up, will retry")
                                 else:
@@ -1214,7 +1237,7 @@ def watch_loop(config, state, poll_interval_min, dry_run=False, no_inject=False)
 
                     # Fetch data
                     if not dry_run:
-                        fetch_success = fetch_latest_data(week, week_start)
+                        fetch_success = fetch_single_date(delivery_str)
                         if not fetch_success:
                             log.warning(f"  ⚠ Fetch failed for {label}, will retry next poll")
                             continue
