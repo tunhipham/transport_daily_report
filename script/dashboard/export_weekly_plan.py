@@ -34,7 +34,7 @@ from generate import STORES as NSO_STORES, parse_date as nso_parse_date
 
 # ═══════════════════════════════════════════════
 # NSO SCHEDULE INFO — fixed delivery schedules
-# User-confirmed shift: A177 = Ngày, all others = Đêm
+# User-confirmed shift: A176, A177, A178 = Ngày, all others = Đêm
 # ═══════════════════════════════════════════════
 NSO_SCHEDULE = {
     # W16 stores (opening 17-18/04/2026)
@@ -56,11 +56,11 @@ NSO_SCHEDULE = {
     "A192": {"schedule_chia": "Thứ 3-5-7", "schedule_ve": "Thứ 2-4-6", "shift": "Đêm",
              "name_full": "Bùi Đình Túy"},
     # W17 stores — Group 2: chia 2-4-6, về 3-5-7
-    "A178": {"schedule_chia": "Thứ 2-4-6", "schedule_ve": "Thứ 3-5-7", "shift": "Đêm",
+    "A178": {"schedule_chia": "Thứ 2-4-6", "schedule_ve": "Thứ 3-5-7", "shift": "Ngày",
              "name_full": "Celesta Rise"},
     "A191": {"schedule_chia": "Thứ 2-4-6", "schedule_ve": "Thứ 3-5-7", "shift": "Đêm",
              "name_full": "Nguyễn Hữu Cầu"},
-    "A176": {"schedule_chia": "Thứ 2-4-6", "schedule_ve": "Thứ 3-5-7", "shift": "Đêm",
+    "A176": {"schedule_chia": "Thứ 2-4-6", "schedule_ve": "Thứ 3-5-7", "shift": "Ngày",
              "name_full": "Sunrise Riverside"},
     "A163": {"schedule_chia": "Thứ 2-4-6", "schedule_ve": "Thứ 3-5-7", "shift": "Đêm",
              "name_full": "Celadon City"},
