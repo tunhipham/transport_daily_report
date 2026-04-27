@@ -434,32 +434,32 @@ def run_check(dry_run=False, is_final=False):
         log.error("  ❌ Export failed")
         return "error"
 
-    # Step 4: Read AFTER state
-    after = read_week_inventory(week_label, week_start, week_end)
-    diff = diff_week_inventory(before, after)
-    log.info(f"\n{format_diff_log(diff, week_label)}")
+    # Step 4: Diff vs Thursday baseline (shift + kiểm kê + days)
+    thu_diff = diff_vs_thursday(week_label, week_num)
 
     # Step 5: Deploy dashboard
     log.info(f"\n  🚀 Deploying dashboard...")
     deploy_ok = run_deploy()
 
     # Step 6: Send Telegram summary + Excel file
-    send_monday_summary(diff, week_label, week_num, week_start, week_end)
+    send_monday_summary(thu_diff, week_label, week_num, week_start, week_end)
 
     # Step 7: Save diff to state for --deliver
-    save_monday_diff(diff, week_label, week_num)
+    save_monday_diff(thu_diff, week_label, week_num)
 
     # ── Summary ──
-    total = len(diff['added']) + len(diff['changed']) + len(diff['removed'])
+    n_changes = len(thu_diff.get("changes", []))
     log.info(f"\n  {'─'*45}")
     log.info(f"  📊 Kết quả CUTOFF:")
     log.info(f"     Excel:    {'✅' if regen_ok   else '❌'}")
     log.info(f"     Export:   {'✅' if export_ok  else '❌'}")
     log.info(f"     Deploy:   {'✅' if deploy_ok  else '❌'}")
-    log.info(f"     Changes:  {total} ({len(diff['added'])} thêm, {len(diff['changed'])} đổi, {len(diff['removed'])} hủy)")
+    log.info(f"     Changes vs Thu: {n_changes}")
+    for c in thu_diff.get("changes", []):
+        log.info(f"       • {c}")
     log.info(f"  {'─'*45}")
 
-    return "changed" if diff["has_changes"] else "unchanged"
+    return "changed" if n_changes > 0 else "unchanged"
 
 
 def run_generate_excel(week_num):
@@ -487,8 +487,83 @@ def run_generate_excel(week_num):
         return False
 
 
-def send_monday_summary(diff, week_label, week_num, week_start, week_end):
-    """Send Telegram summary of Monday update + attach Excel file."""
+def diff_vs_thursday(week_label, week_num):
+    """Diff current weekly_plan.json vs Thursday baseline.
+    Compares: shift, inventory_date, days for every store.
+    Returns dict with 'changes' (list of human-readable strings) and 'has_changes'."""
+    baseline_path = os.path.join(BASE, "output", "state", f"thursday_baseline_W{week_num}.json")
+    json_path = os.path.join(BASE, "docs", "data", "weekly_plan.json")
+
+    if not os.path.exists(baseline_path):
+        log.warning(f"  ⚠ Thursday baseline not found: {baseline_path}")
+        log.info("  ℹ Falling back to same-run kiểm kê diff only")
+        return {"changes": [], "has_changes": False}
+
+    with open(baseline_path, "r", encoding="utf-8") as f:
+        baseline = json.load(f)
+    thu_stores = baseline.get("stores", {})  # {code: store_dict}
+
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    mon_stores_list = data.get("weeks", {}).get(week_label, {}).get("stores", [])
+    mon_stores = {s["code"]: s for s in mon_stores_list}
+
+    changes = []
+
+    log.info(f"\n  🔍 Diffing vs Thursday baseline ({baseline.get('saved_at', '?')})...")
+    log.info(f"     Thu: {len(thu_stores)} stores | Mon: {len(mon_stores)} stores")
+
+    # Compare stores present in both
+    for code in sorted(set(thu_stores) & set(mon_stores)):
+        old = thu_stores[code]
+        new = mon_stores[code]
+        name = new.get("name", "").split(" - ")[-1][:30]  # short name
+
+        # Shift change
+        old_shift = old.get("shift", "")
+        new_shift = new.get("shift", "")
+        if old_shift != new_shift:
+            changes.append(f"đổi shift {code} {name} {old_shift}→{new_shift}")
+
+        # Kiểm kê change
+        old_kk = old.get("inventory_date", "")
+        new_kk = new.get("inventory_date", "")
+        if old_kk != new_kk:
+            if old_kk and new_kk:
+                changes.append(f"dời kiểm kê {code} {name} {old_kk}→{new_kk}")
+            elif new_kk:
+                changes.append(f"thêm kiểm kê {code} {name} {new_kk}")
+            else:
+                changes.append(f"hủy kiểm kê {code} {name} (was {old_kk})")
+
+        # Days change (delivery schedule)
+        old_days = old.get("days", [])
+        new_days = new.get("days", [])
+        if old_days != new_days:
+            # Only log if not already captured by shift change
+            if old_shift == new_shift:
+                changes.append(f"đổi lịch giao {code} {name}")
+
+    # Added stores
+    for code in sorted(set(mon_stores) - set(thu_stores)):
+        name = mon_stores[code].get("name", "").split(" - ")[-1][:30]
+        changes.append(f"thêm store {code} {name}")
+
+    # Removed stores
+    for code in sorted(set(thu_stores) - set(mon_stores)):
+        name = thu_stores[code].get("name", "").split(" - ")[-1][:30]
+        changes.append(f"bỏ store {code} {name}")
+
+    for c in changes:
+        log.info(f"     • {c}")
+    if not changes:
+        log.info("     ✓ Không thay đổi so với thứ 5")
+
+    return {"changes": changes, "has_changes": len(changes) > 0}
+
+
+def send_monday_summary(thu_diff, week_label, week_num, week_start, week_end):
+    """Send Telegram summary + Excel file + draft group caption."""
     bot_token, chat_id = load_telegram_config(TELEGRAM_CONFIG, domain="weekly_plan")
     if not bot_token or not chat_id:
         log.warning("  ⚠ Telegram not configured")
@@ -500,40 +575,40 @@ def send_monday_summary(diff, week_label, week_num, week_start, week_end):
     if prev_mid:
         delete_telegram_message(prev_mid, bot_token, chat_id)
 
-    # Build summary message
     now_str = datetime.now().strftime("%d/%m/%Y %H:%M")
     ws = week_start.strftime("%d/%m")
     we = week_end.strftime("%d/%m")
+    changes = thu_diff.get("changes", [])
 
+    # Build draft group caption
+    if changes:
+        change_text = ", ".join(changes)
+        draft_caption = f"SCM gửi lại lịch đi hàng {week_label} có cập nhật thay đổi: {change_text}"
+    else:
+        draft_caption = f"SCM gửi lại lịch đi hàng {week_label} (cập nhật thứ 2)"
+
+    # Build summary message
     lines = [
         f"📋 <b>Lịch Tuần {week_label} — Monday Update</b>",
         f"📅 {ws}–{we} | 🕐 {now_str}",
         "",
     ]
 
-    if not diff["has_changes"]:
-        lines.append(f"✅ Kiểm kê không thay đổi so với thứ 5 ({len(diff['unchanged'])} stores)")
+    if not changes:
+        lines.append("✅ Không thay đổi so với thứ 5")
     else:
-        if diff["changed"]:
-            lines.append(f"🔄 <b>Đổi lịch kiểm kê ({len(diff['changed'])}):</b>")
-            for s in diff["changed"]:
-                lines.append(f"  • {s['code']} {s['name']}: {s['old_date']} → {s['new_date']}")
-            lines.append("")
-        if diff["added"]:
-            lines.append(f"🆕 <b>Thêm kiểm kê ({len(diff['added'])}):</b>")
-            for s in diff["added"]:
-                lines.append(f"  • {s['code']} {s['name']}: {s['date']}")
-            lines.append("")
-        if diff["removed"]:
-            lines.append(f"🗑️ <b>Hủy kiểm kê ({len(diff['removed'])}):</b>")
-            for s in diff["removed"]:
-                lines.append(f"  • {s['code']} {s['name']}: {s['date']}")
-            lines.append("")
+        lines.append(f"🔄 <b>Thay đổi v/s thứ 5 ({len(changes)}):</b>")
+        for c in changes:
+            lines.append(f"  • {c}")
+        lines.append("")
 
     lines.append("✅ Dashboard đã cập nhật")
     lines.append("📎 File Excel kèm bên dưới")
     lines.append("")
-    lines.append("Reply 'OK' để gửi lịch cập nhật vào group SCM-NCP 👇")
+    lines.append("─── Draft caption gửi group ───")
+    lines.append(f"<i>{draft_caption}</i>")
+    lines.append("")
+    lines.append("Reply '<b>OK</b>' để gửi group SCM-NCP với caption trên 👆")
 
     msg = "\n".join(lines)
     mid = send_telegram_text(msg, bot_token, chat_id)
@@ -545,7 +620,7 @@ def send_monday_summary(diff, week_label, week_num, week_start, week_end):
     # Send Excel file
     excel_path = os.path.join(PLAN_DIR, f"Lịch đi hàng ST W{week_num}.xlsx")
     if os.path.exists(excel_path):
-        caption = f"📋 Lịch đi hàng W{week_num} — cập nhật kiểm kê {now_str}"
+        caption = f"📋 Lịch đi hàng W{week_num} — cập nhật {now_str}"
         fmid = send_telegram_document(excel_path, caption, bot_token, chat_id)
         if fmid:
             log.info(f"  ✅ Excel file sent (msg_id={fmid})")
@@ -553,26 +628,25 @@ def send_monday_summary(diff, week_label, week_num, week_start, week_end):
         log.warning(f"  ⚠ Excel not found: {excel_path}")
 
 
-def save_monday_diff(diff, week_label, week_num):
+def save_monday_diff(thu_diff, week_label, week_num):
     """Save Monday diff to state for --deliver."""
     state = load_state()
+    changes = thu_diff.get("changes", [])
 
-    # Build human-readable change list for caption
-    changes = []
-    if diff["added"] or diff["removed"] or diff["changed"]:
-        changes.append(f"kiểm kê ({len(diff['added'])} thêm, {len(diff['changed'])} đổi, {len(diff['removed'])} hủy)")
+    # Build group caption
+    if changes:
+        change_text = ", ".join(changes)
+        group_caption = f"SCM gửi lại lịch đi hàng {week_label} có cập nhật thay đổi: {change_text}"
+    else:
+        group_caption = f"SCM gửi lại lịch đi hàng {week_label} (cập nhật thứ 2)"
 
     state["monday_diff"] = {
         "week_label": week_label,
         "week_num": week_num,
         "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
-        "has_changes": diff["has_changes"],
+        "has_changes": thu_diff.get("has_changes", False),
         "changes": changes,
-        "details": {
-            "added": diff["added"],
-            "changed": diff["changed"],
-            "removed": diff["removed"],
-        },
+        "group_caption": group_caption,
     }
     save_state(state)
     log.info(f"  💾 Monday diff saved to state")
@@ -602,13 +676,8 @@ def deliver_monday():
         log.info("  ❌ Telegram config missing (bot_token or group_chat_id)")
         return
 
-    # Build caption with changes
-    change_list = md.get("changes", [])
-    if change_list:
-        change_text = ", ".join(change_list)
-        caption = f"SCM gửi lại lịch đi hàng {week_label} có cập nhật thay đổi: {change_text}"
-    else:
-        caption = f"SCM gửi lại lịch đi hàng {week_label} (cập nhật thứ 2)"
+    # Use pre-built caption from state
+    caption = md.get("group_caption", f"SCM gửi lại lịch đi hàng {week_label} (cập nhật thứ 2)")
 
     # Find Excel
     excel_path = os.path.join(PLAN_DIR, f"Lịch đi hàng ST W{week_num}.xlsx")

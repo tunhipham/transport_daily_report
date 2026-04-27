@@ -177,7 +177,7 @@ def send_readiness_check():
 
 
 def generate_and_send():
-    """13:00 Thursday: Generate Excel and send for review."""
+    """13:00 Thursday: Generate Excel, export JSON, save baseline, send for review."""
     bot_token, chat_id = load_telegram_config(TELEGRAM_CFG, domain="weekly_plan")
     if not bot_token:
         print("❌ Telegram config missing")
@@ -197,7 +197,16 @@ def generate_and_send():
         print(f"❌ Generate failed: {e}")
         return
     
-    # Step 2: Find the Excel file
+    # Step 2: Export JSON + Deploy (so dashboard is up to date)
+    import subprocess
+    export_script = os.path.join(REPO_ROOT, "script", "dashboard", "export_weekly_plan.py")
+    print(f"\n📅 Exporting weekly plan JSON...")
+    subprocess.run([sys.executable, export_script], cwd=REPO_ROOT, timeout=120)
+    
+    # Step 3: Save Thursday baseline snapshot for Monday diff
+    _save_thursday_baseline(week_num)
+    
+    # Step 4: Find the Excel file
     excel_path = os.path.join(PLAN_DIR, f"Lịch đi hàng ST W{week_num}.xlsx")
     if not os.path.exists(excel_path):
         error_msg = f"❌ <b>Weekly Plan W{week_num}</b>\n\nExcel file not found: {excel_path}"
@@ -206,7 +215,7 @@ def generate_and_send():
     
     file_size = os.path.getsize(excel_path)
     
-    # Step 3: Send Excel file for review
+    # Step 5: Send Excel file for review
     caption = (
         f"📋 <b>Lịch về hàng W{week_num}</b>\n"
         f"📅 {next_mon.strftime('%d/%m')} → {next_sun.strftime('%d/%m/%Y')}\n"
@@ -219,6 +228,37 @@ def generate_and_send():
         print(f"\n✅ Excel sent to Telegram for review (msg_id={mid})")
     else:
         print("\n❌ Failed to send Excel to Telegram")
+
+
+def _save_thursday_baseline(week_num):
+    """Save current weekly_plan.json W{nn} stores as Thursday baseline.
+    Monday watch will diff against this to detect all changes (shift, kiểm kê, days)."""
+    json_path = os.path.join(REPO_ROOT, "docs", "data", "weekly_plan.json")
+    baseline_path = os.path.join(REPO_ROOT, "output", "state", f"thursday_baseline_W{week_num}.json")
+    
+    if not os.path.exists(json_path):
+        print(f"  ⚠ weekly_plan.json not found, cannot save baseline")
+        return
+    
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    
+    week_key = f"W{week_num}"
+    week_data = data.get("weeks", {}).get(week_key, {})
+    stores = week_data.get("stores", [])
+    
+    baseline = {
+        "week": week_key,
+        "week_num": week_num,
+        "saved_at": datetime.now().strftime("%d/%m/%Y %H:%M"),
+        "stores": {s["code"]: s for s in stores},
+    }
+    
+    os.makedirs(os.path.dirname(baseline_path), exist_ok=True)
+    with open(baseline_path, "w", encoding="utf-8") as f:
+        json.dump(baseline, f, ensure_ascii=False, indent=2)
+    
+    print(f"  💾 Thursday baseline saved: {len(stores)} stores → {baseline_path}")
 
 
 def deliver_to_group(week_override=None):
