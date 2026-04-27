@@ -6,7 +6,8 @@ Dashboard logistics KFM — Tab "📅 Lịch Tuần" hiển thị lịch giao h�
 
 **Flow**: `master_schedule.json` → `generate_excel.py` → Excel W{nn} → `export_weekly_plan.py` → JSON → deploy
 
-**Thursday Cadence**: 12h check data → 13h generate + send review → user confirm → `--deliver` gửi team
+**Thursday Cadence**: 12h check → 13h generate + export + save baseline + send review → user confirm → `--deliver`
+**Monday Cadence**: 07h→12h monitor → 12h cutoff: re-gen Excel + diff vs Thu + deploy → send summary + draft caption → user confirm → `--deliver`
 
 ## Data Source Rules
 
@@ -82,9 +83,12 @@ Script: `script/domains/weekly_plan/finalize.py`
 | Mode | Schedule | Target |
 |------|----------|--------|
 | `--check` | Thu 12:00 (auto) | Telegram cá nhân — data status |
-| `--send` | Thu 13:00 (auto) | Telegram cá nhân — file Excel review |
+| `--send` | Thu 13:00 (auto) | Generate + export + save baseline + Telegram review |
 | `--deliver` | **Manual** (user confirm) | Group SCM - NCP — file Excel final |
 | `--test` | Manual | Telegram cá nhân — test send |
+
+> [!NOTE]
+> `--send` lưu **Thursday baseline** (`output/state/thursday_baseline_W{nn}.json`) để Monday diff.
 
 ## Monday Kiểm Kê Refresh (Thứ 2 — update lịch tuần hiện tại)
 
@@ -111,6 +115,12 @@ Thursday baseline: `output/state/thursday_baseline_W{nn}.json`
 Config: `config/telegram.json` → key `weekly_plan`
 - `chat_id: 5782090339` (personal)
 - `group_chat_id: -4702773130` (SCM - NCP)
+
+## Diff Rules (Monday caption)
+- Chỉ ghi **code** store (A176, LPM...) — không ghi tên dài
+- Nếu days đổi do kiểm kê → gộp vào kiểm kê, không ghi riêng "đổi lịch giao"
+- Chỉ report kiểm kê **trong tuần W hiện tại** (bỏ ngoài tuần)
+- Telegram gửi kèm **draft caption** để user duyệt trước khi gửi group
 
 ## Formatting Rules
 - Số: dùng dấu "," | Ngày: dd/mm/yyyy | Vietnamese diacritics: giữ nguyên

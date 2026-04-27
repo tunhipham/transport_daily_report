@@ -69,7 +69,7 @@ Script: `script/domains/weekly_plan/finalize.py`
 
 ```
 12:00 Thu (auto)   →  --check     Check data readiness → Telegram reminder
-13:00 Thu (auto)   →  --send      Generate Excel → Telegram review
+13:00 Thu (auto)   →  --send      Generate Excel + export JSON + save baseline → Telegram review
 User confirm       →  --deliver   Gửi Excel → group SCM - NCP
 ```
 
@@ -78,7 +78,7 @@ User confirm       →  --deliver   Gửi Excel → group SCM - NCP
 | Lệnh | Mô tả |
 |-------|-------|
 | `python script/domains/weekly_plan/finalize.py --check` | Check readiness + gửi reminder (auto Thu 12h) |
-| `python script/domains/weekly_plan/finalize.py --send` | Generate Excel + gửi review (auto Thu 13h) |
+| `python script/domains/weekly_plan/finalize.py --send` | Generate Excel + export JSON + save baseline + gửi review (auto Thu 13h) |
 | `python script/domains/weekly_plan/finalize.py --deliver` | Gửi lên group SCM - NCP (**MANUAL** — user confirm) |
 | `python script/domains/weekly_plan/finalize.py --deliver --week 18` | Gửi tuần cụ thể |
 | `python script/domains/weekly_plan/finalize.py --test` | Test gửi file mới nhất qua Telegram cá nhân |

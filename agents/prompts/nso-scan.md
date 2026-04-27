@@ -8,6 +8,19 @@ NSO pipeline quét email "Cập nhật NSO" trên Haraworks, merge dữ liệu s
 
 ---
 
+## Automated Timeline
+
+```
+THỨ 2:
+  10:00  scan    → Scan mail → deploy dashboard → Telegram group (KT tuần này + sau)
+                  → Remind cá nhân (NSO thiếu info trong master_schedule)
+  15:00  track   → Re-scan → chỉ deploy + notify nếu có thay đổi
+
+THỨ 3:
+  09:00  scan    → Scan cuối → deploy → Telegram group (nếu thay đổi)
+  09:30  finalize → Export + deploy + generate châm hàng Excel (local only)
+```
+
 ## Data Flow
 
 ```
@@ -20,6 +33,8 @@ fetch_nso_mail.py → Haraworks mail → parse → NsoMaster.merge_mail()
              export_data.py → docs/data/nso.json
                        ↓
              deploy.py → GitHub Pages
+                       ↓
+             nso_remind.py → cross-check vs master_schedule → personal Telegram
 ```
 
 ## Email Parsing Rules
@@ -55,13 +70,24 @@ Email "Cập nhật NSO" từ Hoàng Nguyên Công — text numbered entries.
 - Version rules: 2000/1500/1000/700 → different KSL amounts (D→D+6)
 - ĐÔNG MÁT: fixed 400kg for every version
 
-## Telegram (Thứ 3 auto)
+## Telegram
 
-- Trigger: `auto_nso_watch.bat` detects Tuesday → `generate.py --send-telegram`
+### Group (NSO summary) — Thứ 2 10h + Thứ 3 9h (nếu thay đổi)
 - Flow: Xóa tin cũ → screenshot calendar → gửi ảnh → gửi dashboard HTML kèm caption
 - Caption: Tổng active + TUẦN NÀY + TUẦN SAU
 - Config: `config/telegram.json` → `nso` domain
 - State: `output/state/nso/sent_messages.json`
+
+### Personal Remind — Thứ 2 10h
+- Cross-check NSO tuần này + tuần sau vs `master_schedule.json` + `NSO_SCHEDULE`
+- Flag: missing code, missing schedule_ve, missing shift, missing version
+- ⚡ NSO khai trương Thứ 5 → nhắc đặc biệt (cần lịch tuần trước Thứ 5)
+- Config: `config/telegram.json` → `nso_remind` domain (chat cá nhân)
+
+## Châm hàng (Thứ 3 09:30 — local only)
+- `generate_excel.py` tạo Excel lịch đi hàng có châm hàng NSO
+- KHÔNG gửi Telegram cho châm hàng
+- Output: `output/artifacts/weekly transport plan/Lịch đi hàng ST W{nn}.xlsx`
 
 ---
 

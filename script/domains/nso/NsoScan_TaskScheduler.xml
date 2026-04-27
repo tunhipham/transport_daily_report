@@ -1,29 +1,43 @@
 <?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
-    <Description>NSO Mail Scanner - Quét email NSO trên Haraworks mỗi Thứ 2 + 3</Description>
+    <Description>NSO Pipeline — auto-detect mode by day+time</Description>
     <Author>admin</Author>
   </RegistrationInfo>
   <Triggers>
-    <!-- Thứ 2 (Monday) lúc 09:00 -->
+    <!-- Thứ 2 10:00 — scan mode -->
     <CalendarTrigger>
-      <StartBoundary>2026-04-21T09:00:00</StartBoundary>
+      <StartBoundary>2026-04-28T10:00:00</StartBoundary>
       <Enabled>true</Enabled>
       <ScheduleByWeek>
-        <DaysOfWeek>
-          <Monday />
-        </DaysOfWeek>
+        <DaysOfWeek><Monday /></DaysOfWeek>
         <WeeksInterval>1</WeeksInterval>
       </ScheduleByWeek>
     </CalendarTrigger>
-    <!-- Thứ 3 (Tuesday) lúc 09:00 -->
+    <!-- Thứ 2 15:00 — track mode -->
     <CalendarTrigger>
-      <StartBoundary>2026-04-22T09:00:00</StartBoundary>
+      <StartBoundary>2026-04-28T15:00:00</StartBoundary>
       <Enabled>true</Enabled>
       <ScheduleByWeek>
-        <DaysOfWeek>
-          <Tuesday />
-        </DaysOfWeek>
+        <DaysOfWeek><Monday /></DaysOfWeek>
+        <WeeksInterval>1</WeeksInterval>
+      </ScheduleByWeek>
+    </CalendarTrigger>
+    <!-- Thứ 3 09:00 — scan mode -->
+    <CalendarTrigger>
+      <StartBoundary>2026-04-29T09:00:00</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByWeek>
+        <DaysOfWeek><Tuesday /></DaysOfWeek>
+        <WeeksInterval>1</WeeksInterval>
+      </ScheduleByWeek>
+    </CalendarTrigger>
+    <!-- Thứ 3 09:30 — finalize mode -->
+    <CalendarTrigger>
+      <StartBoundary>2026-04-29T09:30:00</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByWeek>
+        <DaysOfWeek><Tuesday /></DaysOfWeek>
         <WeeksInterval>1</WeeksInterval>
       </ScheduleByWeek>
     </CalendarTrigger>
@@ -36,7 +50,7 @@
     </Principal>
   </Principals>
   <Settings>
-    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <MultipleInstancesPolicy>Queue</MultipleInstancesPolicy>
     <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
     <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
     <AllowHardTerminate>true</AllowHardTerminate>
@@ -45,7 +59,7 @@
     <AllowStartOnDemand>true</AllowStartOnDemand>
     <Enabled>true</Enabled>
     <Hidden>false</Hidden>
-    <ExecutionTimeLimit>PT10M</ExecutionTimeLimit>
+    <ExecutionTimeLimit>PT15M</ExecutionTimeLimit>
   </Settings>
   <Actions Context="Author">
     <Exec>

@@ -2854,6 +2854,7 @@
     <div class="filter-bar" style="display:flex; align-items:center; gap:.5rem; padding:0; border:none; background:none">
       <label style="color:var(--t2);font-size:.8rem">Từ:</label><input type="date" id="nsoDateFrom" onchange="nsoInlineFilter()" style="font-size:.75rem;padding:.3rem .5rem">
       <label style="color:var(--t2);font-size:.8rem">Đến:</label><input type="date" id="nsoDateTo" onchange="nsoInlineFilter()" style="font-size:.75rem;padding:.3rem .5rem">
+      <button class="reset-btn" onclick="nsoResetFilter()" title="Xóa tất cả bộ lọc" style="background:transparent;border:1px solid var(--bd2);color:var(--t2);padding:.3rem .7rem;border-radius:8px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap">↺ Reset</button>
     </div>
     <span class="filter-info" id="nsoFilterCount">Hiển thị: ${stores.length}/${stores.length} stores</span>
   </div>
@@ -2981,6 +2982,17 @@
           if (show) { shown++; r.querySelector('.nso-stt').textContent = shown; }
         });
         document.getElementById('nsoFilterCount').textContent = `Hiển thị: ${shown}/${rows.length} stores`;
+      };
+
+      // Reset all filters
+      window.nsoResetFilter = function () {
+        document.getElementById('nsoDateFrom').value = '';
+        document.getElementById('nsoDateTo').value = '';
+        document.getElementById('nsoFltName').value = '';
+        document.getElementById('nsoFltCode').value = '';
+        document.getElementById('nsoFltDate').value = '';
+        document.getElementById('nsoFltStatus').value = '';
+        nsoInlineFilter();
       };
     }
 

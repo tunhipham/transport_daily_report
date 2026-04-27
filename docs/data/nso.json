@@ -1,28 +1,12 @@
 {
-  "_updated": "21/04/2026 10:18",
+  "_updated": "27/04/2026 15:59",
   "stats": {
-    "total": 27,
-    "upcoming": 22,
-    "opening": 1,
+    "total": 25,
+    "upcoming": 15,
+    "opening": 6,
     "reschedule": 4
   },
   "stores": [
-    {
-      "name": "KFM_HCM_Q07 - 1016/21 Chung Cư Sky Garden 2-R1-2",
-      "code": "A177",
-      "opening_date": "18/04/2026",
-      "iso_date": "2026-04-18",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
-    },
-    {
-      "name": "KFM_BDU_DAN - B2.01.05 Tháp B Opal Boulevard",
-      "code": "A164",
-      "opening_date": "23/04/2026",
-      "iso_date": "2026-04-23",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
-    },
     {
       "name": "KFM_HCM_TDU - BS15 Vinhomes Grand Park",
       "code": "A185",
@@ -36,48 +20,48 @@
       "code": "A178",
       "opening_date": "24/04/2026",
       "iso_date": "2026-04-24",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "status_type": "opening",
+      "status_text": "Đang khai trương"
     },
     {
       "name": "KFM_HCM_Q01 - 35 Nguyễn Hữu Cầu",
       "code": "A191",
       "opening_date": "24/04/2026",
       "iso_date": "2026-04-24",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "status_type": "opening",
+      "status_text": "Đang khai trương"
     },
     {
       "name": "KFM_HCM_NBE - A.1.05 Sunrise Riverside",
       "code": "A176",
       "opening_date": "24/04/2026",
       "iso_date": "2026-04-24",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "status_type": "opening",
+      "status_text": "Đang khai trương"
     },
     {
       "name": "KFM_HCM_TPH - S2.0.28 Block A6 Alnata Plus Celadon City",
       "code": "A163",
       "opening_date": "25/04/2026",
       "iso_date": "2026-04-25",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "status_type": "opening",
+      "status_text": "Đang khai trương"
     },
     {
       "name": "KFM_HCM_TDU - TM1.15 Chung Cư 9 View",
       "code": "A167",
       "opening_date": "25/04/2026",
       "iso_date": "2026-04-25",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "status_type": "opening",
+      "status_text": "Đang khai trương"
     },
     {
       "name": "KFM_HCM_BTH - 61 Bùi Đình Túy",
       "code": "A192",
       "opening_date": "25/04/2026",
       "iso_date": "2026-04-25",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "status_type": "opening",
+      "status_text": "Đang khai trương"
     },
     {
       "name": "KFM_HCM_TPH - H.38 Melody Residences Âu Cơ",
@@ -226,18 +210,6 @@
   ],
   "calendar_events": [
     {
-      "date": "2026-04-18",
-      "label": "A177 - Sky Garden 2",
-      "code": "A177",
-      "type": "opening"
-    },
-    {
-      "date": "2026-04-23",
-      "label": "A164 - Opal Boulevard",
-      "code": "A164",
-      "type": "upcoming"
-    },
-    {
       "date": "2026-04-25",
       "label": "A185 - VHGP Q9 - BS1501",
       "code": "A185",
@@ -247,37 +219,37 @@
       "date": "2026-04-24",
       "label": "A178 - Celesta Rise G16",
       "code": "A178",
-      "type": "upcoming"
+      "type": "opening"
     },
     {
       "date": "2026-04-24",
       "label": "A191 - 35-37 Nguyễn Hữu Cầu",
       "code": "A191",
-      "type": "upcoming"
+      "type": "opening"
     },
     {
       "date": "2026-04-24",
       "label": "A176 - Sunrise Riverside",
       "code": "A176",
-      "type": "upcoming"
+      "type": "opening"
     },
     {
       "date": "2026-04-25",
       "label": "A163 - Celadon Boulevard",
       "code": "A163",
-      "type": "upcoming"
+      "type": "opening"
     },
     {
       "date": "2026-04-25",
       "label": "A167 - Shophouse 9 View",
       "code": "A167",
-      "type": "upcoming"
+      "type": "opening"
     },
     {
       "date": "2026-04-25",
       "label": "A192 - 61 Bùi Đình Túy",
       "code": "A192",
-      "type": "upcoming"
+      "type": "opening"
     },
     {
       "date": "2026-05-07",
@@ -388,464 +360,7 @@
       "type": "upcoming"
     }
   ],
-  "schedules": [
-    {
-      "label": "KFM_BDU_DAN - B2.01.05 Tháp B Opal Boulevard (A164)",
-      "version": 1500,
-      "days": [
-        {
-          "date": "23/04/2026",
-          "day_name": "Thứ 5",
-          "label": "D",
-          "ksl": 2800,
-          "dm": 0
-        },
-        {
-          "date": "24/04/2026",
-          "day_name": "Thứ 6",
-          "label": "D+1",
-          "ksl": 4200,
-          "dm": 400
-        },
-        {
-          "date": "25/04/2026",
-          "day_name": "Thứ 7",
-          "label": "D+2",
-          "ksl": 2800,
-          "dm": 0
-        },
-        {
-          "date": "26/04/2026",
-          "day_name": "CN",
-          "label": "D+3",
-          "ksl": 2300,
-          "dm": 0
-        },
-        {
-          "date": "27/04/2026",
-          "day_name": "Thứ 2",
-          "label": "D+4",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "28/04/2026",
-          "day_name": "Thứ 3",
-          "label": "D+5",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "29/04/2026",
-          "day_name": "Thứ 4",
-          "label": "D+6",
-          "ksl": "Daily",
-          "dm": 0
-        }
-      ],
-      "total_ksl": 12100,
-      "total_dm": 400
-    },
-    {
-      "label": "KFM_HCM_TDU - BS15 Vinhomes Grand Park (A185)",
-      "version": 700,
-      "days": [
-        {
-          "date": "25/04/2026",
-          "day_name": "Thứ 7",
-          "label": "D",
-          "ksl": 1800,
-          "dm": 0
-        },
-        {
-          "date": "26/04/2026",
-          "day_name": "CN",
-          "label": "D+1",
-          "ksl": 3000,
-          "dm": 400
-        },
-        {
-          "date": "27/04/2026",
-          "day_name": "Thứ 2",
-          "label": "D+2",
-          "ksl": 1800,
-          "dm": 0
-        },
-        {
-          "date": "28/04/2026",
-          "day_name": "Thứ 3",
-          "label": "D+3",
-          "ksl": 1500,
-          "dm": 0
-        },
-        {
-          "date": "29/04/2026",
-          "day_name": "Thứ 4",
-          "label": "D+4",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "30/04/2026",
-          "day_name": "Thứ 5",
-          "label": "D+5",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "01/05/2026",
-          "day_name": "Thứ 6",
-          "label": "D+6",
-          "ksl": "Daily",
-          "dm": 0
-        }
-      ],
-      "total_ksl": 8100,
-      "total_dm": 400
-    },
-    {
-      "label": "KFM_HCM_NBE - G16 Celesta Rise (A178)",
-      "version": 1000,
-      "days": [
-        {
-          "date": "24/04/2026",
-          "day_name": "Thứ 6",
-          "label": "D",
-          "ksl": 2500,
-          "dm": 0
-        },
-        {
-          "date": "25/04/2026",
-          "day_name": "Thứ 7",
-          "label": "D+1",
-          "ksl": 4000,
-          "dm": 400
-        },
-        {
-          "date": "26/04/2026",
-          "day_name": "CN",
-          "label": "D+2",
-          "ksl": 2500,
-          "dm": 0
-        },
-        {
-          "date": "27/04/2026",
-          "day_name": "Thứ 2",
-          "label": "D+3",
-          "ksl": 2100,
-          "dm": 0
-        },
-        {
-          "date": "28/04/2026",
-          "day_name": "Thứ 3",
-          "label": "D+4",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "29/04/2026",
-          "day_name": "Thứ 4",
-          "label": "D+5",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "30/04/2026",
-          "day_name": "Thứ 5",
-          "label": "D+6",
-          "ksl": "Daily",
-          "dm": 0
-        }
-      ],
-      "total_ksl": 11100,
-      "total_dm": 400
-    },
-    {
-      "label": "KFM_HCM_Q01 - 35 Nguyễn Hữu Cầu (A191)",
-      "version": 2000,
-      "days": [
-        {
-          "date": "24/04/2026",
-          "day_name": "Thứ 6",
-          "label": "D",
-          "ksl": 3500,
-          "dm": 0
-        },
-        {
-          "date": "25/04/2026",
-          "day_name": "Thứ 7",
-          "label": "D+1",
-          "ksl": 5500,
-          "dm": 400
-        },
-        {
-          "date": "26/04/2026",
-          "day_name": "CN",
-          "label": "D+2",
-          "ksl": 3500,
-          "dm": 0
-        },
-        {
-          "date": "27/04/2026",
-          "day_name": "Thứ 2",
-          "label": "D+3",
-          "ksl": 3000,
-          "dm": 0
-        },
-        {
-          "date": "28/04/2026",
-          "day_name": "Thứ 3",
-          "label": "D+4",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "29/04/2026",
-          "day_name": "Thứ 4",
-          "label": "D+5",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "30/04/2026",
-          "day_name": "Thứ 5",
-          "label": "D+6",
-          "ksl": "Daily",
-          "dm": 0
-        }
-      ],
-      "total_ksl": 15500,
-      "total_dm": 400
-    },
-    {
-      "label": "KFM_HCM_NBE - A.1.05 Sunrise Riverside (A176)",
-      "version": 1000,
-      "days": [
-        {
-          "date": "24/04/2026",
-          "day_name": "Thứ 6",
-          "label": "D",
-          "ksl": 2500,
-          "dm": 0
-        },
-        {
-          "date": "25/04/2026",
-          "day_name": "Thứ 7",
-          "label": "D+1",
-          "ksl": 4000,
-          "dm": 400
-        },
-        {
-          "date": "26/04/2026",
-          "day_name": "CN",
-          "label": "D+2",
-          "ksl": 2500,
-          "dm": 0
-        },
-        {
-          "date": "27/04/2026",
-          "day_name": "Thứ 2",
-          "label": "D+3",
-          "ksl": 2100,
-          "dm": 0
-        },
-        {
-          "date": "28/04/2026",
-          "day_name": "Thứ 3",
-          "label": "D+4",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "29/04/2026",
-          "day_name": "Thứ 4",
-          "label": "D+5",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "30/04/2026",
-          "day_name": "Thứ 5",
-          "label": "D+6",
-          "ksl": "Daily",
-          "dm": 0
-        }
-      ],
-      "total_ksl": 11100,
-      "total_dm": 400
-    },
-    {
-      "label": "KFM_HCM_TPH - S2.0.28 Block A6 Alnata Plus Celadon City (A163)",
-      "version": 1000,
-      "days": [
-        {
-          "date": "25/04/2026",
-          "day_name": "Thứ 7",
-          "label": "D",
-          "ksl": 2500,
-          "dm": 0
-        },
-        {
-          "date": "26/04/2026",
-          "day_name": "CN",
-          "label": "D+1",
-          "ksl": 4000,
-          "dm": 400
-        },
-        {
-          "date": "27/04/2026",
-          "day_name": "Thứ 2",
-          "label": "D+2",
-          "ksl": 2500,
-          "dm": 0
-        },
-        {
-          "date": "28/04/2026",
-          "day_name": "Thứ 3",
-          "label": "D+3",
-          "ksl": 2100,
-          "dm": 0
-        },
-        {
-          "date": "29/04/2026",
-          "day_name": "Thứ 4",
-          "label": "D+4",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "30/04/2026",
-          "day_name": "Thứ 5",
-          "label": "D+5",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "01/05/2026",
-          "day_name": "Thứ 6",
-          "label": "D+6",
-          "ksl": "Daily",
-          "dm": 0
-        }
-      ],
-      "total_ksl": 11100,
-      "total_dm": 400
-    },
-    {
-      "label": "KFM_HCM_TDU - TM1.15 Chung Cư 9 View (A167)",
-      "version": 700,
-      "days": [
-        {
-          "date": "25/04/2026",
-          "day_name": "Thứ 7",
-          "label": "D",
-          "ksl": 1800,
-          "dm": 0
-        },
-        {
-          "date": "26/04/2026",
-          "day_name": "CN",
-          "label": "D+1",
-          "ksl": 3000,
-          "dm": 400
-        },
-        {
-          "date": "27/04/2026",
-          "day_name": "Thứ 2",
-          "label": "D+2",
-          "ksl": 1800,
-          "dm": 0
-        },
-        {
-          "date": "28/04/2026",
-          "day_name": "Thứ 3",
-          "label": "D+3",
-          "ksl": 1500,
-          "dm": 0
-        },
-        {
-          "date": "29/04/2026",
-          "day_name": "Thứ 4",
-          "label": "D+4",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "30/04/2026",
-          "day_name": "Thứ 5",
-          "label": "D+5",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "01/05/2026",
-          "day_name": "Thứ 6",
-          "label": "D+6",
-          "ksl": "Daily",
-          "dm": 0
-        }
-      ],
-      "total_ksl": 8100,
-      "total_dm": 400
-    },
-    {
-      "label": "KFM_HCM_BTH - 61 Bùi Đình Túy (A192)",
-      "version": 2000,
-      "days": [
-        {
-          "date": "25/04/2026",
-          "day_name": "Thứ 7",
-          "label": "D",
-          "ksl": 3500,
-          "dm": 0
-        },
-        {
-          "date": "26/04/2026",
-          "day_name": "CN",
-          "label": "D+1",
-          "ksl": 5500,
-          "dm": 400
-        },
-        {
-          "date": "27/04/2026",
-          "day_name": "Thứ 2",
-          "label": "D+2",
-          "ksl": 3500,
-          "dm": 0
-        },
-        {
-          "date": "28/04/2026",
-          "day_name": "Thứ 3",
-          "label": "D+3",
-          "ksl": 3000,
-          "dm": 0
-        },
-        {
-          "date": "29/04/2026",
-          "day_name": "Thứ 4",
-          "label": "D+4",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "30/04/2026",
-          "day_name": "Thứ 5",
-          "label": "D+5",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "01/05/2026",
-          "day_name": "Thứ 6",
-          "label": "D+6",
-          "ksl": "Daily",
-          "dm": 0
-        }
-      ],
-      "total_ksl": 15500,
-      "total_dm": 400
-    }
-  ],
+  "schedules": [],
   "version_rules": {
     "2000": {
       "D": 3500,
@@ -876,5 +391,5 @@
       "total": 8100
     }
   },
-  "week_range": "20/04/2026 → 26/04/2026"
+  "week_range": "27/04/2026 → 03/05/2026"
 }

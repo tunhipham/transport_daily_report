@@ -573,19 +573,15 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
 def main():
     parser = argparse.ArgumentParser(description="NSO Mail Scanner — Haraworks")
     parser.add_argument("--dry-run", action="store_true", help="Parse only, don't write")
-    parser.add_argument("--force", action="store_true", help="Skip day-of-week check")
+    parser.add_argument("--force", action="store_true", help="Skip dedup check")
+    parser.add_argument("--no-deploy", action="store_true",
+                        help="Skip deploy step (for tracking runs)")
     args = parser.parse_args()
 
     now = datetime.now()
     print(f"\n{'='*55}")
     print(f"  🏪 NSO Mail Scanner — {now.strftime('%d/%m/%Y %H:%M')}")
     print(f"{'='*55}")
-
-    # Day-of-week check (Mon=0, Tue=1)
-    if not args.force and now.weekday() not in (0, 1):
-        print(f"\n  ⏭ Today is {now.strftime('%A')} — NSO scan runs Mon/Tue only.")
-        print(f"  💡 Use --force to run anyway.")
-        return
 
     # Read DSST cache (no browser needed)
     dsst_lookup = read_dsst()
@@ -639,9 +635,11 @@ def main():
         print(f"     Updated dates: {len(updated)} {updated[:5] if updated else ''}")
         print(f"     History entries: {len(master.history)}")
 
+        has_changes = len(added) > 0 or len(updated) > 0
+
         if args.dry_run:
             print(f"\n  🏃 DRY RUN — not writing files")
-            return
+            return has_changes
 
         # Save master + output
         master.save()
@@ -651,21 +649,32 @@ def main():
         _save_last_mail_url(mail_url)
         print(f"  📌 Saved state: {mail_url.split('/')[-1][:12]}...")
 
-        # Re-export + deploy
-        import subprocess
-        print(f"\n  📦 Re-exporting NSO data...")
-        subprocess.run(
-            [sys.executable, os.path.join(REPO_ROOT, "script", "dashboard", "export_data.py"),
-             "--domain", "nso"],
-            cwd=REPO_ROOT, timeout=60
-        )
+        if args.no_deploy:
+            if has_changes:
+                print(f"\n  ⚠ Changes detected but --no-deploy set, skipping deploy")
+            else:
+                print(f"\n  ℹ No changes, skipping deploy")
+        else:
+            # Re-export + deploy
+            import subprocess
+            print(f"\n  📦 Re-exporting NSO data...")
+            subprocess.run(
+                [sys.executable, os.path.join(REPO_ROOT, "script", "dashboard", "export_data.py"),
+                 "--domain", "nso"],
+                cwd=REPO_ROOT, timeout=60
+            )
 
-        print(f"  🚀 Deploying...")
-        subprocess.run(
-            [sys.executable, os.path.join(REPO_ROOT, "script", "dashboard", "deploy.py"),
-             "--domain", "nso"],
-            cwd=REPO_ROOT, timeout=120
-        )
+            print(f"  🚀 Deploying...")
+            subprocess.run(
+                [sys.executable, os.path.join(REPO_ROOT, "script", "dashboard", "deploy.py"),
+                 "--domain", "nso"],
+                cwd=REPO_ROOT, timeout=120
+            )
+
+        # Write change flag for upstream scripts
+        flag_path = os.path.join(REPO_ROOT, "output", "state", "nso", ".has_changes")
+        with open(flag_path, "w") as f:
+            f.write("1" if has_changes else "0")
 
     except Exception as e:
         print(f"\n  ❌ Error: {e}")
