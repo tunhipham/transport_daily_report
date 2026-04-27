@@ -33,38 +33,19 @@ sys.path.insert(0, os.path.join(BASE, "script", "domains", "nso"))
 from generate import STORES as NSO_STORES, parse_date as nso_parse_date
 
 # ═══════════════════════════════════════════════
-# NSO SCHEDULE INFO — fixed delivery schedules
-# User-confirmed shift: A176, A177, A178 = Ngày, all others = Đêm
+# NSO SCHEDULE INFO — loaded from data/nso/nso_schedule.json
+# Keys: store_code → {schedule_chia, schedule_ve, shift, name_full}
+# Update via: edit JSON or tell agent "A186 về 2-4-6 Đêm"
 # ═══════════════════════════════════════════════
-NSO_SCHEDULE = {
-    # W16 stores (opening 17-18/04/2026)
-    "A148": {"schedule_chia": "Thứ 3-5-7", "schedule_ve": "Thứ 2-4-6", "shift": "Đêm",
-             "name_full": "127 Tân Cảng"},
-    "A179": {"schedule_chia": "Thứ 3-5-7", "schedule_ve": "Thứ 2-4-6", "shift": "Đêm",
-             "name_full": "A1.02 Him Lam Phú An"},
-    "A177": {"schedule_chia": "Thứ 2-4-6", "schedule_ve": "Thứ 3-5-7", "shift": "Ngày",
-             "name_full": "Sky Garden 2"},
-    "A161": {"schedule_chia": "Thứ 2-4-6", "schedule_ve": "Thứ 3-5-7", "shift": "Đêm",
-             "name_full": "The Park Residence"},
-    # W17 stores — Group 1: chia 3-5-7, về 2-4-6 (opening 23-25/04/2026)
-    "A164": {"schedule_chia": "Thứ 3-5-7", "schedule_ve": "Thứ 2-4-6", "shift": "Đêm",
-             "name_full": "Opal Boulevard"},
-    "A185": {"schedule_chia": "Thứ 3-5-7", "schedule_ve": "Thứ 2-4-6", "shift": "Đêm",
-             "name_full": "Vinhomes Grand Park"},
-    "A167": {"schedule_chia": "Thứ 3-5-7", "schedule_ve": "Thứ 2-4-6", "shift": "Đêm",
-             "name_full": "9 View"},
-    "A192": {"schedule_chia": "Thứ 3-5-7", "schedule_ve": "Thứ 2-4-6", "shift": "Đêm",
-             "name_full": "Bùi Đình Túy"},
-    # W17 stores — Group 2: chia 2-4-6, về 3-5-7
-    "A178": {"schedule_chia": "Thứ 2-4-6", "schedule_ve": "Thứ 3-5-7", "shift": "Ngày",
-             "name_full": "Celesta Rise"},
-    "A191": {"schedule_chia": "Thứ 2-4-6", "schedule_ve": "Thứ 3-5-7", "shift": "Đêm",
-             "name_full": "Nguyễn Hữu Cầu"},
-    "A176": {"schedule_chia": "Thứ 2-4-6", "schedule_ve": "Thứ 3-5-7", "shift": "Ngày",
-             "name_full": "Sunrise Riverside"},
-    "A163": {"schedule_chia": "Thứ 2-4-6", "schedule_ve": "Thứ 3-5-7", "shift": "Đêm",
-             "name_full": "Celadon City"},
-}
+_NSO_SCHEDULE_PATH = os.path.join(BASE, "data", "nso", "nso_schedule.json")
+
+def _load_nso_schedule():
+    if os.path.exists(_NSO_SCHEDULE_PATH):
+        with open(_NSO_SCHEDULE_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+NSO_SCHEDULE = _load_nso_schedule()
 
 
 def fetch_inventory_schedule():
