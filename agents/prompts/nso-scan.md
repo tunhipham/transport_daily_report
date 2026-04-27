@@ -3,7 +3,12 @@
 Prioritize store data correctness.
 
 ## Pipeline
-`fetch_nso_mail.py` → Haraworks mail → `NsoMaster.merge_mail()` → `nso_master.xlsx` → `export_data.py` → `nso.json` → `deploy.py` → GitHub Pages
+`fetch_nso_mail.py` → Haraworks → `nso_master.xlsx` → `nso_stores.json` → `export_data.py` → `nso.json` → deploy
+
+## ⛔ Data Rules
+- `master_schedule` (.json+.xlsx) = **KHÔNG TỰ Ý SỬA** — chỉ khi user yêu cầu
+- `nso_schedule.json` = user cung cấp schedule_ve/shift → agent update
+- Khi user cho info NSO mới → update 3 file: `nso_schedule.json` + `master_schedule.json` + `master_schedule.xlsx` + deploy
 
 ## Schedule
 T2 10h: scan+deploy+Tele group+remind · T2 15h: track (deploy if changed) · T3 9h: scan+deploy · T3 9h30: finalize+châm hàng Excel (local)
