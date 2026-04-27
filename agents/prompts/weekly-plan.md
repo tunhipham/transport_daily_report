@@ -75,7 +75,7 @@ config/telegram.json → "weekly_plan"    # chat_id + group_chat_id
 - `CODE_CORRECTIONS` dict sửa code sai (vd: A179 → A176 Sunrise Riverside)
 - `_name_matches()` check 50% từ khớp — tránh false positive trùng code
 
-## Thursday Finalize
+## Thursday Finalize (Thứ 5 — tạo lịch W+1)
 
 Script: `script/domains/weekly_plan/finalize.py`
 
@@ -86,16 +86,28 @@ Script: `script/domains/weekly_plan/finalize.py`
 | `--deliver` | **Manual** (user confirm) | Group SCM - NCP — file Excel final |
 | `--test` | Manual | Telegram cá nhân — test send |
 
+## Monday Kiểm Kê Refresh (Thứ 2 — update lịch tuần hiện tại)
+
+Script: `script/dashboard/auto_inventory_watch.py`
+
+| Giờ | Action |
+|-----|--------|
+| 07:00→11:00 | Monitor kiểm kê mỗi 1h (log only, không deploy) |
+| 12:00 cutoff | Re-generate Excel W → export JSON → deploy dashboard |
+| 12:00 | Gửi Telegram: summary thay đổi v/s thứ 5 + file Excel |
+| User confirm | `--deliver`: gửi group SCM-NCP với caption cập nhật |
+
+| Mode | Mô tả |
+|------|-------|
+| `--watch` | Watch mode: monitor → cutoff 12h full pipeline |
+| `--backup` | One-shot full pipeline (bất kỳ ngày) |
+| `--deliver` | Gửi Excel cập nhật vào group SCM-NCP |
+
 Config: `config/telegram.json` → key `weekly_plan`
 - `chat_id: 5782090339` (personal)
 - `group_chat_id: -4702773130` (SCM - NCP)
 
-## Auto-Watch Kiểm Kê (Thứ 2)
-
-`auto_inventory_watch.py --watch` — poll mỗi 1h (07:00→17:30)
-- Diff kiểm kê tuần hiện tại: BEFORE vs AFTER
-- Re-export → deploy → Telegram notify (personal, xóa msg cũ)
-
 ## Formatting Rules
 - Số: dùng dấu "," | Ngày: dd/mm/yyyy | Vietnamese diacritics: giữ nguyên
 - KHÔNG viết tắt trong report
+

@@ -95,29 +95,40 @@ User confirm       →  --deliver   Gửi Excel → group SCM - NCP
 
 ---
 
-## Auto-Watch Kiểm Kê (Thứ 2)
+## Monday Kiểm Kê Refresh (Thứ 2)
 
 Script: `script/dashboard/auto_inventory_watch.py`
 
 ```
 Task Scheduler (thứ 2 07:00) → --watch
-  └─ Mỗi 1h (07:00 → 17:30): fetch kiểm kê → diff → deploy → Telegram notify
+  ├─ 07:00-11:00: Monitor kiểm kê (fetch + log only, no deploy)
+  ├─ 12:00 cutoff: Re-generate Excel → export JSON → deploy → send summary + file
+  └─ User confirm → --deliver: gửi group SCM-NCP
 ```
 
 ### Commands
 
 | Lệnh | Mô tả |
 |-------|-------|
-| `auto_inventory_watch.py --backup` | Fetch thủ công bất kỳ ngày |
+| `auto_inventory_watch.py --watch` | Watch mode: monitor → cutoff 12h full pipeline |
+| `auto_inventory_watch.py --backup` | One-shot full pipeline (bất kỳ ngày) |
+| `auto_inventory_watch.py --deliver` | Gửi Excel cập nhật vào group SCM-NCP |
 | `auto_inventory_watch.py --backup --dry-run` | Xem thay đổi, không deploy |
-| `auto_inventory_watch.py --watch` | Watch mode (chỉ thứ 2) |
-| `auto_inventory_watch.py --force` | 1 shot, bỏ qua check thứ 2 |
+| `auto_inventory_watch.py --force` | 1 shot full pipeline, bỏ qua check thứ 2 |
+
+### Monday Flow
+
+1. **07:00→11:00**: Fetch kiểm kê mỗi 1h, log thay đổi (không deploy)
+2. **12:00 Cutoff**: Re-generate Excel tuần hiện tại → re-export JSON → deploy dashboard
+3. **Telegram**: Gửi summary thay đổi v/s thứ 5 + kèm file Excel
+4. **User confirm**: Reply 'OK' → chạy `--deliver` gửi vào group SCM-NCP
+5. **Caption group**: `"SCM gửi lại lịch đi hàng W{nn} có cập nhật thay đổi: kiểm kê (...)"` 
 
 ### State Files
 
 | File | Nội dung |
 |------|----------|
-| `output/state/inventory_watch_state.json` | `last_telegram_msg_id` |
+| `output/state/inventory_watch_state.json` | `last_telegram_msg_id`, `monday_diff` |
 | `output/state/inventory_watch.lock` | Lock chống chạy trùng |
 | `output/logs/inventory_watch.log` | Log chi tiết |
 
@@ -134,3 +145,5 @@ Task Scheduler (thứ 2 07:00) → --watch
 | Finalize không chạy | `schtasks /query /tn "WeeklyPlan_12h_Check"` |
 | Watch không chạy | Xóa lock file `output/state/inventory_watch.lock` |
 | Telegram không gửi | Check `config/telegram.json` key `weekly_plan` |
+| Deliver không gửi | Chạy `--backup` trước để tạo diff, sau đó `--deliver` |
+

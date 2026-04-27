@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-auto_inventory_watch.py — Monitor kiểm kê schedule changes on Mondays
+auto_inventory_watch.py — Monday kiểm kê refresh for Lịch Tuần
 
-Compares inventory dates in the current weekly plan (dashboard) with
-fresh data from Google Sheets. Reports only changes affecting the
-current week's stores (new, changed, cancelled inventory dates).
+Monday pipeline (07:00→12:00):
+  - 07:00-11:00: Watch kiểm kê changes from Google Sheets (log only)
+  - 12:00 cutoff: Re-generate Excel → export JSON → deploy → send summary + file
+  - User confirm → --deliver: send updated Excel to group SCM-NCP
 
 Usage:
   python script/dashboard/auto_inventory_watch.py              # One-shot check
-  python script/dashboard/auto_inventory_watch.py --watch      # Watch mode (loop every 1h until 17:30)
+  python script/dashboard/auto_inventory_watch.py --watch      # Watch mode (loop every 1h until 12:00)
   python script/dashboard/auto_inventory_watch.py --dry-run    # Check only, no deploy/notify
   python script/dashboard/auto_inventory_watch.py --force      # Force run (ignore day-of-week check)
-  python script/dashboard/auto_inventory_watch.py --backup     # Backup: fetch + update + notify (any day, one-shot)
+  python script/dashboard/auto_inventory_watch.py --backup     # Backup: one-shot full pipeline (any day)
+  python script/dashboard/auto_inventory_watch.py --deliver    # Send updated Excel to group SCM-NCP
 
 Schedule: runs via Windows Task Scheduler on Mondays only.
           Use --backup for ad-hoc runs outside Monday.
@@ -32,7 +34,7 @@ WEEKLY_PLAN_JSON = os.path.join(BASE, "docs", "data", "weekly_plan.json")
 
 # Import shared libs
 sys.path.insert(0, os.path.join(BASE, "script"))
-from lib.telegram import load_telegram_config, send_telegram_text, delete_telegram_message
+from lib.telegram import load_telegram_config, send_telegram_text, send_telegram_document, delete_telegram_message
 
 # ── Logging ──────────────────────────────────────────────────────────
 
@@ -372,26 +374,24 @@ def send_notification(message):
 #  Main check cycle
 # ══════════════════════════════════════════════════════════════════════
 
-def run_check(dry_run=False):
+def run_check(dry_run=False, is_final=False):
     """Run one inventory check cycle.
-    
-    Flow:
-    1. Read CURRENT weekly_plan.json → get this week's inventory (BEFORE)
-    2. Run export_weekly_plan.py (fetches fresh Google Sheets)
-    3. Read UPDATED weekly_plan.json → get this week's inventory (AFTER)
-    4. Diff BEFORE vs AFTER → report changes
-    
+
+    is_final=False (intermediate): fetch kiểm kê, log changes only — no deploy/export
+    is_final=True  (cutoff 12h):   re-gen Excel → export JSON → deploy → send summary + file
+
     Returns: 'changed', 'unchanged', or 'error'.
     """
     now = datetime.now()
     now_str = now.strftime("%d/%m/%Y %H:%M")
-    log.info(f"\n{'═'*55}")
-    log.info(f"  📋 Inventory Watch — {now_str}")
-    log.info(f"{'═'*55}")
-
-    # ── Determine current week ──
     week_label, week_start, week_end = get_current_week()
-    log.info(f"\n  📅 {week_label}: {week_start.strftime('%d/%m')}–{week_end.strftime('%d/%m')}")
+    week_num = int(week_label[1:])
+    mode = "CUTOFF" if is_final else "MONITOR"
+
+    log.info(f"\n{'═'*55}")
+    log.info(f"  📋 Inventory Watch [{mode}] — {now_str}")
+    log.info(f"  📅 {week_label}: {week_start.strftime('%d/%m')}–{week_end.strftime('%d/%m')}")
+    log.info(f"{'═'*55}")
 
     # ── Step 1: Read BEFORE state from dashboard ──
     log.info(f"\n  📖 Reading current {week_label} inventory from dashboard...")
@@ -400,106 +400,297 @@ def run_check(dry_run=False):
     for code, info in sorted(before.items()):
         log.info(f"       • {code} {info['name']}: {info['date']}")
 
-    # ── Step 2: Re-export (fetch fresh Google Sheets) ──
-    if not dry_run:
+    if not is_final:
+        # ── INTERMEDIATE CYCLE: just fetch + compare, don't act ──
+        log.info(f"\n  👁 Monitoring only (deploy at cutoff {WATCH_END_HOUR}:{WATCH_END_MINUTE:02d})")
         export_ok = run_export()
         if not export_ok:
-            log.error("  ❌ Export failed, cannot compare")
+            log.info("  ⚠ Export failed this cycle, will retry next cycle")
             return "error"
-    else:
-        log.info("\n  🏃 DRY RUN — skipping export")
+        after = read_week_inventory(week_label, week_start, week_end)
+        diff = diff_week_inventory(before, after)
+        log.info(f"\n{format_diff_log(diff, week_label)}")
+        if diff["has_changes"]:
+            log.info("  📌 Changes detected — will be applied at cutoff")
+        return "changed" if diff["has_changes"] else "unchanged"
 
-    # ── Step 3: Read AFTER state from dashboard ──
-    log.info(f"\n  📖 Reading updated {week_label} inventory from dashboard...")
+    # ══════════════════════════════════════════════════
+    #  FINAL CYCLE (cutoff): full pipeline
+    # ══════════════════════════════════════════════════
+    if dry_run:
+        log.info("\n  🏃 DRY RUN — skipping full pipeline")
+        return "unchanged"
+
+    # Step 2: Re-generate Excel for current week (fresh kiểm kê)
+    log.info(f"\n  📝 Re-generating Excel W{week_num}...")
+    regen_ok = run_generate_excel(week_num)
+    if not regen_ok:
+        log.error("  ❌ Excel re-generation failed")
+
+    # Step 3: Re-export JSON
+    log.info(f"\n  📅 Re-exporting weekly plan JSON...")
+    export_ok = run_export()
+    if not export_ok:
+        log.error("  ❌ Export failed")
+        return "error"
+
+    # Step 4: Read AFTER state
     after = read_week_inventory(week_label, week_start, week_end)
-    log.info(f"     → {len(after)} stores with kiểm kê this week")
-
-    # ── Step 4: Diff ──
     diff = diff_week_inventory(before, after)
     log.info(f"\n{format_diff_log(diff, week_label)}")
 
-    if dry_run:
-        log.info("\n  🏃 DRY RUN — skipping deploy/notify")
-        return "changed" if diff["has_changes"] else "unchanged"
-
-    # ── No changes → skip deploy/notify ──
-    if not diff["has_changes"]:
-        log.info("\n  ✓ Không thay đổi → skip deploy/notify")
-        return "unchanged"
-
-    # ── Deploy (chỉ khi có thay đổi) ──
+    # Step 5: Deploy dashboard
+    log.info(f"\n  🚀 Deploying dashboard...")
     deploy_ok = run_deploy()
 
-    # ── Telegram notify (chỉ khi có thay đổi) ──
-    telegram_msg = format_telegram_message(diff, week_label, week_start, week_end)
-    notify_ok = send_notification(telegram_msg)
+    # Step 6: Send Telegram summary + Excel file
+    send_monday_summary(diff, week_label, week_num, week_start, week_end)
+
+    # Step 7: Save diff to state for --deliver
+    save_monday_diff(diff, week_label, week_num)
 
     # ── Summary ──
-    log.info(f"\n  {'─'*45}")
-    log.info(f"  📊 Kết quả:")
-    log.info(f"     Export:   ✅")
-    log.info(f"     Deploy:   {'✅' if deploy_ok   else '❌'}")
-    log.info(f"     Telegram: {'✅' if notify_ok   else '❌'}")
     total = len(diff['added']) + len(diff['changed']) + len(diff['removed'])
+    log.info(f"\n  {'─'*45}")
+    log.info(f"  📊 Kết quả CUTOFF:")
+    log.info(f"     Excel:    {'✅' if regen_ok   else '❌'}")
+    log.info(f"     Export:   {'✅' if export_ok  else '❌'}")
+    log.info(f"     Deploy:   {'✅' if deploy_ok  else '❌'}")
     log.info(f"     Changes:  {total} ({len(diff['added'])} thêm, {len(diff['changed'])} đổi, {len(diff['removed'])} hủy)")
     log.info(f"  {'─'*45}")
 
-    return "changed"
+    return "changed" if diff["has_changes"] else "unchanged"
+
+
+def run_generate_excel(week_num):
+    """Run generate_excel.py --week {nn} to re-generate current week's Excel."""
+    script = os.path.join(BASE, "script", "domains", "weekly_plan", "generate_excel.py")
+    log.info(f"  📝 Running generate_excel.py --week {week_num}...")
+    try:
+        result = subprocess.run(
+            [sys.executable, script, "--week", str(week_num)],
+            capture_output=True, text=True,
+            encoding='utf-8', errors='replace',
+            timeout=120, cwd=BASE
+        )
+        if result.returncode == 0:
+            log.info(f"  ✅ Excel W{week_num} re-generated")
+            return True
+        else:
+            log.warning(f"  ⚠ generate_excel returned code {result.returncode}")
+            if result.stderr:
+                log.warning(f"     {result.stderr[:200]}")
+            return False
+    except Exception as e:
+        log.error(f"  ❌ generate_excel error: {e}")
+        return False
+
+
+def send_monday_summary(diff, week_label, week_num, week_start, week_end):
+    """Send Telegram summary of Monday update + attach Excel file."""
+    bot_token, chat_id = load_telegram_config(TELEGRAM_CONFIG, domain="weekly_plan")
+    if not bot_token or not chat_id:
+        log.warning("  ⚠ Telegram not configured")
+        return
+
+    # Delete previous Monday message
+    state = load_state()
+    prev_mid = state.get("last_telegram_msg_id")
+    if prev_mid:
+        delete_telegram_message(prev_mid, bot_token, chat_id)
+
+    # Build summary message
+    now_str = datetime.now().strftime("%d/%m/%Y %H:%M")
+    ws = week_start.strftime("%d/%m")
+    we = week_end.strftime("%d/%m")
+
+    lines = [
+        f"📋 <b>Lịch Tuần {week_label} — Monday Update</b>",
+        f"📅 {ws}–{we} | 🕐 {now_str}",
+        "",
+    ]
+
+    if not diff["has_changes"]:
+        lines.append(f"✅ Kiểm kê không thay đổi so với thứ 5 ({len(diff['unchanged'])} stores)")
+    else:
+        if diff["changed"]:
+            lines.append(f"🔄 <b>Đổi lịch kiểm kê ({len(diff['changed'])}):</b>")
+            for s in diff["changed"]:
+                lines.append(f"  • {s['code']} {s['name']}: {s['old_date']} → {s['new_date']}")
+            lines.append("")
+        if diff["added"]:
+            lines.append(f"🆕 <b>Thêm kiểm kê ({len(diff['added'])}):</b>")
+            for s in diff["added"]:
+                lines.append(f"  • {s['code']} {s['name']}: {s['date']}")
+            lines.append("")
+        if diff["removed"]:
+            lines.append(f"🗑️ <b>Hủy kiểm kê ({len(diff['removed'])}):</b>")
+            for s in diff["removed"]:
+                lines.append(f"  • {s['code']} {s['name']}: {s['date']}")
+            lines.append("")
+
+    lines.append("✅ Dashboard đã cập nhật")
+    lines.append("📎 File Excel kèm bên dưới")
+    lines.append("")
+    lines.append("Reply 'OK' để gửi lịch cập nhật vào group SCM-NCP 👇")
+
+    msg = "\n".join(lines)
+    mid = send_telegram_text(msg, bot_token, chat_id)
+    if mid:
+        state["last_telegram_msg_id"] = mid
+        save_state(state)
+        log.info(f"  ✅ Telegram summary sent (msg_id={mid})")
+
+    # Send Excel file
+    excel_path = os.path.join(PLAN_DIR, f"Lịch đi hàng ST W{week_num}.xlsx")
+    if os.path.exists(excel_path):
+        caption = f"📋 Lịch đi hàng W{week_num} — cập nhật kiểm kê {now_str}"
+        fmid = send_telegram_document(excel_path, caption, bot_token, chat_id)
+        if fmid:
+            log.info(f"  ✅ Excel file sent (msg_id={fmid})")
+    else:
+        log.warning(f"  ⚠ Excel not found: {excel_path}")
+
+
+def save_monday_diff(diff, week_label, week_num):
+    """Save Monday diff to state for --deliver."""
+    state = load_state()
+
+    # Build human-readable change list for caption
+    changes = []
+    if diff["added"] or diff["removed"] or diff["changed"]:
+        changes.append(f"kiểm kê ({len(diff['added'])} thêm, {len(diff['changed'])} đổi, {len(diff['removed'])} hủy)")
+
+    state["monday_diff"] = {
+        "week_label": week_label,
+        "week_num": week_num,
+        "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
+        "has_changes": diff["has_changes"],
+        "changes": changes,
+        "details": {
+            "added": diff["added"],
+            "changed": diff["changed"],
+            "removed": diff["removed"],
+        },
+    }
+    save_state(state)
+    log.info(f"  💾 Monday diff saved to state")
+
+
+def deliver_monday():
+    """--deliver: Send updated Excel to group SCM-NCP with diff caption."""
+    state = load_state()
+    md = state.get("monday_diff", {})
+
+    if not md:
+        log.info("  ⚠ No Monday diff found. Run --watch or --backup first.")
+        return
+
+    week_label = md["week_label"]
+    week_num = md["week_num"]
+
+    # Load config
+    with open(TELEGRAM_CONFIG, "r", encoding="utf-8") as f:
+        cfg = json.load(f)
+    wp = cfg.get("weekly_plan", {})
+    bot_token = wp.get("bot_token")
+    group_chat_id = wp.get("group_chat_id")
+    personal_chat_id = wp.get("chat_id")
+
+    if not bot_token or not group_chat_id:
+        log.info("  ❌ Telegram config missing (bot_token or group_chat_id)")
+        return
+
+    # Build caption with changes
+    change_list = md.get("changes", [])
+    if change_list:
+        change_text = ", ".join(change_list)
+        caption = f"SCM gửi lại lịch đi hàng {week_label} có cập nhật thay đổi: {change_text}"
+    else:
+        caption = f"SCM gửi lại lịch đi hàng {week_label} (cập nhật thứ 2)"
+
+    # Find Excel
+    excel_path = os.path.join(PLAN_DIR, f"Lịch đi hàng ST W{week_num}.xlsx")
+    if not os.path.exists(excel_path):
+        log.info(f"  ❌ Excel not found: {excel_path}")
+        return
+
+    fsize = os.path.getsize(excel_path)
+    log.info(f"  📤 Delivering {week_label} to SCM-NCP group ({fsize:,} bytes)...")
+
+    mid = send_telegram_document(excel_path, caption, bot_token, group_chat_id)
+    if mid:
+        log.info(f"  ✅ Delivered to group! (msg_id={mid})")
+        if personal_chat_id:
+            send_telegram_text(
+                f"✅ Lịch đi hàng {week_label} (Monday update) đã gửi group SCM-NCP",
+                bot_token, personal_chat_id
+            )
+    else:
+        log.info("  ❌ Failed to deliver to group")
 
 
 # ══════════════════════════════════════════════════════════════════════
 #  Watch mode
 # ══════════════════════════════════════════════════════════════════════
 
-WATCH_END_HOUR = 17
-WATCH_END_MINUTE = 30
+WATCH_END_HOUR = 12
+WATCH_END_MINUTE = 0
 POLL_INTERVAL_SEC = 3600  # 1 hour
+PLAN_DIR = os.path.join(BASE, "output", "artifacts", "weekly transport plan")
 
 
 def watch_mode(dry_run=False):
-    """Run in watch mode: loop every 1h until 17:30."""
+    """Watch mode: intermediate cycles (log only) → final cutoff cycle (full pipeline)."""
     if not acquire_lock():
         return
     atexit.register(release_lock)
 
     log.info(f"\n{'═'*55}")
     log.info(f"  👁️  Inventory Watch — WATCH MODE")
-    log.info(f"  📅 Chạy mỗi {POLL_INTERVAL_SEC // 60} phút đến {WATCH_END_HOUR}:{WATCH_END_MINUTE:02d}")
+    log.info(f"  📅 Monitor 07:00→{WATCH_END_HOUR}:{WATCH_END_MINUTE:02d}, cutoff = full pipeline")
     log.info(f"  🔒 PID: {os.getpid()}")
     log.info(f"{'═'*55}")
 
     cycle = 0
     while True:
         now = datetime.now()
-
-        # Check end time
         end_time = now.replace(hour=WATCH_END_HOUR, minute=WATCH_END_MINUTE, second=0)
+
         if now >= end_time:
-            log.info(f"\n  ⏰ Đã qua {WATCH_END_HOUR}:{WATCH_END_MINUTE:02d} — stopping watch mode.")
+            # ── CUTOFF: run final cycle ──
+            log.info(f"\n  ⏰ Cutoff {WATCH_END_HOUR}:{WATCH_END_MINUTE:02d} — running FINAL cycle")
+            try:
+                run_check(dry_run=dry_run, is_final=True)
+            except Exception as e:
+                log.error(f"  ❌ Final cycle error: {e}")
+                import traceback
+                log.error(traceback.format_exc())
+            log.info(f"\n  ✅ Watch mode complete.")
             break
 
+        # ── INTERMEDIATE CYCLE ──
         cycle += 1
-        log.info(f"\n  ── Cycle #{cycle} ──")
+        log.info(f"\n  ── Cycle #{cycle} (monitor) ──")
 
         try:
-            run_check(dry_run=dry_run)
+            run_check(dry_run=dry_run, is_final=False)
         except Exception as e:
             log.error(f"  ❌ Cycle error: {e}")
             import traceback
             log.error(traceback.format_exc())
 
-        # Calculate sleep time
+        # Sleep until next cycle
         now = datetime.now()
         next_run = now + timedelta(seconds=POLL_INTERVAL_SEC)
 
-        # Don't sleep past end time
         if next_run >= end_time:
+            # Next run would be past cutoff — sleep until cutoff
             remaining = (end_time - now).total_seconds()
             if remaining > 60:
-                log.info(f"  💤 Sleeping {int(remaining // 60)} min (last cycle before {WATCH_END_HOUR}:{WATCH_END_MINUTE:02d})...")
+                log.info(f"  💤 Sleeping {int(remaining // 60)} min until cutoff {WATCH_END_HOUR}:{WATCH_END_MINUTE:02d}...")
                 time.sleep(remaining)
-            log.info(f"\n  ⏰ Watch mode complete.")
-            break
+            # Loop back to run final cycle
         else:
             log.info(f"  💤 Sleeping {POLL_INTERVAL_SEC // 60} min until {next_run.strftime('%H:%M')}...")
             time.sleep(POLL_INTERVAL_SEC)
@@ -512,23 +703,31 @@ def watch_mode(dry_run=False):
 # ══════════════════════════════════════════════════════════════════════
 
 def main():
-    parser = argparse.ArgumentParser(description="Inventory Schedule Watch — Monday auto-update")
+    parser = argparse.ArgumentParser(description="Monday kiểm kê refresh — Lịch Tuần")
     parser.add_argument("--watch", action="store_true",
-                        help="Watch mode: poll every 1h until 17:30")
+                        help="Watch mode: poll every 1h until 12:00, full pipeline at cutoff")
     parser.add_argument("--dry-run", action="store_true",
                         help="Check only, no deploy/notify")
     parser.add_argument("--force", action="store_true",
                         help="Force run (ignore day-of-week check)")
     parser.add_argument("--backup", action="store_true",
-                        help="Backup mode: one-shot fetch + update + notify (any day)")
+                        help="Backup: one-shot full pipeline (any day)")
+    parser.add_argument("--deliver", action="store_true",
+                        help="Send updated Excel to group SCM-NCP (after user confirm)")
     args = parser.parse_args()
 
     now = datetime.now()
 
-    # Backup mode: skip all checks, just run
+    # Deliver mode: send to group (any day)
+    if args.deliver:
+        log.info("\n  📤 DELIVER MODE — sending to group SCM-NCP")
+        deliver_monday()
+        return
+
+    # Backup mode: run full pipeline immediately (any day)
     if args.backup:
-        log.info("\n  🔄 BACKUP MODE — manual fetch + update + notify")
-        run_check(dry_run=args.dry_run)
+        log.info("\n  🔄 BACKUP MODE — full pipeline (one-shot)")
+        run_check(dry_run=args.dry_run, is_final=True)
         return
 
     # Day-of-week check (skip unless Monday or --force)
@@ -541,7 +740,7 @@ def main():
     if args.watch:
         watch_mode(dry_run=args.dry_run)
     else:
-        run_check(dry_run=args.dry_run)
+        run_check(dry_run=args.dry_run, is_final=True)
 
 
 if __name__ == "__main__":
