@@ -467,11 +467,12 @@ def run_generate_excel(week_num):
     script = os.path.join(BASE, "script", "domains", "weekly_plan", "generate_excel.py")
     log.info(f"  📝 Running generate_excel.py --week {week_num}...")
     try:
+        env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
         result = subprocess.run(
             [sys.executable, script, "--week", str(week_num)],
             capture_output=True, text=True,
             encoding='utf-8', errors='replace',
-            timeout=120, cwd=BASE
+            timeout=120, cwd=BASE, env=env
         )
         if result.returncode == 0:
             log.info(f"  ✅ Excel W{week_num} re-generated")
