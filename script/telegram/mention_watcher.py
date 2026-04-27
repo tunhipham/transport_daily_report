@@ -104,6 +104,7 @@ def build_message_link(chat_id, message_id):
 async def run_watcher():
     """Main event loop — listens for mentions 24/7."""
     from telethon import TelegramClient, events
+    from telethon.errors import FloodWaitError
     from telethon.tl.types import (
         MessageEntityMention, MessageEntityMentionName,
         InputMessageEntityMentionName,
@@ -136,7 +137,7 @@ async def run_watcher():
             if msg.sender_id == my_id:
                 return
 
-            # --- Check mention ---
+            # --- Check mention (NO API calls here — purely local data) ---
             is_mentioned = False
 
             # Method 1: Telethon built-in flag
@@ -162,17 +163,27 @@ async def run_watcher():
             if not is_mentioned:
                 return
 
-            # --- Build notification ---
-            chat = await event.get_chat()
-            chat_title = getattr(chat, "title", "Unknown group")
+            # --- Build notification (API calls only when actually mentioned) ---
             chat_id = event.chat_id
+            try:
+                chat = await event.get_chat()
+                chat_title = getattr(chat, "title", "Unknown group")
+            except FloodWaitError as fw:
+                log.warning(f"FloodWait {fw.seconds}s on get_chat — using chat_id")
+                chat_title = f"Group {chat_id}"
+                await asyncio.sleep(min(fw.seconds, 30))
 
-            sender = await event.get_sender()
-            sender_name = ""
-            if sender:
-                sender_name = getattr(sender, "first_name", "") or ""
-                if getattr(sender, "last_name", ""):
-                    sender_name += f" {sender.last_name}"
+            try:
+                sender = await event.get_sender()
+                sender_name = ""
+                if sender:
+                    sender_name = getattr(sender, "first_name", "") or ""
+                    if getattr(sender, "last_name", ""):
+                        sender_name += f" {sender.last_name}"
+            except FloodWaitError as fw:
+                log.warning(f"FloodWait {fw.seconds}s on get_sender — using ID")
+                sender_name = f"User {msg.sender_id}"
+                await asyncio.sleep(min(fw.seconds, 30))
 
             preview = (msg.raw_text or "(media/sticker)")[:150]
             if len(msg.raw_text or "") > 150:
@@ -191,6 +202,9 @@ async def run_watcher():
 
             send_notification(notification, bot_token, notify_chat_id)
 
+        except FloodWaitError as fw:
+            log.warning(f"FloodWait {fw.seconds}s — sleeping...")
+            await asyncio.sleep(min(fw.seconds, 60))
         except Exception as e:
             log.exception(f"Handler error: {e}")
 
