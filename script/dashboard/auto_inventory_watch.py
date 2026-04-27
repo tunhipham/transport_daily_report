@@ -489,7 +489,7 @@ def run_generate_excel(week_num):
 
 def diff_vs_thursday(week_label, week_num):
     """Diff current weekly_plan.json vs Thursday baseline.
-    Compares: shift, inventory_date, days for every store.
+    Compares: shift, inventory_date (within current week only), days.
     Returns dict with 'changes' (list of human-readable strings) and 'has_changes'."""
     baseline_path = os.path.join(BASE, "output", "state", f"thursday_baseline_W{week_num}.json")
     json_path = os.path.join(BASE, "docs", "data", "weekly_plan.json")
@@ -501,58 +501,71 @@ def diff_vs_thursday(week_label, week_num):
 
     with open(baseline_path, "r", encoding="utf-8") as f:
         baseline = json.load(f)
-    thu_stores = baseline.get("stores", {})  # {code: store_dict}
+    thu_stores = baseline.get("stores", {})
 
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     mon_stores_list = data.get("weeks", {}).get(week_label, {}).get("stores", [])
     mon_stores = {s["code"]: s for s in mon_stores_list}
 
+    # Week date range for filtering kiểm kê
+    _, week_start, week_end = get_current_week()
+
+    def _kk_in_week(date_str):
+        """Check if a kiểm kê date string falls within current week."""
+        if not date_str:
+            return False
+        try:
+            dt = datetime.strptime(date_str, "%d/%m/%Y").date()
+            return week_start <= dt <= week_end
+        except ValueError:
+            return False
+
     changes = []
 
     log.info(f"\n  🔍 Diffing vs Thursday baseline ({baseline.get('saved_at', '?')})...")
     log.info(f"     Thu: {len(thu_stores)} stores | Mon: {len(mon_stores)} stores")
+    log.info(f"     Week range: {week_start.strftime('%d/%m')}–{week_end.strftime('%d/%m')}")
 
-    # Compare stores present in both
     for code in sorted(set(thu_stores) & set(mon_stores)):
         old = thu_stores[code]
         new = mon_stores[code]
-        name = new.get("name", "").split(" - ")[-1][:30]  # short name
+        kk_changed = False
 
         # Shift change
         old_shift = old.get("shift", "")
         new_shift = new.get("shift", "")
         if old_shift != new_shift:
-            changes.append(f"đổi shift {code} {name} {old_shift}→{new_shift}")
+            changes.append(f"đổi shift {code} {old_shift}→{new_shift}")
 
-        # Kiểm kê change
+        # Kiểm kê change — only if relevant to this week
         old_kk = old.get("inventory_date", "")
         new_kk = new.get("inventory_date", "")
         if old_kk != new_kk:
-            if old_kk and new_kk:
-                changes.append(f"dời kiểm kê {code} {name} {old_kk}→{new_kk}")
-            elif new_kk:
-                changes.append(f"thêm kiểm kê {code} {name} {new_kk}")
-            else:
-                changes.append(f"hủy kiểm kê {code} {name} (was {old_kk})")
+            old_in_week = _kk_in_week(old_kk)
+            new_in_week = _kk_in_week(new_kk)
+            # Only report if either old or new date is within this week
+            if old_in_week or new_in_week:
+                kk_changed = True
+                if old_kk and new_kk:
+                    changes.append(f"dời kiểm kê {code} {old_kk}→{new_kk}")
+                elif new_kk:
+                    changes.append(f"thêm kiểm kê {code} {new_kk}")
+                else:
+                    changes.append(f"hủy kiểm kê {code} (was {old_kk})")
 
-        # Days change (delivery schedule)
+        # Days change — only if NOT already explained by shift or kiểm kê change
         old_days = old.get("days", [])
         new_days = new.get("days", [])
         if old_days != new_days:
-            # Only log if not already captured by shift change
-            if old_shift == new_shift:
-                changes.append(f"đổi lịch giao {code} {name}")
+            if old_shift == new_shift and not kk_changed:
+                changes.append(f"đổi lịch giao {code}")
 
-    # Added stores
+    # Added/removed stores
     for code in sorted(set(mon_stores) - set(thu_stores)):
-        name = mon_stores[code].get("name", "").split(" - ")[-1][:30]
-        changes.append(f"thêm store {code} {name}")
-
-    # Removed stores
+        changes.append(f"thêm store {code}")
     for code in sorted(set(thu_stores) - set(mon_stores)):
-        name = thu_stores[code].get("name", "").split(" - ")[-1][:30]
-        changes.append(f"bỏ store {code} {name}")
+        changes.append(f"bỏ store {code}")
 
     for c in changes:
         log.info(f"     • {c}")

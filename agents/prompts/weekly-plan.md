@@ -94,8 +94,13 @@ Script: `script/dashboard/auto_inventory_watch.py`
 |-----|--------|
 | 07:00→11:00 | Monitor kiểm kê mỗi 1h (log only, không deploy) |
 | 12:00 cutoff | Re-generate Excel W → export JSON → deploy dashboard |
-| 12:00 | Gửi Telegram: summary thay đổi v/s thứ 5 + file Excel |
-| User confirm | `--deliver`: gửi group SCM-NCP với caption cập nhật |
+| 12:00 | Diff vs Thursday baseline: shift + kiểm kê + lịch giao (246/357) |
+| 12:00 | Gửi Telegram: summary + file Excel + draft caption gửi group |
+| User confirm | `--deliver`: gửi group SCM-NCP với caption đã duyệt |
+
+Thursday baseline: `output/state/thursday_baseline_W{nn}.json`
+- Lưu tự động khi `finalize.py --send` (thứ 5)
+- Chứa snapshot tất cả stores: shift, inventory_date, days
 
 | Mode | Mô tả |
 |------|-------|

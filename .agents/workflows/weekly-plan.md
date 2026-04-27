@@ -120,15 +120,20 @@ Task Scheduler (thứ 2 07:00) → --watch
 
 1. **07:00→11:00**: Fetch kiểm kê mỗi 1h, log thay đổi (không deploy)
 2. **12:00 Cutoff**: Re-generate Excel tuần hiện tại → re-export JSON → deploy dashboard
-3. **Telegram**: Gửi summary thay đổi v/s thứ 5 + kèm file Excel
-4. **User confirm**: Reply 'OK' → chạy `--deliver` gửi vào group SCM-NCP
-5. **Caption group**: `"SCM gửi lại lịch đi hàng W{nn} có cập nhật thay đổi: kiểm kê (...)"` 
+3. **Diff vs thứ 5**: So sánh toàn bộ store data (shift, kiểm kê, lịch giao) v/s Thursday baseline
+4. **Telegram**: Gửi summary thay đổi + file Excel + **draft caption** gửi group
+5. **User confirm**: Reply 'OK' → chạy `--deliver` gửi vào group SCM-NCP với caption đã duyệt
+
+> [!IMPORTANT]
+> `finalize.py --send` (thứ 5) lưu **Thursday baseline** (`output/state/thursday_baseline_W{nn}.json`).
+> Monday diff so với baseline này để phát hiện mọi thay đổi: shift (Đêm→Ngày), kiểm kê (thêm/bớt/dời), lịch giao (246/357). 
 
 ### State Files
 
 | File | Nội dung |
-|------|----------|
-| `output/state/inventory_watch_state.json` | `last_telegram_msg_id`, `monday_diff` |
+|------|-----------|
+| `output/state/inventory_watch_state.json` | `last_telegram_msg_id`, `monday_diff`, `group_caption` |
+| `output/state/thursday_baseline_W{nn}.json` | Snapshot stores từ thứ 5 (shift, kiểm kê, days) |
 | `output/state/inventory_watch.lock` | Lock chống chạy trùng |
 | `output/logs/inventory_watch.log` | Log chi tiết |
 
