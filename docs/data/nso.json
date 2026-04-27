@@ -1,19 +1,19 @@
 {
-  "_updated": "27/04/2026 15:59",
+  "_updated": "27/04/2026 16:14",
   "stats": {
-    "total": 25,
-    "upcoming": 15,
+    "total": 27,
+    "upcoming": 13,
     "opening": 6,
-    "reschedule": 4
+    "reschedule": 8
   },
   "stores": [
     {
       "name": "KFM_HCM_TDU - BS15 Vinhomes Grand Park",
       "code": "A185",
-      "opening_date": "25/04/2026",
-      "iso_date": "2026-04-25",
+      "opening_date": "19/06/2026",
+      "iso_date": "2026-06-19",
       "status_type": "reschedule",
-      "status_text": "Dời lịch: 23/04/2026 → 25/04/2026"
+      "status_text": "Dời lịch: 23/04/2026 → 19/06/2026"
     },
     {
       "name": "KFM_HCM_NBE - G16 Celesta Rise",
@@ -66,18 +66,18 @@
     {
       "name": "KFM_HCM_TPH - H.38 Melody Residences Âu Cơ",
       "code": "A186",
-      "opening_date": "07/05/2026",
-      "iso_date": "2026-05-07",
+      "opening_date": "16/05/2026",
+      "iso_date": "2026-05-16",
       "status_type": "reschedule",
-      "status_text": "Dời lịch: 30/04/2026 → 07/05/2026"
+      "status_text": "Dời lịch: 30/04/2026 → 16/05/2026"
     },
     {
       "name": "KFM_BDU_DAN - Đường M-KP Nhị Đồng - Dĩ An",
       "code": "A181",
-      "opening_date": "08/05/2026",
-      "iso_date": "2026-05-08",
+      "opening_date": "15/05/2026",
+      "iso_date": "2026-05-15",
       "status_type": "reschedule",
-      "status_text": "Dời lịch: 30/04/2026 → 08/05/2026"
+      "status_text": "Dời lịch: 30/04/2026 → 15/05/2026"
     },
     {
       "name": "KFM_HCM_PNH - Golden Mansion 119 Phổ Quang",
@@ -130,18 +130,18 @@
     {
       "name": "Millennium - Q4 - mới bổ sung",
       "code": "",
-      "opening_date": "08/05/2026",
-      "iso_date": "2026-05-08",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "opening_date": "22/05/2026",
+      "iso_date": "2026-05-22",
+      "status_type": "reschedule",
+      "status_text": "Dời lịch: 08/05/2026 → 22/05/2026"
     },
     {
       "name": "6/1 Đường 13 (Thạnh Xuân 13)",
       "code": "",
-      "opening_date": "22/05/2026",
-      "iso_date": "2026-05-22",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "opening_date": "26/06/2026",
+      "iso_date": "2026-06-26",
+      "status_type": "reschedule",
+      "status_text": "Dời lịch: 22/05/2026 → 26/06/2026"
     },
     {
       "name": "52 Thoại Ngọc Hầu",
@@ -186,18 +186,18 @@
     {
       "name": "KFM_HCM_TDU - 86C-88 Đường 339 - Phước Long B",
       "code": "A107",
-      "opening_date": "26/06/2026",
-      "iso_date": "2026-06-26",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "opening_date": "29/05/2026",
+      "iso_date": "2026-05-29",
+      "status_type": "reschedule",
+      "status_text": "Đôn lịch: 26/06/2026 → 29/05/2026"
     },
     {
       "name": "KFM_HCM_GVA - 173 Lê Văn Chí - Thủ Đức",
       "code": "LVT",
-      "opening_date": "03/07/2026",
-      "iso_date": "2026-07-03",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "opening_date": "05/09/2026",
+      "iso_date": "2026-09-05",
+      "status_type": "reschedule",
+      "status_text": "Dời lịch: 03/07/2026 → 05/09/2026"
     },
     {
       "name": "KFM_HCM_Q07 - 1652 Huỳnh Tấn Phát - Phú Xuân",
@@ -206,11 +206,27 @@
       "iso_date": "2026-09-25",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "Bàu Cát - TBI",
+      "code": "",
+      "opening_date": "22/05/2026",
+      "iso_date": "2026-05-22",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "KDC Thới An - Q12",
+      "code": "",
+      "opening_date": "26/06/2026",
+      "iso_date": "2026-06-26",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
     }
   ],
   "calendar_events": [
     {
-      "date": "2026-04-25",
+      "date": "2026-06-19",
       "label": "A185 - VHGP Q9 - BS1501",
       "code": "A185",
       "type": "reschedule"
@@ -252,13 +268,13 @@
       "type": "opening"
     },
     {
-      "date": "2026-05-07",
+      "date": "2026-05-16",
       "label": "A186 - Melody Residence",
       "code": "A186",
       "type": "reschedule"
     },
     {
-      "date": "2026-05-08",
+      "date": "2026-05-15",
       "label": "A181 - Masterise Center Point",
       "code": "A181",
       "type": "reschedule"
@@ -300,16 +316,16 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-05-08",
+      "date": "2026-05-22",
       "label": "None - Millennium - Q4 - mới bổ sung",
       "code": "",
-      "type": "upcoming"
+      "type": "reschedule"
     },
     {
-      "date": "2026-05-22",
+      "date": "2026-06-26",
       "label": "None - 6/1 Đường 13 (Thạnh Xuân 13)",
       "code": "",
-      "type": "upcoming"
+      "type": "reschedule"
     },
     {
       "date": "2026-05-22",
@@ -342,21 +358,33 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-06-26",
+      "date": "2026-05-29",
       "label": "A107 - 86C-88 Đường 339 - Phước Long B",
       "code": "A107",
-      "type": "upcoming"
+      "type": "reschedule"
     },
     {
-      "date": "2026-07-03",
+      "date": "2026-09-05",
       "label": "LVT - 173 Lê Văn Chí - Thủ Đức",
       "code": "LVT",
-      "type": "upcoming"
+      "type": "reschedule"
     },
     {
       "date": "2026-09-25",
       "label": "HTP - 1652 Huỳnh Tấn Phát - Phú Xuân",
       "code": "HTP",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-05-22",
+      "label": "None - Bàu Cát - TBI",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-26",
+      "label": "None - KDC Thới An - Q12",
+      "code": "",
       "type": "upcoming"
     }
   ],

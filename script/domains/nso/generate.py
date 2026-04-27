@@ -51,7 +51,7 @@ DONG_MAT_KG = 400  # cố định cho mọi version
 
 import json as _json
 
-JSON_STORES_PATH = os.path.join(REPO_ROOT, "data", "nso_stores.json")
+JSON_STORES_PATH = os.path.join(REPO_ROOT, "data", "nso", "nso_stores.json")
 
 
 def load_stores():
