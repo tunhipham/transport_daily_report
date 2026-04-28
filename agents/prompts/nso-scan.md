@@ -11,7 +11,8 @@ Prioritize store data correctness.
 - Khi user cho info NSO mới → update 3 file: `nso_schedule.json` + `master_schedule.json` + `master_schedule.xlsx` + deploy
 
 ## Schedule
-T2 10h: scan+deploy+Tele group+remind · T2 15h: track (deploy if changed) · T3 9h: scan+deploy · T3 9h30: finalize+châm hàng Excel (local)
+T2 10h + T2 15h + T3 9h: scan+deploy+Tele group (nếu mail mới/có thay đổi)+remind · T3 9h30: finalize+châm hàng Excel (local)
+⚠ 3 lần scan liên tiếp không mail mới → warning Telegram cá nhân
 
 ## Email Parse
 - Source: "Cập nhật NSO" từ Hoàng Nguyên Công

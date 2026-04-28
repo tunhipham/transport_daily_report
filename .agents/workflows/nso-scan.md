@@ -10,19 +10,20 @@ description: Scan NSO emails, merge to master, deploy dashboard
 
 | Time | Mode | Action |
 |------|------|--------|
-| T2 10h | `scan` | Scan → deploy → Tele group + remind cá nhân |
-| T2 15h | `track` | Re-scan → deploy+notify CHỈ KHI thay đổi |
-| T3 9h | `scan` | Scan cuối → deploy → Tele group |
+| T2 10h | `scan` | Scan → deploy → Tele group (nếu mail mới) + remind |
+| T2 15h | `scan` | Re-scan → deploy+Tele group CHỈ KHI mail mới/thay đổi + remind |
+| T3 9h | `scan` | Scan cuối → deploy → Tele group (nếu mail mới) + remind |
 | T3 9h30 | `finalize` | Deploy + châm hàng Excel |
+
+> ⚠ Nếu 3 lần scan liên tiếp không có mail mới → warning Telegram cá nhân
 
 ## Run
 
 ```powershell
 python -u script/domains/nso/fetch_nso_mail.py          # scan+deploy
-python -u script/domains/nso/fetch_nso_mail.py --no-deploy  # track only
 python -u script/domains/nso/fetch_nso_mail.py --force   # skip dedup
 python -u script/domains/nso/nso_remind.py --dry-run     # remind preview
-script/domains/nso/auto_nso_watch.bat scan|track|finalize
+script/domains/nso/auto_nso_watch.bat scan|finalize
 ```
 
 ## Prereq

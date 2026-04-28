@@ -14,7 +14,7 @@
         <WeeksInterval>1</WeeksInterval>
       </ScheduleByWeek>
     </CalendarTrigger>
-    <!-- Thứ 2 15:00 — track mode -->
+    <!-- Thứ 2 15:00 — scan mode (re-scan) -->
     <CalendarTrigger>
       <StartBoundary>2026-04-28T15:00:00</StartBoundary>
       <Enabled>true</Enabled>

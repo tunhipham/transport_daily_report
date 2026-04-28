@@ -322,6 +322,44 @@ def _save_last_mail_url(url):
         f.write(url)
 
 
+# No-mail warning counter (warn user if 3 consecutive scans find no new mail)
+NO_MAIL_COUNTER = os.path.join(REPO_ROOT, "output", "state", "nso", ".no_mail_count")
+
+def _read_no_mail_count():
+    if os.path.exists(NO_MAIL_COUNTER):
+        try:
+            return int(open(NO_MAIL_COUNTER).read().strip())
+        except Exception:
+            return 0
+    return 0
+
+def _save_no_mail_count(n):
+    os.makedirs(os.path.dirname(NO_MAIL_COUNTER), exist_ok=True)
+    with open(NO_MAIL_COUNTER, "w") as f:
+        f.write(str(n))
+
+def _warn_no_mail(count):
+    """Send Telegram warning to personal chat when no new mail after 3 scans."""
+    try:
+        import urllib.request
+        cfg_path = os.path.join(REPO_ROOT, "config", "telegram.json")
+        with open(cfg_path, "r") as f:
+            cfg = json.load(f)
+        bot_token = cfg["nso_remind"]["bot_token"]
+        chat_id = cfg["nso_remind"]["chat_id"]
+        msg = (f"⚠️ NSO Warning: Đã quét {count} lần liên tiếp "
+               f"nhưng KHÔNG tìm thấy mail NSO mới!\n"
+               f"Kiểm tra Haraworks inbox hoặc hỏi Hoàng Nguyên Công.")
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        data = json.dumps({"chat_id": chat_id, "text": msg}).encode()
+        req = urllib.request.Request(url, data=data,
+                                     headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=10)
+        print(f"  ⚠️ Warning sent to personal chat (scan #{count})")
+    except Exception as e:
+        print(f"  ❌ Warning send failed: {e}")
+
+
 def parse_nso_table(driver):
     """Parse NSO store list from the email body.
 
@@ -583,6 +621,13 @@ def main():
     print(f"  🏪 NSO Mail Scanner — {now.strftime('%d/%m/%Y %H:%M')}")
     print(f"{'='*55}")
 
+    # Reset upstream flags (prevent stale values from previous runs)
+    _state_dir = os.path.join(REPO_ROOT, "output", "state", "nso")
+    os.makedirs(_state_dir, exist_ok=True)
+    for _fname in [".has_changes", ".mail_processed"]:
+        with open(os.path.join(_state_dir, _fname), "w") as f:
+            f.write("0")
+
     # Read DSST cache (no browser needed)
     dsst_lookup = read_dsst()
 
@@ -606,14 +651,22 @@ def main():
         # Find NSO mail
         mail_url = find_nso_mail(driver)
         if not mail_url:
-            print("  ❌ Cannot find NSO mail")
+            count = _read_no_mail_count() + 1
+            _save_no_mail_count(count)
+            print(f"  ❌ Cannot find NSO mail (miss #{count}/3)")
+            if count >= 3:
+                _warn_no_mail(count)
             return
 
         # Dedup: skip if same mail already processed
         last_url = _read_last_mail_url()
         if last_url == mail_url and not args.force:
-            print(f"  ⏭ Mail already processed: {mail_url.split('/')[-1][:12]}...")
+            count = _read_no_mail_count() + 1
+            _save_no_mail_count(count)
+            print(f"  ⏭ Mail already processed (miss #{count}/3): {mail_url.split('/')[-1][:12]}...")
             print(f"  💡 Use --force to re-process")
+            if count >= 3:
+                _warn_no_mail(count)
             return
 
         # Parse table
@@ -671,10 +724,15 @@ def main():
                 cwd=REPO_ROOT, timeout=120
             )
 
-        # Write change flag for upstream scripts
-        flag_path = os.path.join(REPO_ROOT, "output", "state", "nso", ".has_changes")
-        with open(flag_path, "w") as f:
+        # Write flags for upstream scripts (bat file)
+        _state_dir = os.path.join(REPO_ROOT, "output", "state", "nso")
+        with open(os.path.join(_state_dir, ".has_changes"), "w") as f:
             f.write("1" if has_changes else "0")
+        with open(os.path.join(_state_dir, ".mail_processed"), "w") as f:
+            f.write("1")
+
+        # Reset no-mail counter (new mail found successfully)
+        _save_no_mail_count(0)
 
     except Exception as e:
         print(f"\n  ❌ Error: {e}")
