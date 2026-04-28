@@ -1232,6 +1232,14 @@
     .wk-legend-dot.lg-dem { background:rgba(99,102,241,.4); border:1px solid rgba(99,102,241,.6) }
     .wk-legend-dot.lg-kk { background:rgba(168,85,247,.4); border:1px solid rgba(168,85,247,.6) }
     .wk-legend-dot.lg-cham { background:rgba(251,146,60,.4); border:1px solid rgba(251,146,60,.6) }
+
+    /* ═══ NHẬP/XUẤT ĐÔNG MÁT (IFRAME TAB) ═══ */
+    .nx-iframe-wrap { position:relative; width:100%; height:calc(100vh - 120px); min-height:600px; border-radius:var(--radius); overflow:hidden; border:1px solid var(--bd); background:var(--surface) }
+    .nx-iframe { width:100%; height:100%; border:none; border-radius:var(--radius) }
+    .nx-fallback { display:flex; flex-direction:column; align-items:center; justify-content:center; height:400px; gap:1rem; color:var(--t3); text-align:center }
+    .nx-fallback .nx-icon { font-size:3rem; opacity:.5 }
+    .nx-fallback .nx-msg { font-size:.9rem; font-weight:500 }
+    .nx-fallback .nx-sub { font-size:.75rem; color:var(--t4) }
   </style>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
@@ -1248,6 +1256,7 @@
         <div class="tab" data-tab="inventory" id="tab-inventory">📋 Inventory</div>
         <div class="tab" data-tab="nso" id="tab-nso">🏪 NSO</div>
         <div class="tab" data-tab="weekly_plan" id="tab-weekly_plan">📅 Lịch Tuần</div>
+        <div class="tab" data-tab="nhap_xuat" id="tab-nhap_xuat">📊 Nhập/Xuất ĐM</div>
       </div>
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Chuyển giao diện Sáng / Tối">🌙</button>
       <div class="meta">
@@ -1297,6 +1306,18 @@
         <div class="spinner"></div><span>Đang tải dữ liệu Lịch Tuần...</span>
       </div>
       <div id="weekly_plan-content" style="display:none"></div>
+    </div>
+
+    <!-- ═══ NHẬP/XUẤT ĐÔNG MÁT TAB (IFRAME — ISOLATED) ═══ -->
+    <div class="tab-content" id="content-nhap_xuat">
+      <div class="nx-iframe-wrap" id="nx-wrap">
+        <iframe id="nx-iframe" class="nx-iframe"
+                src="external/nhap_xuat_dm.html"
+                sandbox="allow-scripts"
+                loading="lazy"
+                title="Báo Cáo Nhập/Xuất Đông Mát"
+                onerror="nxFallback()"></iframe>
+      </div>
     </div>
   </div>
 
@@ -1377,9 +1398,38 @@
         contents.forEach(c => c.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById('content-' + target).classList.add('active');
-        if (!loaded[target]) loadTab(target);
+        // nhap_xuat uses iframe — no JSON to load
+        if (target === 'nhap_xuat') {
+          loaded[target] = true;
+          nxInit();
+        } else if (!loaded[target]) {
+          loadTab(target);
+        }
       });
     });
+
+    // ═══════════════════════════════════════════════
+    // NHẬP/XUẤT ĐÔNG MÁT — iframe helpers
+    // ═══════════════════════════════════════════════
+    function nxInit() {
+      const iframe = document.getElementById('nx-iframe');
+      if (!iframe) return;
+      // Check if iframe loaded successfully
+      iframe.addEventListener('load', () => {
+        // iframe loaded OK
+      });
+      iframe.addEventListener('error', nxFallback);
+    }
+
+    function nxFallback() {
+      const wrap = document.getElementById('nx-wrap');
+      if (wrap) wrap.innerHTML = `
+        <div class="nx-fallback">
+          <div class="nx-icon">📊</div>
+          <div class="nx-msg">Chưa có dữ liệu Nhập/Xuất Đông Mát</div>
+          <div class="nx-sub">File chưa được deploy. Liên hệ người phụ trách để cập nhật.</div>
+        </div>`;
+    }
 
     // ═══════════════════════════════════════════════
     // DATA FETCHING

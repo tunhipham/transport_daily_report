@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sản Lượng Nhập Xuất — ABA Đông Mát T4/2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b0d12;
+  --bg2: #111420;
+  --bg3: #181c2a;
+  --bg-head: #0d1020;
+  --bg-row1: #12152200;
+  --bg-row2: rgba(255,255,255,0.015);
+  --border: #1e2236;
+  --border-cat: #2a2f48;
+  --txt: #d8dce6;
+  --txt2: #7d849c;
+  --txt3: #4e5470;
+  /* Unified colors */
+  --label-cat: #d8dce6;
+  --label-info: #d8dce6;
+  --num: #22d3ee;
+  --num-hi: #22d3ee;
+  --num-fc: #22d3ee;
+  /* Percentage */
+  --pct-good: #22d3ee;
+  --pct-warn: #22d3ee;
+  --pct-bad: #22d3ee;
+  --pct-over: #22d3ee;
+  /* Highlight */
+  --cyan: #22d3ee;
+  --cyan-bg: rgba(34,211,238,0.10);
+  --yellow: #fde047;
+  --yellow-bg: rgba(253,224,71,0.12);
+  --green: #22d3ee;
+  --red: #22d3ee;
+  --blue: #60a5fa;
+  --purple: #a78bfa;
+  --pick-ok: #22d3ee;
+  --pick-warn: #22d3ee;
+  --pick-bad: #22d3ee;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:var(--txt);
+  min-height:100vh;
+  padding-bottom:60px;
+}
+
+/* Header */
+.header {
+  background:linear-gradient(135deg,#0f1328,#141938);
+  border-bottom:1px solid var(--border);
+  padding:22px 28px 18px;
+  text-align:center;
+}
+.header h1 {
+  font-size:18px; font-weight:800; letter-spacing:0.5px;
+  background:linear-gradient(90deg,#e2e5eb,#9aa0b0);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.header .sub { color:#ef4444; font-size:14px; font-weight:700; margin-top:4px; }
+
+/* Day Nav */
+.day-nav {
+  display:flex; align-items:center; justify-content:center; gap:20px;
+  padding:14px 28px;
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:50;
+  backdrop-filter:blur(8px);
+}
+.day-nav button {
+  background:var(--bg3); border:1px solid var(--border); color:var(--txt);
+  padding:9px 20px; border-radius:8px; font-family:'Inter'; font-size:13px;
+  font-weight:600; cursor:pointer; transition:all .2s;
+}
+.day-nav button:hover { background:#252a40; border-color:var(--cyan); color:var(--cyan); }
+.day-nav button:disabled { opacity:.25; cursor:default; }
+.day-info { text-align:center; min-width:200px; }
+.day-info .date { font-size:22px; font-weight:800; color:var(--cyan); }
+.day-info .dow { font-size:13px; color:var(--txt2); margin-top:2px; }
+.day-info .week {
+  font-size:10px; color:var(--bg); margin-top:4px;
+  background:var(--cyan); padding:2px 10px; border-radius:10px;
+  display:inline-block; font-weight:700; letter-spacing:0.5px;
+}
+
+/* Table */
+.table-block {
+  margin:16px auto;
+  max-width:920px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 4px 24px rgba(0,0,0,0.25);
+}
+.table-title {
+  padding:10px 16px;
+  font-size:13px; font-weight:700;
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:8px;
+  background:rgba(255,255,255,0.02);
+  color:var(--txt);
+}
+table {
+  width:100%; border-collapse:collapse; font-size:12px;
+  table-layout:fixed;
+}
+
+/* Column widths */
+col.col-cat    { width:115px; }
+col.col-info   { width:115px; }
+col.col-num    { width:82px; }
+col.col-pct    { width:82px; }
+col.col-qclh   { width:68px; }
+
+thead th {
+  background:var(--bg-head);
+  color:var(--txt2);
+  font-weight:600; font-size:10px;
+  text-transform:uppercase; letter-spacing:0.5px;
+  padding:6px 8px;
+  text-align:right;
+  border-bottom:2px solid var(--border-cat);
+  white-space:nowrap;
+  overflow:hidden;
+}
+th.h-cat, th.h-info { text-align:left; }
+th.h-cat { padding-left:12px; }
+th.date-head {
+  background:linear-gradient(135deg,#0c3d5e,#134050);
+  color:var(--cyan);
+  font-size:13px; font-weight:700;
+  text-align:center;
+  letter-spacing:0;
+  text-transform:none;
+  padding:8px 6px;
+}
+
+tbody td {
+  padding:5px 8px;
+  border-bottom:1px solid rgba(30,34,54,0.6);
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+  height:30px;
+  vertical-align:middle;
+  overflow:hidden;
+}
+
+/* Class-based column styling (fixes rowspan alignment) */
+.c-cat { text-align:left !important; font-weight:700; color:var(--txt); padding-left:12px !important; font-size:11.5px; letter-spacing:0.2px; }
+.c-info { text-align:left !important; color:var(--txt); font-weight:500; font-size:11px; }
+.c-bk { color:var(--cyan); font-weight:600; }
+.c-fc { color:var(--cyan); font-weight:500; }
+.c-pct { color:var(--cyan); font-weight:600; }
+.c-ql { color:var(--cyan); font-weight:600; }
+.c-bt { color:var(--cyan); font-weight:500; }
+.c-tx { color:var(--cyan); font-weight:600; }
+.c-pk { color:var(--cyan); font-weight:600; }
+.c-empty { color:var(--txt3); }
+
+/* Hover */
+tbody tr:hover td { background:rgba(94,234,212,0.04) !important; }
+
+/* Category group separator */
+tbody tr.cat-first td { border-top:2px solid var(--border-cat); }
+tbody tr.cat-first td.c-cat { border-top-color:var(--label-cat); }
+
+/* Zebra per row within category group */
+tbody tr.row-2 td { background:var(--bg-row2); }
+tbody tr.row-3 td { background:rgba(255,255,255,0.025); }
+
+/* Summary rows */
+tbody tr.summary td {
+  background:rgba(96,165,250,0.05) !important;
+  font-weight:700;
+  border-bottom:1px solid rgba(96,165,250,0.15);
+}
+tbody tr.summary.cat-first td {
+  border-top:3px solid var(--blue);
+}
+tbody tr.summary td.c-cat {
+  color:var(--txt) !important;
+  font-size:12.5px;
+}
+tbody tr.summary td.c-info {
+  color:var(--txt) !important;
+  font-weight:600;
+  font-style:italic;
+}
+tbody tr.summary td.c-bk { color:var(--cyan) !important; }
+tbody tr.summary td.c-tx { color:var(--cyan) !important; }
+
+/* Highlight cells */
+.hl-cyan {
+  background:var(--cyan-bg) !important;
+  color:var(--cyan) !important;
+  font-weight:700;
+  border-radius:4px;
+}
+.hl-yellow {
+  background:var(--cyan-bg) !important;
+  color:var(--cyan) !important;
+  font-weight:700;
+  border-radius:4px;
+}
+.pct-warn {
+  background:rgba(253,224,71,0.18) !important;
+  color:#fde047 !important;
+  font-weight:700;
+}
+.pct-normal {
+  color:var(--cyan) !important;
+  font-weight:600;
+}
+
+/* Pick rot coloring */
+.pick-ok  { color:var(--cyan); }
+.pick-warn { background:rgba(253,224,71,0.18) !important; color:#fde047 !important; font-weight:700; }
+
+/* Empty cell */
+.empty-cell { color:var(--txt3); }
+
+/* Off day */
+.off-msg {
+  padding:50px; text-align:center; color:var(--txt3); font-size:16px; font-style:italic;
+}
+
+/* Footer legend */
+.legend {
+  display:flex; gap:24px; justify-content:center; padding:18px;
+  font-size:11px; color:var(--txt3);
+  flex-wrap:wrap;
+}
+.legend span { display:flex; align-items:center; gap:6px; }
+.legend .dot { width:10px; height:10px; border-radius:3px; display:inline-block; }
+
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:#2a2f48; border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:#3a3f58; }
+
+@keyframes fadeIn {
+  from { opacity:0; transform:translateY(6px); }
+  to { opacity:1; transform:translateY(0); }
+}
+.table-block { animation:fadeIn 0.3s ease; }
+
+/* Bảng 3 - Chi tiết */
+.detail-block { max-width:1260px !important; }
+.detail-block .detail-wrap { overflow-x:auto; }
+.detail-table { font-size:11px; table-layout:fixed !important; width:100%; min-width:1200px; }
+.detail-table thead th {
+  font-size:9px; padding:6px 5px;
+  background:linear-gradient(135deg,#0c3d5e,#134050);
+  color:var(--cyan); font-weight:700;
+  border-bottom:2px solid rgba(34,211,238,0.3);
+  text-transform:uppercase; letter-spacing:0.3px;
+  white-space:nowrap;
+}
+.detail-table thead th:first-child { text-align:center; width:28px; }
+.detail-table thead th.th-cat { text-align:left; width:78px; }
+.detail-table thead th.th-temp { text-align:center; width:44px; }
+.detail-table thead th.th-code { text-align:left; width:72px; }
+.detail-table thead th.th-name { text-align:left; width:auto; }
+.detail-table thead th.th-unit { text-align:center; width:40px; }
+.detail-table thead th.th-num { width:68px; }
+.detail-table thead th.th-note { text-align:left; width:120px; }
+.detail-table thead th.th-tf { width:38px; }
+.detail-table thead th.th-pct { width:68px; }
+.detail-table tbody td {
+  padding:5px 5px; height:30px;
+  border-bottom:1px solid rgba(30,34,54,0.7);
+  overflow:hidden; text-overflow:ellipsis;
+}
+.detail-table tbody td:first-child { text-align:center; color:var(--txt); font-size:10px; font-weight:600; }
+.detail-table tbody td.d-cat { text-align:left; font-size:10px; color:var(--txt); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.detail-table tbody td.d-temp { text-align:center; font-size:9.5px; font-weight:700; color:var(--txt); }
+.detail-table tbody td.d-code { text-align:left; font-size:9px; color:var(--txt); font-weight:500; overflow:hidden; text-overflow:ellipsis; }
+.detail-table tbody td.d-name { text-align:left; color:var(--txt); font-size:10.5px; font-weight:500; white-space:normal; }
+.detail-table tbody td.d-unit { text-align:center; color:var(--txt); font-size:9.5px; }
+.d-bk { color:var(--cyan) !important; font-weight:700; }
+.d-tx { color:var(--cyan) !important; font-weight:600; }
+.d-qcr { color:var(--cyan) !important; font-weight:500; }
+.d-hold { color:var(--cyan) !important; font-weight:500; }
+.d-diff { color:var(--cyan) !important; font-weight:700; }
+.d-note { color:var(--txt) !important; font-weight:700; font-size:10px !important; text-align:left !important; }
+.d-tf { color:var(--txt) !important; font-size:9px !important; font-weight:600; }
+.d-pct-good { color:var(--cyan) !important; font-weight:600; }
+.d-pct-warn { color:var(--cyan) !important; font-weight:700; }
+.d-pct-bad { color:var(--cyan) !important; font-weight:700; }
+.detail-table tbody tr:nth-child(odd) td { background:rgba(255,255,255,0.018); }
+.detail-table tbody tr:nth-child(even) td { background:rgba(14,17,30,0.5); }
+.detail-table tbody tr:hover td { background:rgba(94,234,212,0.06) !important; }
+.detail-total td { background:rgba(96,165,250,0.06) !important; font-weight:700 !important; border-top:1px solid rgba(96,165,250,0.2); }
+.detail-total td.d-name { color:var(--blue) !important; font-style:italic; }
+.summary-cards { display:flex; gap:12px; padding:12px 0 8px; flex-wrap:wrap; justify-content:center; }
+.s-card {
+  background:linear-gradient(135deg, rgba(24,28,42,0.95), rgba(17,20,32,0.95));
+  border:1.5px solid var(--border);
+  border-radius:10px; padding:10px 18px; text-align:center; min-width:110px;
+  transition:transform 0.2s, box-shadow 0.2s;
+}
+.s-card:hover { transform:translateY(-2px); }
+.s-card .s-label { font-size:9px; text-transform:uppercase; letter-spacing:0.6px; color:var(--txt2); font-weight:700; }
+.s-card .s-val { font-size:18px; font-weight:800; margin-top:3px; font-variant-numeric:tabular-nums; }
+
+/* SKU rớt — purple */
+.s-card.sc-sku { border-color:rgba(167,139,250,0.5); box-shadow:0 0 12px rgba(167,139,250,0.15); }
+.s-card.sc-sku .s-val { color:#c4b5fd; text-shadow:0 0 8px rgba(167,139,250,0.4); }
+
+/* Booking — cyan */
+.s-card.sc-bk { border-color:rgba(34,211,238,0.5); box-shadow:0 0 12px rgba(34,211,238,0.15); }
+.s-card.sc-bk .s-val { color:#22d3ee; text-shadow:0 0 8px rgba(34,211,238,0.4); }
+
+/* Thực xuất — green */
+.s-card.sc-tx { border-color:rgba(52,211,153,0.5); box-shadow:0 0 12px rgba(52,211,153,0.15); }
+.s-card.sc-tx .s-val { color:#34d399; text-shadow:0 0 8px rgba(52,211,153,0.4); }
+
+/* Chênh lệch — orange/amber */
+.s-card.sc-diff { border-color:rgba(251,146,60,0.5); box-shadow:0 0 12px rgba(251,146,60,0.15); }
+.s-card.sc-diff .s-val { color:#fb923c; text-shadow:0 0 8px rgba(251,146,60,0.4); }
+
+/* %TX/BK — yellow */
+.s-card.sc-pct { border-color:rgba(253,224,71,0.5); box-shadow:0 0 12px rgba(253,224,71,0.15); }
+.s-card.sc-pct .s-val { color:#fde047; text-shadow:0 0 8px rgba(253,224,71,0.4); }
+.badge-cat { font-size:9px; padding:2px 8px; border-radius:8px; font-weight:700; margin-left:6px; }
+.badge-lh { background:rgba(167,139,250,0.15); color:var(--purple); }
+.badge-qc { background:rgba(251,191,36,0.15); color:var(--yellow); }
+.badge-tcnk { background:rgba(251,146,60,0.15); color:#fb923c; }
+
+/* Bảng 4 - Warning */
+.warn-block { max-width:1260px !important; }
+.warn-block .warn-title-bar {
+  padding:10px 16px;
+  font-size:13px; font-weight:700;
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:8px;
+  background:rgba(239,68,68,0.06);
+  color:#f87171;
+}
+.warn-table { width:100%; border-collapse:collapse; font-size:11.5px; table-layout:fixed; }
+.warn-table thead th {
+  font-size:10px; padding:8px 6px;
+  background:linear-gradient(135deg,#3b1320,#2d1018);
+  color:#f87171; font-weight:700;
+  border-bottom:2px solid rgba(248,113,113,0.3);
+  text-transform:uppercase; letter-spacing:0.4px;
+  white-space:nowrap;
+  text-align:center;
+}
+.warn-table thead th:first-child { width:32px; }
+.warn-table thead th.wt-code { width:110px; }
+.warn-table thead th.wt-name { width:auto; }
+.warn-table thead th.wt-cat { width:85px; }
+.warn-table thead th.wt-num { width:72px; }
+.warn-table thead th.wt-days { width:56px; }
+.warn-table tbody td {
+  padding:6px 8px; height:32px;
+  border-bottom:1px solid rgba(248,113,113,0.1);
+  overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+  vertical-align:middle;
+}
+.warn-table tbody td:first-child { text-align:center; color:var(--txt); font-size:11px; font-weight:700; vertical-align:middle; }
+.warn-table tbody td.wc-code { text-align:left; font-size:10.5px; color:var(--txt); font-weight:600; vertical-align:middle; }
+.warn-table tbody td.wc-name { text-align:left; color:var(--txt); font-size:11px; font-weight:500; white-space:normal; vertical-align:middle; }
+.warn-table tbody td.wc-cat { text-align:center; font-size:10.5px; color:var(--txt); font-weight:500; vertical-align:middle; }
+.warn-table tbody td.wc-num { text-align:center; color:var(--cyan); font-weight:700; font-size:11px; }
+.warn-table tbody td.wc-days {
+  text-align:center; font-weight:800; font-size:15px; vertical-align:middle;
+}
+.wc-days-3 { color:#fb923c; }
+.wc-days-4 { color:#f87171; }
+.wc-days-5 { color:#ef4444; text-shadow:0 0 8px rgba(239,68,68,0.5); }
+.warn-table tbody td.wc-dates { text-align:center; font-size:11px; color:#93c5fd; font-weight:600; }
+.warn-table tbody tr:nth-child(odd) td { background:rgba(248,113,113,0.03); }
+.warn-table tbody tr:nth-child(even) td { background:rgba(14,17,30,0.5); }
+.warn-table tbody tr:hover td { background:rgba(248,113,113,0.08) !important; }
+/* Separator between SKU groups */
+.warn-table tbody tr.warn-group-first td { border-top:2px solid rgba(248,113,113,0.25); }
+.warn-badge {
+  display:inline-block; padding:3px 10px; border-radius:10px;
+  font-size:11px; font-weight:800;
+  background:rgba(248,113,113,0.15); color:#f87171;
+  margin-left:8px;
+}
+/* Tab navigation */
+.tab-nav {
+  display:flex; justify-content:center; gap:0;
+  padding:0; background:var(--bg2);
+  border-bottom:1px solid var(--border);
+}
+.tab-btn {
+  padding:12px 36px; font-family:'Inter'; font-size:14px; font-weight:700;
+  background:transparent; border:none; color:var(--txt2); cursor:pointer;
+  border-bottom:3px solid transparent; transition:all .2s;
+  letter-spacing:0.3px;
+}
+.tab-btn:hover { color:var(--txt); background:rgba(255,255,255,0.03); }
+.tab-btn.active { color:var(--cyan); border-bottom-color:var(--cyan); }
+.tab-btn.active-nhap { color:#f59e0b; border-bottom-color:#f59e0b; }
+/* Import table header */
+.nh-head { background:linear-gradient(135deg,#3d2e0c,#2d2108) !important; color:#f59e0b !important; }
+.date-head-nh { background:linear-gradient(90deg,#3d2e0c,#2d2108) !important; color:#fbbf24 !important; }
+/* Nhập compact layout */
+.nh-compact { max-width:680px !important; }
+.nh-compact table { table-layout:fixed; }
+.nh-compact tbody td { height:26px; padding:3px 6px; font-size:11.5px; }
+.nh-compact thead th { padding:5px 6px; font-size:9.5px; }
+.nh-compact .c-cat { font-size:11px; padding-left:10px !important; }
+.nh-compact .c-info { font-size:10.5px; }
+.nh-compact .table-title { padding:8px 14px; font-size:12px; }
+.nh-cards { max-width:680px !important; margin:10px auto !important; padding:10px 12px !important; }
+.nh-cards .s-card { min-width:100px !important; padding:7px 12px !important; }
+.nh-cards .s-card .s-label { font-size:8px !important; }
+.nh-cards .s-card .s-val { font-size:15px !important; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>BÁO CÁO SẢN LƯỢNG ABA ĐÔNG MÁT T4 2026</h1>
+  <div class="sub" id="headerSub">XUẤT HÀNG</div>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" id="tabXuat" onclick="switchTab('xuat')">📦 XUẤT HÀNG</button>
+  <button class="tab-btn" id="tabNhap" onclick="switchTab('nhap')">📥 NHẬP HÀNG</button>
+</div>
+
+<div class="day-nav">
+  <button onclick="prev()" id="btnPrev">◀ Trước</button>
+  <div class="day-info">
+    <div class="date" id="navDate"></div>
+    <div class="dow" id="navDow"></div>
+    <div class="week" id="navWeek"></div>
+  </div>
+  <button onclick="next()" id="btnNext">Sau ▶</button>
+</div>
+
+<div id="content"></div>
+
+<div class="legend">
+  <span><span class="dot" style="background:var(--cyan-bg);border:1px solid var(--cyan)"></span> %Bk/FC ≥ 100%</span>
+  <span><span class="dot" style="background:var(--yellow-bg);border:1px solid var(--yellow)"></span> %Bk/FC ≥ 200%</span>
+  <span><span class="dot" style="background:var(--pick-ok)"></span> Pick rớt OK</span>
+  <span><span class="dot" style="background:var(--pick-warn)"></span> Pick rớt ≥ 1%</span>
+  <span><span class="dot" style="background:var(--pick-bad)"></span> Pick rớt ≥ 5%</span>
+  <span style="color:var(--label-cat)">■</span><span style="margin-left:-4px"> Chữ loại hàng</span>
+  <span style="color:var(--num-hi)">■</span><span style="margin-left:-4px"> Số liệu</span>
+</div>
+
+<div id="warning-section"></div>
+
+<script>
+// === DATA ===
+// Format per category: [sku_bk,sku_tx,sku_pick, item_bk,item_fc,item_pct,item_tx,item_pick, kg_bk,kg_fc,kg_pct,kg_tx,kg_pick]
+// Summary ts:[bk,tx,pick]  ti:[bk,fc,pct,tx,pick]  tQ/tL:[bk,fc,pct,qclh,tx,pick]  tk:[bk,fc,pct,tx,pick]
+// dong/mat: same 13-value format as categories
+
+const D = [
+{d:'1-Apr',w:'Mon',wk:'W1',
+ qc:[116,109,0,18423,19289,95.51,17890,0,4818,4663,103.32,4746,0],
+ lk:[368,365,0.82,82020,68621,119.53,81996,0.03,16101,17125,94.02,16095,0.04],
+ tqc:[16,14,0,4012,4800,83.58,3026,0,3113,6500,47.89,2591,0],
+ tlh:[14,14,0,3275,2000,163.73,3275,0,3229,2000,161.44,3229,0],
+ ts:[514,502,0.59],ti:[107730,94710,113.75,106187,0.02],
+ tQ:[22435,24089,93.13,19.69,20916,0],tL:[85295,70621,120.78,80.31,85271,0.03],
+ tk:[27261,30288,90.00,26660,0.02],
+ dong:[152,151,0.66,11971,12478,95.94,11958,0.11,3462,3941,87.85,3459,0.10],
+ mat:[332,323,0.62,88472,82232,107.59,87928,0.01,17457,26347,66.26,17382,0.02]},
+
+{d:'2-Apr',w:'Tue',wk:'W1',
+ qc:[139,128,0,26401,18296,144.30,25387,0,7599,4923,154.36,7433,0],
+ lk:[364,363,0.27,63328,71436,88.65,63325,0,12655,18335,69.02,12654,0.01],
+ tqc:[18,16,0,5926,8600,68.91,5275,0,4039,7600,53.14,3763,0],
+ tlh:[13,13,0,3720,2000,185.98,3720,0,3380,2400,140.82,3380,0],
+ ts:[534,520,0.19],ti:[99375,100332,99.05,97707,0],
+ tQ:[32327,26896,120.19,31.38,30662,0],tL:[67048,73436,91.30,68.62,67045,0],
+ tk:[27672,33258,83.21,27229,0],
+ dong:[155,154,0.65,10787,17669,61.05,10785,0.02,3034,5717,53.08,3034,0.01],
+ mat:[348,337,0,78942,82663,95.50,77927,0,17220,27541,62.52,17053,0]},
+
+{d:'3-Apr',w:'Wed',wk:'W1',
+ qc:[132,122,0,19743,13371,147.66,19359,0,4834,3577,135.14,4777,0],
+ lk:[394,391,0.76,74416,68621,108.44,74308,0.15,15745,17125,91.94,15730,0.09],
+ tqc:[22,22,0,7801,8600,90.71,6936,0,5241,8000,65.52,5020,0],
+ tlh:[15,15,0,2919,2500,116.74,2919,0,2697,2500,107.87,2697,0],
+ ts:[563,550,0.54],ti:[104879,93092,112.66,103522,0.10],
+ tQ:[27544,21971,125.37,25.37,26295,0],tL:[77335,71121,108.74,74.63,77227,0.14],
+ tk:[28517,31202,91.40,28224,0.05],
+ dong:[152,151,0.66,11325,12478,90.76,11304,0.19,3353,3941,85.09,3350,0.10],
+ mat:[374,364,0,82834,80614,102.75,82437,0.02,17226,27261,63.19,17164,0.02]},
+
+{d:'4-Apr',w:'Thu',wk:'W1',
+ qc:[131,123,0,30138,21196,142.19,28571,0,7967,4823,165.19,7516,0],
+ lk:[384,382,0.52,65702,73793,89.04,65684,0.03,13845,18689,74.08,13835,0.08],
+ tqc:[19,19,0,4334,8400,51.60,4332,0,3370,7000,48.14,3369,0],
+ tlh:[15,15,0,2623,2500,104.90,2623,0,2538,3000,84.59,2538,0],
+ ts:[549,539,0.37],ti:[102797,105889,97.08,101210,0.02],
+ tQ:[34472,29596,116.48,32.50,32903,0],tL:[68325,76293,89.56,67.50,68307,0.03],
+ tk:[27720,33512,82.72,27257,0.04],
+ dong:[150,148,1.33,9368,15174,61.74,9350,0.19,2740,4929,55.59,2729,0.39],
+ mat:[365,357,0,86472,90715,95.32,84905,0,19072,28583,66.73,18621,0]},
+
+{d:'5-Apr',w:'Fri',wk:'W1',
+ qc:[141,140,0,35398,26178,135.22,35009,0.01,8189,5766,142.01,7935,0.01],
+ lk:[388,385,0.77,69739,71097,98.09,69714,0.04,13911,17701,78.59,13905,0.05],
+ tqc:[21,21,0,7803,9600,81.28,7616,0,7254,8600,84.34,7016,0],
+ tlh:[12,12,0,4065,3200,127.02,3978,2.14,3953,3200,123.52,3866,2.20],
+ ts:[562,558,0.53],ti:[117005,110075,106.30,116317,0.10],
+ tQ:[43201,35778,120.75,36.61,42625,0.01],tL:[73804,74297,99.34,63.39,73692,0.15],
+ tk:[33306,35267,94.44,32721,0.29],
+ dong:[152,149,1.97,10131,12478,81.19,10119,0.12,2856,3941,72.48,2853,0.11],
+ mat:[377,376,0,95006,97597,97.35,94604,0.02,19244,31326,61.43,18987,0.02]},
+
+{d:'6-Apr',w:'Mon',wk:'W2',off:true},
+
+{d:'7-Apr',w:'Tue',wk:'W2',
+ qc:[123,123,0,25897,20761,124.74,25642,0,6766,4910,137.81,6707,0],
+ lk:[385,383,0.52,79163,71821,110.22,79156,0.01,16480,18088,91.11,16479,0.01],
+ tqc:[18,18,0,3345,5000,66.90,3345,0,2635,4800,54.91,2635,0],
+ tlh:[11,11,0,1945,2000,97.25,1945,0,1857,2000,92.83,1857,0],
+ ts:[537,535,0.37],ti:[110350,99582,110.81,110088,0.01],
+ tQ:[29242,25761,113.51,26.33,28987,0],tL:[81108,73821,109.87,73.67,81101,0.01],
+ tk:[27738,29798,93.09,27678,0],
+ dong:[148,146,1.35,8549,13302,64.27,8544,0.06,2513,4338,57.92,2512,0.04],
+ mat:[360,360,0,96511,86280,111.86,96254,0,20734,25460,81.44,20674,0]},
+
+{d:'8-Apr',w:'Wed',wk:'W2',
+ qc:[115,110,0,17579,19907,88.31,16153,0,4413,4820,91.56,4142,0],
+ lk:[390,385,1.28,74607,71166,104.84,74559,0.06,15195,15542,97.77,15187,0.05],
+ tqc:[17,17,0,3926,4800,81.79,3918,0,2334,6500,35.91,2331,0],
+ tlh:[12,12,0,3116,2000,155.78,3116,0,3018,2000,150.88,3018,0],
+ ts:[534,524,0.95],ti:[99228,97873,101.38,97746,0.05],
+ tQ:[21505,24707,87.04,20.52,20071,0],tL:[77723,73166,106.23,79.48,77675,0.06],
+ tk:[24959,28862,86.48,24678,0.03],
+ dong:[152,150,1.32,11821,10648,111.02,11784,0.31,3411,3146,108.43,3405,0.17],
+ mat:[353,345,0.86,80365,87225,92.14,78928,0.01,16197,25716,62.98,15926,0.01]},
+
+{d:'9-Apr',w:'Thu',wk:'W2',
+ qc:[140,136,0,28188,17678,159.45,27570,0,7462,4766,156.56,7171,0],
+ lk:[400,397,0.75,63419,66955,94.72,63365,0.09,13183,14872,88.65,13171,0.09],
+ tqc:[20,18,0,7014,8600,81.56,6560,0,3460,7600,45.53,2834,0],
+ tlh:[10,10,0,6228,2000,311.40,6228,0,6095,2400,253.97,6095,0],
+ ts:[570,561,0.53],ti:[104849,95233,110.10,103723,0.05],
+ tQ:[35202,26278,133.96,32.89,34130,0],tL:[69647,68955,101.00,67.11,69593,0.08],
+ tk:[30201,29638,101.90,29271,0.04],
+ dong:[156,153,1.92,12032,11355,105.96,12010,0.18,3605,3495,103.16,3599,0.17],
+ mat:[378,374,1.58,76995,83878,91.79,76345,3.31,17040,26143,65.18,16749,0.04]},
+
+{d:'10-Apr',w:'Fri',wk:'W2',
+ qc:[138,137,0,19677,13989,140.66,19454,0,4615,3733,123.62,4402,0],
+ lk:[392,389,0.77,60149,69214,86.90,60083,0.11,12612,15182,83.07,12599,0.10],
+ tqc:[23,22,0,8244,8600,95.86,7591,0,5264,8000,65.80,4314,0],
+ tlh:[12,12,0,4195,2500,167.78,4195,0,4135,2500,165.40,4135,0],
+ ts:[565,560,0.53],ti:[92265,94303,97.84,91323,0.07],
+ tQ:[27921,22589,123.60,29.59,27045,0],tL:[64344,71714,89.72,70.41,64278,0.10],
+ tk:[26625,29415,90.52,25450,0.05],
+ dong:[153,151,1.31,9560,11155,85.70,9534,0.27,2831,3295,85.91,2825,0.19],
+ mat:[377,375,0.27,70266,83148,84.51,70003,0.06,14396,26120,55.11,14183,0.05]},
+
+{d:'11-Apr',w:'Sat',wk:'W2',
+ qc:[126,125,0,29912,21196,141.12,28278,0,7643,4823,158.46,7044,0],
+ lk:[392,389,0.77,66241,73925,89.61,66223,0.03,12437,16262,76.48,12431,0.05],
+ tqc:[20,19,0,7612,8400,90.62,6970,0,5024,7000,71.77,4812,0],
+ tlh:[12,11,8.33,2568,2500,102.72,1848,28.04,2546,3000,84.85,1826,28.28],
+ ts:[550,544,0.73],ti:[106333,106021,100.29,103319,0.71],
+ tQ:[37524,29596,126.79,33.87,35248,0],tL:[68809,76425,90.03,66.13,68071,1.07],
+ tk:[27649,31085,88.95,26112,2.70],
+ dong:[154,152,1.30,7947,10848,73.26,7941,0.08,2205,3346,65.90,2203,0.09],
+ mat:[364,362,0.28,88206,95173,92.68,86560,0.01,17875,27739,64.44,17272,0.02]},
+
+{d:'12-Apr',w:'Sun',wk:'W2',
+ qc:[141,138,0,32426,26178,123.87,31840,0,7228,5766,125.36,7004,0],
+ lk:[393,390,0.76,74900,73725,101.59,74808,0.12,14648,16062,91.20,14628,0.14],
+ tqc:[25,24,-4.35,9961,9600,103.76,9220,-2.22,6447,8600,74.97,6229,-3.32],
+ tlh:[13,13,0,5166,3200,161.45,5166,0,5089,3200,159.03,5089,0],
+ ts:[572,565,0.35],ti:[122453,112703,108.65,121034,-0.09],
+ tQ:[42387,35778,118.47,33.79,41060,-0.49],tL:[80066,76925,104.08,66.21,79974,0.11],
+ tk:[33412,33628,99.36,32949,-0.55],
+ dong:[152,152,0,7113,10648,66.80,7110,0.04,2112,3146,67.12,2111,0.04],
+ mat:[382,376,0.79,100213,102055,98.20,99538,0.09,19765,30482,64.84,19521,0.10]},
+
+{d:'13-Apr',w:'Mon',wk:'W3',off:true},
+
+{d:'14-Apr',w:'Tue',wk:'W3',
+ qc:[132,130,0,26553,20761,127.90,25385,0,8091,4910,164.79,7448,0],
+ lk:[385,381,1.04,88048,71873,122.50,88024,0.03,17091,15891,107.55,17085,0.04],
+ tqc:[21,19,-5.56,4768,5000,95.36,4577,-12.26,3365,4800,70.11,3205,-18.48],
+ tlh:[11,11,0,2514,2000,125.72,2514,0,2450,2000,122.50,2450,0],
+ ts:[549,541,0.55],ti:[121883,99634,122.33,120500,-0.40],
+ tQ:[31321,25761,121.58,24.55,29962,-1.70],tL:[90562,73873,122.59,75.45,90538,0.03],
+ tk:[30997,27601,112.30,30188,-1.66],
+ dong:[152,150,1.32,12416,11355,109.34,12401,0.12,3533,3495,101.08,3528,0.12],
+ mat:[365,361,0.55,102185,88279,115.75,101008,0.01,21649,24106,89.81,21004,0.01]},
+
+{d:'15-Apr',w:'Wed',wk:'W3',
+ qc:[111,108,0,20526,19289,106.41,19981,0,5723,4663,122.72,5306,0],
+ lk:[359,355,1.11,74325,69214,107.38,74312,0.02,16667,15182,109.78,16664,0.02],
+ tqc:[0,22,-4.76,6323,4800,131.74,6689,-3.08,6256,6500,96.24,4734,-4.41],
+ tlh:[11,11,0,6323,2000,316.17,6323,0,6256,2000,312.80,6256,0],
+ ts:[481,496,0.60],ti:[107498,95303,112.80,107305,-0.17],
+ tQ:[26849,24089,111.46,24.71,26670,-0.76],tL:[80648,71214,113.25,75.29,80635,0.02],
+ tk:[34902,28345,123.13,32960,-0.60],
+ dong:[148,146,1.35,13090,11155,117.35,13085,0.04,3538,3295,107.38,3537,0.03],
+ mat:[322,317,0.63,81761,84148,97.16,81208,0.01,18852,25050,75.26,18433,0.01]},
+
+{d:'16-Apr',w:'Thu',wk:'W3',
+ qc:[149,148,0,39091,18296,213.66,37919,0,11907,4923,241.87,11119,0],
+ lk:[393,391,0.51,78987,67462,117.08,78931,0.07,16355,15022,108.87,16345,0.06],
+ tqc:[24,23,-4.55,9764,8600,113.53,8153,-2.51,6424,7600,84.52,5912,-3.39],
+ tlh:[12,12,0,3185,2000,159.27,3185,0,3070,2400,127.93,3070,0],
+ ts:[578,574,0.17],ti:[131027,96358,135.98,128188,-0.11],
+ tQ:[48855,26896,181.64,35.83,46072,-0.44],tL:[82172,69462,118.30,64.17,82116,0.07],
+ tk:[37756,29945,126.08,36446,-0.51],
+ dong:[154,153,0.65,13994,11862,117.97,13961,0.24,4015,3645,110.14,4008,0.17],
+ mat:[388,386,0.26,104084,84496,123.18,102889,0.02,24247,26300,92.20,23456,0.01]},
+
+{d:'17-Apr',w:'Fri',wk:'W3',
+ qc:[140,138,0,20675,13371,154.63,19891,0.07,5853,3577,163.63,5282,0.15],
+ lk:[384,380,1.04,70708,69721,101.42,70695,0.02,15657,15332,102.12,15653,0.02],
+ tqc:[24,22,0,7080,8600,82.33,6419,0,5082,8000,63.52,4174,-0.14],
+ tlh:[13,13,0,3271,2500,130.82,3271,0,3205,2500,128.18,3205,0],
+ ts:[561,553,0.72],ti:[101734,94192,108.01,100276,0.03],
+ tQ:[27755,21971,126.33,26.24,26310,0.05],tL:[73979,72221,102.43,73.76,73966,0.02],
+ tk:[29796,29409,101.32,28313,0.02],
+ dong:[149,147,1.34,11682,11662,100.17,11675,0.06,3397,3445,98.61,3395,0.08],
+ mat:[375,371,0.54,79701,82530,96.57,78911,0.03,18113,25964,69.76,17540,0.05]},
+
+{d:'18-Apr',w:'Sat',wk:'W3',
+ qc:[133,129,0,33433,21196,157.73,30846,0,9581,4823,198.65,8354,0],
+ lk:[375,371,1.07,67798,71669,94.60,67774,0.04,13557,15811,85.74,13552,0.04],
+ tqc:[25,23,0,9466,8400,112.69,8384,0,7272,7000,103.89,7014,0],
+ tlh:[13,13,0,1796,2500,71.83,1706,5.01,1730,3000,57.65,1640,5.20],
+ ts:[546,536,0.74],ti:[112493,103765,108.41,108710,0.10],
+ tQ:[42899,29596,144.95,36.05,39230,0],tL:[69594,74169,93.83,63.95,69480,0.16],
+ tk:[32139,30634,104.91,30559,0.31],
+ dong:[153,151,1.31,11167,11051,101.05,11156,0.10,3327,3205,104.06,3324,0.09],
+ mat:[354,348,0.85,87130,92714,93.98,84530,3.37,16877,29972,56.34,15647,4.91]},
+
+{d:'19-Apr',w:'Sun',wk:'W3',
+ qc:[146,144,0,42309,26178,161.62,40817,0,11238,5766,194.90,10806,0.01],
+ lk:[376,371,1.33,73239,71469,102.48,73214,0.03,14222,15611,91.10,14216,0.04],
+ tqc:[27,23,0,9982,9600,103.98,7437,0,7668,8600,89.16,4866,0],
+ tlh:[11,11,0,5018,3200,156.80,5018,0,4958,3200,154.95,4958,0],
+ ts:[560,549,0.90],ti:[130548,110447,118.20,126486,0.02],
+ tQ:[52291,35778,146.15,38.14,48254,0],tL:[78257,74669,104.80,61.86,78232,0.03],
+ tk:[38086,33177,114.80,34847,0.02],
+ dong:[143,141,1.40,11630,10851,107.18,11625,0.04,3335,3205,104.06,3333,0.07],
+ mat:[376,372,1.33,103364,99596,103.78,100936,1.46,21981,29972,73.34,20629,4.91]},
+
+{d:'20-Apr',w:'Mon',wk:'W4',off:true},
+
+{d:'21-Apr',w:'Tue',wk:'W4',
+ qc:[133,132,0,31804,20761,153.19,31282,0,8732,4910,177.85,8628,0],
+ lk:[379,374,1.32,88519,71366,124.04,88463,0.06,16742,15742,106.35,16730,0.07],
+ tqc:[27,25,0,7534,5000,150.68,6836,0,6171,4800,128.57,5202,0],
+ tlh:[15,13,13.33,4916,2000,245.80,2636,46.38,4852,2000,242.60,2572,46.99],
+ ts:[554,544,1.27],ti:[132773,99127,133.94,129217,1.78],
+ tQ:[39338,25761,152.70,28.98,38118,0],tL:[93435,73366,127.35,71.02,91099,2.50],
+ tk:[36498,27452,132.95,33131,6.47],
+ dong:[146,144,1.37,10208,10848,94.10,10163,0.44,3184,3346,95.15,3174,0.31],
+ mat:[363,359,1.64,109593,88279,124.14,109060,0.49,22129,24106,91.80,22022,0.74]},
+
+{d:'22-Apr',w:'Wed',wk:'W4',
+ qc:[136,135,0,20420,19907,102.58,19943,0,6033,4820,125.16,5912,0],
+ lk:[388,380,2.06,83121,71166,116.80,83086,0.04,16797,15542,108.07,16790,0.04],
+ tqc:[27,23,0,5148,4800,107.25,3648,0,3481,6500,53.55,1962,0],
+ tlh:[15,15,0,4869,2000,243.45,4869,0,3986,2000,199.30,3986,0],
+ ts:[566,553,1.43],ti:[113558,97873,116.03,111546,0.03],
+ tQ:[25568,24707,103.48,21.14,23591,0],tL:[87990,73166,120.26,78.86,87955,0.04],
+ tk:[30296,28862,104.97,28650,0.02],
+ dong:[147,142,3.40,12426,10648,116.70,12404,0.18,3659,3146,116.30,3654,0.12],
+ mat:[377,373,0.80,91115,87225,104.46,90625,0.01,19171,25716,74.55,19048,0.01]},
+
+{d:'23-Apr',w:'Wed',wk:'W4',
+ qc:[142,142,0,31967,20500,155.94,31790,0.02,9211,4766,193.27,9185,0.01],
+ lk:[387,382,1.29,67062,64855,103.40,67021,0.06,13830,14872,93.00,13821,0.07],
+ tqc:[28,25,0,5190,8600,60.35,4509,0,5324,7600,70.05,4867,0],
+ tlh:[13,13,0,5619,2000,280.93,5619,0,4863,2400,202.63,4863,0],
+ ts:[570,562,0.88],ti:[109838,95955,114.47,108939,0.04],
+ tQ:[37157,29100,127.69,33.31,36299,0.01],tL:[72681,66855,108.71,66.69,72640,0.06],
+ tk:[33229,29638,112.11,32736,0.03],
+ dong:[147,145,1.36,13068,11355,115.09,13054,0.11,3773,3495,107.94,3769,0.10],
+ mat:[382,379,0.79,85961,84600,101.61,85757,0.04,19269,26143,73.70,19237,0.03]},
+
+{d:'24-Apr',w:'Thu',wk:'W4',
+ qc:[139,139,0,24018,12900,186.19,23913,0,6035,3733,161.67,6001,0],
+ lk:[381,379,0.52,79049,72655,108.80,79025,0.03,15816,15182,104.18,15809,0.05],
+ tqc:[27,24,0,5496,8600,63.91,4977,0,3116,8000,38.95,2830,0],
+ tlh:[14,14,0,3653,2500,146.10,3653,0,3408,2500,136.33,3408,0],
+ ts:[561,556,0.36],ti:[112216,96655,116.10,111568,0.02],
+ tQ:[29514,21500,137.27,25.89,28890,0],tL:[82702,75155,110.04,74.11,82678,0.03],
+ tk:[28376,29415,96.47,28048,0.03],
+ dong:[145,144,0.69,13169,11155,118.05,13168,0.01,3984,3295,120.93,3984,0.01],
+ mat:[374,373,0.53,88398,85500,103.39,88270,1.70,17867,26120,68.40,17826,0.04]},
+
+{d:'25-Apr',w:'Fri',wk:'W4',
+ qc:[124,124,0,30624,23400,130.87,30422,0,8269,4823,171.45,8226,0],
+ lk:[381,373,2.10,72183,74448,96.96,72160,0.03,15695,16262,96.51,15689,0.04],
+ tqc:[30,25,0,6550,8400,77.98,5397,0,3652,7000,52.18,3010,0],
+ tlh:[11,11,0,2981,2500,119.22,2981,0,2695,3000,89.82,2695,0],
+ ts:[546,533,1.48],ti:[112338,108748,103.30,110960,0.02],
+ tQ:[37174,31800,116.90,32.27,35819,0],tL:[75164,76948,97.68,67.73,75141,0.03],
+ tk:[30311,31085,97.51,29619,0.02],
+ dong:[147,141,4.08,10518,10848,96.96,10500,0.17,3057,3346,91.36,3052,0.17],
+ mat:[357,355,0.84,91789,97900,93.76,91582,0.55,20907,27739,75.37,20863,0.01]},
+
+{d:'26-Apr',w:'Sun',wk:'W4',
+ qc:[136,135,0,34611,29000,119.35,34057,0,8449,5766,146.52,8312,0],
+ lk:[372,369,0.81,73938,76248,96.97,73919,0.03,14391,16062,89.59,14386,0.03],
+ tqc:[28,25,0,8588,9600,89.46,7805,0,5493,8600,63.87,4970,0],
+ tlh:[13,13,0,4284,3200,133.88,4264,0.47,3781,3200,118.15,3762,0.50],
+ ts:[549,542,0.55],ti:[121421,118048,102.86,120045,0.03],
+ tQ:[43199,38600,111.91,34.86,41862,0],tL:[78222,79448,98.46,65.14,78183,0.05],
+ tk:[32113,33628,95.50,31430,0.07],
+ dong:[140,139,0.71,11527,10648,108.26,11523,0.03,3038,3146,96.58,3037,0.05],
+ mat:[367,364,0.82,96022,107400,89.41,95453,1.05,19801,30482,64.96,19661,0.01]},
+
+{d:'27-Apr',w:'Mon',wk:'W5',off:true},
+
+{d:'28-Apr',w:'Tue',wk:'W5',
+ qc:[95,94,0,19150,15200,125.99,18045,0,3176,3500,90.76,2930,0],
+ lk:[377,372,1.33,82781,76448,108.28,82695,0.10,15715,15991,98.27,15697,0.11],
+ tqc:[28,24,0,4939,5000,98.78,4423,0,2829,4800,58.94,2495,0],
+ tlh:[13,13,0,3996,2000,199.80,3995,0.03,3729,2000,186.45,3728,0.01],
+ ts:[513,503,0.98],ti:[110866,98648,112.39,109158,0.08],
+ tQ:[24089,20200,119.25,20.57,22468,0],tL:[86777,78448,110.62,79.43,86690,0.10],
+ tk:[25449,26291,96.80,24850,0.07],
+ dong:[150,147,2.00,11086,10948,101.26,11050,0.32,3156,3595,87.80,3146,0.34],
+ mat:[321,318,0.93,90345,87700,103.02,89190,0.61,15735,22696,69.33,15481,0.05]}
+];
+
+// === CHI TIẾT XUẤT HÀNG DATA ===
+// sx=Số Xuất, nqc=Nhập QC, qcr=Hàng QC rớt, hold=Hold
+const CT = {
+'22-Apr': {
+  totalBk:99, totalTx:64, totalDiff:35,
+  items:[
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'10933',name:'HS - CÁ DÌA NGUYÊN CON LÀM SẠCH 350G',unit:'GÓI',bk:1,sx:0,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'4953823388700',name:'LOTTE - KEM GHANA RICH 330ML',unit:'HỘP',bk:1,sx:0,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'74570022021',name:'HAAGEN DAZS - KEM DÂU TÂY 100ML',unit:'HỘP',bk:8,sx:4,nqc:null,qcr:null,hold:null,diff:4,note:'ABA pick rớt',pct:50},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'74570052028',name:'HAAGEN DAZS - KEM VỊ BÁNH QUY VÀ KEM 100ML',unit:'HỘP',bk:12,sx:5,nqc:null,qcr:null,hold:null,diff:7,note:'ABA pick rớt',pct:41.67},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8906078780894',name:'FARM BEST - KHOAI TÂY ĐÔNG LẠNH SỢI NHỎ 1KG',unit:'TÚI',bk:1,sx:0,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8935275600247',name:'OG BLUE - CỒI SÒ ĐIỆP NHẬT 240G',unit:'GÓI',bk:1,sx:0,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8936076279731',name:'SUNDO - BÁNH MÌ QUE XÁ XÍU THỊT XÔNG KHÓI 189G',unit:'GÓI',bk:4,sx:0,nqc:null,qcr:null,hold:null,diff:4,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8938520657447',name:'RÂU BẠCH TUỘC CHẦN ĐÔNG LẠNH 200G',unit:'VỈ',bk:19,sx:16,nqc:null,qcr:null,hold:null,diff:3,note:'ABA pick rớt',pct:84.21},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'8888470042001',name:'MEIJI - SỮA THANH TRÙNG SOCOLA 200ML',unit:'CHAI',bk:6,sx:0,nqc:null,qcr:null,hold:null,diff:6,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'8936219620161',name:'SAMHO - THANH SUMIRI HƯƠNG CUA NHÂN PHÔ MAI 30G',unit:'GÓI',bk:41,sx:39,nqc:null,qcr:null,hold:null,diff:2,note:'ABA pick rớt',pct:95.12},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'8938500810084',name:'VS - TÔM KHÔ L HŨ 200G',unit:'GÓI',bk:3,sx:0,nqc:null,qcr:null,hold:null,diff:3,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'9300658407505',name:'FARMERS UNION - SỮA CHUA KIỂU HY LẠP NGUYÊN CHẤT 2*140G',unit:'LỐC',bk:2,sx:0,nqc:null,qcr:null,hold:null,diff:2,note:'ABA pick rớt',pct:0}
+  ]
+},
+'23-Apr': {
+  totalBk:843, totalTx:797, totalDiff:46,
+  items:[
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'10947',name:'HUẾ SPECIALTY - BÁNH LỌC HUẾ LOẠI 1 330G',unit:'GÓI',bk:4,sx:0,nqc:null,qcr:null,hold:null,diff:4,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8935360200390',name:'SAVORA - BA CHỈ BÒ CANADA ĐÔNG LẠNH CẮT CUỘN - 250G',unit:'KHAY',bk:218,sx:214,nqc:null,qcr:null,hold:null,diff:4,note:'ABA pick rớt',pct:98.17},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8935360203674',name:'SAVORA - BA CHỈ BÒ CANADA CUỘN PHÔ MAI 250G',unit:'KHAY',bk:20,sx:17,nqc:null,qcr:null,hold:null,diff:3,note:'ABA pick rớt',pct:85},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8936013231662',name:'SG FOOD - MỲ Ý XỐT KEM THỊT XÔNG KHÓI 250G',unit:'GÓI',bk:154,sx:153,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:99.35},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8936190861645',name:'FRESHFOCO - THỊT BÒ MỘT NẮNG 200G',unit:'KHAY',bk:1,sx:0,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8938520657447',name:'RÂU BẠCH TUỘC CHẦN ĐÔNG LẠNH 200G',unit:'VỈ',bk:57,sx:56,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:98.25},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'8934673314572',name:'VINAMILK - SCU PROBI CÓ ĐƯỜNG 400ML',unit:'HỘP',bk:30,sx:26,nqc:null,qcr:null,hold:null,diff:4,note:'ABA pick rớt',pct:86.67},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'8938500810084',name:'VS - TÔM KHÔ L HŨ 200G',unit:'GÓI',bk:3,sx:0,nqc:null,qcr:null,hold:null,diff:3,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'8938534740364',name:'KITKOOL - BÁNH GIÒ THẬP CẨM TRỨNG CÚT 150G',unit:'CÁI',bk:18,sx:0,nqc:null,qcr:null,hold:null,diff:18,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'9300658407505',name:'FARMERS UNION - SỮA CHUA KIỂU HY LẠP NGUYÊN CHẤT 2*140G',unit:'LỐC',bk:2,sx:0,nqc:null,qcr:null,hold:null,diff:2,note:'ABA pick rớt',pct:0},
+    {cat:'Quá Cảnh',temp:'MÁT',code:'11617',name:'GIÁ ĐẬU NÀNH 150G',unit:'GÓI',bk:336,sx:331,nqc:336,qcr:-5,hold:0,diff:5,note:'ABA pick rớt hàng QC',pct:98.51}
+  ]
+},
+'24-Apr': {
+  totalBk:68, totalTx:44, totalDiff:24,
+  items:[
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8935275600247',name:'OG BLUE - CỒI SÒ ĐIỆP NHẬT 240G',unit:'GÓI',bk:1,sx:0,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'8934673314572',name:'VINAMILK - SCU PROBI CÓ ĐƯỜNG 400ML',unit:'HỘP',bk:12,sx:4,nqc:null,qcr:null,hold:null,diff:8,note:'ABA pick rớt',pct:33.33},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'8938527710510',name:'SEAPRODEX - TÔM SÚ THỊT SINH THÁI 41/50 200G',unit:'GÓI',bk:21,sx:12,nqc:null,qcr:null,hold:null,diff:9,note:'ABA pick rớt',pct:57.14},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'9300658407505',name:'FARMERS UNION - SỮA CHUA KIỂU HY LẠP NGUYÊN CHẤT 2*140G',unit:'LỐC',bk:3,sx:0,nqc:null,qcr:null,hold:null,diff:3,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'9336243005030',name:'ROKEBY FARMS - THỨC UỐNG SMOOTHIE PROTEIN VỊ CÀ PHÊ ESPRESSO CHAI 425ML',unit:'CHAI',bk:31,sx:28,nqc:null,qcr:null,hold:null,diff:3,note:'ABA pick rớt',pct:90.32}
+  ]
+},
+'25-Apr': {
+  totalBk:96, totalTx:73, totalDiff:23,
+  items:[
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'10933',name:'HS - CÁ DÌA NGUYÊN CON LÀM SẠCH 350G',unit:'GÓI',bk:1,sx:0,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'10947',name:'HUẾ SPECIALTY - BÁNH LỌC HUẾ LOẠI 1 330G',unit:'GÓI',bk:4,sx:0,nqc:null,qcr:null,hold:null,diff:4,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8935067796295',name:'HẢI NAM - ĐẦU MỰC ỐNG LOẠI A XẾP KHAY 500G',unit:'GÓI',bk:3,sx:0,nqc:null,qcr:null,hold:null,diff:3,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8935360203674',name:'SAVORA - BA CHỈ BÒ CANADA CUỘN PHÔ MAI 250G',unit:'KHAY',bk:3,sx:0,nqc:null,qcr:null,hold:null,diff:3,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8936076279731',name:'SUNDO - BÁNH MÌ QUE XÁ XÍU THỊT XÔNG KHÓI 189G',unit:'GÓI',bk:12,sx:8,nqc:null,qcr:null,hold:null,diff:4,note:'ABA pick rớt',pct:66.67},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8936190861645',name:'FRESHFOCO - THỊT BÒ MỘT NẮNG 200G',unit:'KHAY',bk:1,sx:0,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8936239090036',name:'365 FRESH FOODS - BA CHỈ BÒ MỸ TÚI ZIP 200G',unit:'TÚI',bk:66,sx:65,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:98.48},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8938520657447',name:'RÂU BẠCH TUỘC CHẦN ĐÔNG LẠNH 200G',unit:'VỈ',bk:1,sx:0,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'8938500810084',name:'VS - TÔM KHÔ L HŨ 200G',unit:'GÓI',bk:3,sx:0,nqc:null,qcr:null,hold:null,diff:3,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'9300658407505',name:'FARMERS UNION - SỮA CHUA KIỂU HY LẠP NGUYÊN CHẤT 2*140G',unit:'LỐC',bk:2,sx:0,nqc:null,qcr:null,hold:null,diff:2,note:'ABA pick rớt',pct:0}
+  ]
+},
+'26-Apr': {
+  totalBk:3355, totalTx:3316, totalDiff:39,
+  items:[
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8935275600247',name:'OG BLUE - CỒI SÒ ĐIỆP NHẬT 240G',unit:'GÓI',bk:1,sx:0,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8936013231662',name:'SG FOOD - MỲ Ý XỐT KEM THỊT XÔNG KHÓI 250G',unit:'GÓI',bk:416,sx:415,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:99.76},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8938500810763',name:'HỒN VIỆT - KHÔ CÁ ĐÙ 1 NẮNG NGUYÊN CON 500G',unit:'GÓI',bk:30,sx:28,nqc:null,qcr:null,hold:null,diff:2,note:'ABA pick rớt',pct:93.33},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'8859544300136',name:'RL- NẤM KIM CHÂM THÁI LAN 150G',unit:'GÓI',bk:1525,sx:1516,nqc:null,qcr:null,hold:null,diff:9,note:'ABA pick rớt',pct:99.41},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'8938500810084',name:'VS - TÔM KHÔ L HŨ 200G',unit:'GÓI',bk:3,sx:0,nqc:null,qcr:null,hold:null,diff:3,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'9300658407505',name:'FARMERS UNION - SỮA CHUA KIỂU HY LẠP NGUYÊN CHẤT 2*140G',unit:'LỐC',bk:3,sx:0,nqc:null,qcr:null,hold:null,diff:3,note:'ABA pick rớt',pct:0},
+    {cat:'TCNK Lưu Hàng',temp:'MÁT',code:'1102041',name:'TÁO ENVY MỸ (5-6 QUẢ/KG)',unit:'KG',bk:540,sx:522,nqc:null,qcr:null,hold:null,diff:18,note:'SCM booking vượt tồn',pct:96.67},
+    {cat:'TCNK Lưu Hàng',temp:'MÁT',code:'8936052000823',name:'ZESPRI - HỘP KIWI VÀNG 4 QUẢ',unit:'HỘP',bk:837,sx:835,nqc:null,qcr:null,hold:null,diff:2,note:'ABA pick rớt',pct:99.76}
+  ]
+},
+'28-Apr': {
+  totalBk:780, totalTx:693, totalDiff:87,
+  items:[
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'10933',name:'HS - CÁ DÌA NGUYÊN CON LÀM SẠCH 350G',unit:'GÓI',bk:1,sx:0,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'10947',name:'HUẾ SPECIALTY - BÁNH LỌC HUẾ LOẠI 1 330G',unit:'GÓI',bk:4,sx:0,nqc:null,qcr:null,hold:null,diff:4,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'3415581119183',name:'HAAGEN DAZS - KEM VỊ HẠT MACADAMIA 473ML',unit:'HỘP',bk:22,sx:19,nqc:null,qcr:null,hold:null,diff:3,note:'ABA pick rớt',pct:86.36},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'74570022021',name:'HAAGEN DAZS - KEM DÂU TÂY 100ML',unit:'HỘP',bk:120,sx:116,nqc:null,qcr:null,hold:null,diff:4,note:'ABA pick rớt',pct:96.67},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'74570052028',name:'HAAGEN DAZS - KEM VỊ BÁNH QUY VÀ KEM 100ML',unit:'HỘP',bk:31,sx:24,nqc:null,qcr:null,hold:null,diff:7,note:'ABA pick rớt',pct:77.42},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8934673600347',name:'VINAMILK - KEM DỪA 400ML',unit:'HỘP',bk:36,sx:22,nqc:null,qcr:null,hold:null,diff:14,note:'ABA pick rớt',pct:61.11},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8936190861645',name:'FRESHFOCO - THỊT BÒ MỘT NẮNG 200G',unit:'KHAY',bk:1,sx:0,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'ĐÔNG',code:'8938562732133',name:'AN GIA - SƯỜN BÒ MỸ CÓ XƯƠNG 300G (SHORT RIB)',unit:'KHAY',bk:6,sx:4,nqc:null,qcr:null,hold:null,diff:2,note:'ABA pick rớt',pct:66.67},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'11061',name:'NẤM HẢI SẢN TQ 150G',unit:'GÓI',bk:185,sx:173,nqc:null,qcr:null,hold:null,diff:12,note:'ABA pick rớt',pct:93.51},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'3412290040708',name:'PAYSAN BRETON - PHÔ MAI BRIE 125G',unit:'HỘP',bk:4,sx:1,nqc:null,qcr:null,hold:null,diff:3,note:'ABA pick rớt',pct:25},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'8935007110457',name:'LOTHAMILK - SCA NHA ĐAM 100G',unit:'HỘP',bk:4,sx:0,nqc:null,qcr:null,hold:null,diff:4,note:'ABA pick rớt',pct:0},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'8936210410822',name:'KITKOOL - BÁNH GIÒ THẬP CẨM TRỨNG CÚT 150G',unit:'CÁI',bk:313,sx:285,nqc:null,qcr:null,hold:null,diff:28,note:'ABA pick rớt',pct:91.05},
+    {cat:'Lưu Hàng',temp:'MÁT',code:'8938500810084',name:'VS - TÔM KHÔ L HŨ 200G',unit:'GÓI',bk:3,sx:0,nqc:null,qcr:null,hold:null,diff:3,note:'ABA pick rớt',pct:0},
+    {cat:'TCNK Lưu Hàng',temp:'MÁT',code:'8938553641376',name:'TÁO POSY ỐNG (4 QUẢ)',unit:'ỐNG',bk:50,sx:49,nqc:null,qcr:null,hold:null,diff:1,note:'ABA pick rớt',pct:98}
+  ]
+}
+};
+
+// === HELPERS ===
+let curIdx = D.length - 1; // Start at last day with data
+let currentTab = 'xuat';
+let nhapIdx = 0; // Will be set after DN is defined
+
+function fmt(n) {
+  if (n===0||n===null||n===undefined) return '—';
+  return Math.round(n).toLocaleString('en-US');
+}
+function fmtD(n,d) { return n===0?'—':n.toFixed(d||0); }
+
+function bkTon(tx, pick) {
+  if(tx===0) return 0;
+  if(pick===0) return tx;
+  return Math.round(tx / (1 - pick/100));
+}
+
+function pctCls(v) {
+  if(v > 115 || (v > 0 && v < 85)) return 'pct-warn';
+  return 'pct-normal';
+}
+
+function pickCls(v) {
+  const a = Math.abs(v);
+  if(a > 1) return 'pick-warn';
+  return 'pick-ok';
+}
+
+function fmtPick(v) {
+  const cls = pickCls(v);
+  const txt = v !== 0 ? fmtD(v,2)+'%' : '0.00%';
+  return `<span class="${cls}">${txt}</span>`;
+}
+
+// Render a category row group (3 rows: SKU, ITEM, kg)
+function catRows(label, c, isFirst) {
+  const cls1 = isFirst ? ' class="cat-first"' : '';
+  const sku_bkTon = bkTon(c[1], c[2]);
+  const item_bkTon = bkTon(c[6], c[7]);
+  const kg_bkTon = bkTon(c[11], c[12]);
+
+  return `
+  <tr${cls1}>
+    <td class="c-cat" rowspan="3">${label}</td>
+    <td class="c-info">Số lượng SKU</td>
+    <td class="c-bk">${fmt(c[0])}</td><td class="c-fc c-empty"></td><td class="c-pct c-empty"></td><td class="c-ql c-empty"></td>
+    <td class="c-bt">${fmt(sku_bkTon)}</td><td class="c-tx">${fmt(c[1])}</td><td class="c-pk ${pickCls(c[2])}">${fmtPick(c[2])}</td>
+  </tr>
+  <tr class="row-2">
+    <td class="c-info">Số lượng (ITEM)</td>
+    <td class="c-bk">${fmt(c[3])}</td><td class="c-fc">${fmt(c[4])}</td>
+    <td class="c-pct ${pctCls(c[5])}">${c[5]?fmtD(c[5],2)+'%':'—'}</td><td class="c-ql c-empty"></td>
+    <td class="c-bt">${fmt(item_bkTon)}</td><td class="c-tx">${fmt(c[6])}</td><td class="c-pk ${pickCls(c[7])}">${fmtPick(c[7])}</td>
+  </tr>
+  <tr class="row-3">
+    <td class="c-info">Trọng lượng (kg)</td>
+    <td class="c-bk">${fmt(c[8])}</td><td class="c-fc">${fmt(c[9])}</td>
+    <td class="c-pct ${pctCls(c[10])}">${c[10]?fmtD(c[10],2)+'%':'—'}</td><td class="c-ql c-empty"></td>
+    <td class="c-bt">${fmt(kg_bkTon)}</td><td class="c-tx">${fmt(c[11])}</td><td class="c-pk ${pickCls(c[12])}">${fmtPick(c[12])}</td>
+  </tr>`;
+}
+
+// Summary rows
+function sumRows(day) {
+  const d = day;
+  const ts_bkTon = bkTon(d.ts[1], d.ts[2]);
+  const ti_bkTon = bkTon(d.ti[3], d.ti[4]);
+  const tQ_bkTon = bkTon(d.tQ[4], d.tQ[5]);
+  const tL_bkTon = bkTon(d.tL[4], d.tL[5]);
+  const tk_bkTon = bkTon(d.tk[3], d.tk[4]);
+
+  return `
+  <tr class="summary cat-first">
+    <td class="c-cat" rowspan="5" style="vertical-align:top">Tổng hợp</td>
+    <td class="c-info">Tổng SKU</td>
+    <td class="c-bk">${fmt(d.ts[0])}</td><td class="c-fc c-empty"></td><td class="c-pct c-empty"></td><td class="c-ql c-empty"></td>
+    <td class="c-bt">${fmt(ts_bkTon)}</td><td class="c-tx">${fmt(d.ts[1])}</td><td class="c-pk ${pickCls(d.ts[2])}">${fmtPick(d.ts[2])}</td>
+  </tr>
+  <tr class="summary row-2">
+    <td class="c-info">Total ITEM</td>
+    <td class="c-bk">${fmt(d.ti[0])}</td><td class="c-fc">${fmt(d.ti[1])}</td>
+    <td class="c-pct ${pctCls(d.ti[2])}">${fmtD(d.ti[2],2)}%</td><td class="c-ql c-empty"></td>
+    <td class="c-bt">${fmt(ti_bkTon)}</td><td class="c-tx">${fmt(d.ti[3])}</td><td class="c-pk ${pickCls(d.ti[4])}">${fmtPick(d.ti[4])}</td>
+  </tr>
+  <tr class="summary row-3">
+    <td class="c-info">Total Quá Cảnh</td>
+    <td class="c-bk">${fmt(d.tQ[0])}</td><td class="c-fc">${fmt(d.tQ[1])}</td>
+    <td class="c-pct ${pctCls(d.tQ[2])}">${fmtD(d.tQ[2],2)}%</td>
+    <td class="c-ql hl-cyan">${fmtD(d.tQ[3],2)}%</td>
+    <td class="c-bt">${fmt(tQ_bkTon)}</td><td class="c-tx">${fmt(d.tQ[4])}</td><td class="c-pk ${pickCls(d.tQ[5])}">${fmtPick(d.tQ[5])}</td>
+  </tr>
+  <tr class="summary">
+    <td class="c-info">Total Lưu Hàng</td>
+    <td class="c-bk">${fmt(d.tL[0])}</td><td class="c-fc">${fmt(d.tL[1])}</td>
+    <td class="c-pct ${pctCls(d.tL[2])}">${fmtD(d.tL[2],2)}%</td>
+    <td class="c-ql hl-cyan">${fmtD(d.tL[3],2)}%</td>
+    <td class="c-bt">${fmt(tL_bkTon)}</td><td class="c-tx">${fmt(d.tL[4])}</td><td class="c-pk ${pickCls(d.tL[5])}">${fmtPick(d.tL[5])}</td>
+  </tr>
+  <tr class="summary row-2">
+    <td class="c-info">Total trọng lượng</td>
+    <td class="c-bk">${fmt(d.tk[0])}</td><td class="c-fc">${fmt(d.tk[1])}</td>
+    <td class="c-pct ${pctCls(d.tk[2])}">${fmtD(d.tk[2],2)}%</td><td class="c-ql c-empty"></td>
+    <td class="c-bt">${fmt(tk_bkTon)}</td><td class="c-tx">${fmt(d.tk[3])}</td><td class="c-pk ${pickCls(d.tk[4])}">${fmtPick(d.tk[4])}</td>
+  </tr>`;
+}
+
+function tableHead(day) {
+  return `
+  <colgroup>
+    <col class="col-cat"><col class="col-info">
+    <col class="col-num"><col class="col-num"><col class="col-pct">
+    <col class="col-qclh"><col class="col-num"><col class="col-num"><col class="col-pct">
+  </colgroup>
+  <thead>
+    <tr><th class="h-cat" colspan="2"></th><th class="date-head" colspan="7">${day.d} — ${day.w}</th></tr>
+    <tr>
+      <th class="h-cat">Loại hàng</th><th class="h-info">Thông tin</th>
+      <th>Booking</th><th>FC</th><th>%Booking/FC</th><th>%QC & LH</th>
+      <th>Bk theo tồn</th><th>Thực xuất</th><th>Tỉ lệ pick rớt</th>
+    </tr>
+  </thead>`;
+}
+
+// Compute Table 2 derived categories
+function computeT2(day) {
+  const q=day.qc, m=day.mat, tqc=day.tqc, tlh=day.tlh;
+  // tcnk combined = tqc + tlh
+  const tcnk = [];
+  for(let i=0;i<13;i++) {
+    if(i===5 || i===10) { // pct fields - recompute
+      const bk = tqc[i-2]+tlh[i-2];
+      const fc = tqc[i-1]+tlh[i-1];
+      tcnk[i] = fc>0 ? Math.round(bk/fc*10000)/100 : 0;
+    } else {
+      tcnk[i] = tqc[i]+tlh[i];
+    }
+  }
+  // matLH = mat - qc (matQC = qc)
+  const matLH = [];
+  for(let i=0;i<13;i++) {
+    if(i===5 || i===10) { // pct - recompute
+      const bk = m[i-2]-q[i-2];
+      const fc = m[i-1]-q[i-1];
+      matLH[i] = fc>0 ? Math.round(bk/fc*10000)/100 : 0;
+    } else if(i===2 || i===7 || i===12) { // pick - recompute
+      const tx = m[i-1]-q[i-1];
+      const bt = bkTon(tx, 0); // will compute later via rendering
+      // Actually pick = (bkTon-tx)/bkTon, hard to compute without bkTon
+      // Let's just compute from mat/qc bkTon difference
+      const m_bt = bkTon(m[i-1], m[i]);
+      const q_bt = bkTon(q[i-1], q[i]);
+      const lh_bt = m_bt - q_bt;
+      const lh_tx = m[i-1] - q[i-1];
+      matLH[i] = lh_bt > 0 ? Math.round((lh_bt-lh_tx)/lh_bt*10000)/100 : 0;
+    } else {
+      matLH[i] = m[i]-q[i];
+    }
+  }
+  return { tcnk, matQC:q, matLH, tcnkLH:tlh, tcnkQC:tqc };
+}
+
+// === RENDER ===
+function render() {
+  const day = D[curIdx];
+  document.getElementById('navDate').textContent = day.d;
+  document.getElementById('navDow').textContent = day.w;
+  document.getElementById('navWeek').textContent = day.wk;
+  document.getElementById('btnPrev').disabled = curIdx === 0;
+  document.getElementById('btnNext').disabled = curIdx === D.length-1;
+
+  if (day.off) {
+    document.getElementById('content').innerHTML = `
+      <div class="table-block"><div class="off-msg">📅 ${day.d} (${day.w}) — Ngày nghỉ, không có dữ liệu</div></div>`;
+    return;
+  }
+
+  const t2 = computeT2(day);
+
+  let html = `
+  <div class="table-block">
+    <div class="table-title">📦 Bảng 1 — Theo loại vận chuyển</div>
+    <table>${tableHead(day)}<tbody>
+      ${catRows('Hàng Quá Cảnh', day.qc, true)}
+      ${catRows('Hàng Lưu Kho', day.lk, true)}
+      ${catRows('TCNK Quá Cảnh', day.tqc, true)}
+      ${catRows('TCNK Lưu Hàng', day.tlh, true)}
+      ${sumRows(day)}
+    </tbody></table>
+  </div>
+
+  <div class="table-block">
+    <div class="table-title">🌡️ Bảng 2 — Theo loại nhiệt độ (Đông / Mát)</div>
+    <table>${tableHead(day)}<tbody>
+      ${catRows('Đông', day.dong, true)}
+      ${catRows('Mát', day.mat, true)}
+      ${catRows('TCNK', t2.tcnk, true)}
+      ${catRows('Mát quá cảnh', t2.matQC, true)}
+      ${catRows('Mát lưu Hàng', t2.matLH, true)}
+      ${catRows('TCNK lưu hàng', t2.tcnkLH, true)}
+      ${catRows('TCNK quá cảnh', t2.tcnkQC, true)}
+    </tbody></table>
+  </div>`;
+
+  // Bảng 3 — Chi tiết xuất hàng
+  const ct = CT[day.d];
+  if (ct) {
+    const totalPct = ct.totalBk > 0 ? ((ct.totalTx / ct.totalBk) * 100).toFixed(1) : '0';
+    html += `
+    <div class="table-block detail-block">
+      <div class="table-title">📋 Bảng 3 — Chi tiết SKU pick rớt</div>
+      <div style="padding:0 12px">
+        <div class="summary-cards">
+          <div class="s-card sc-sku"><div class="s-label">SKU rớt</div><div class="s-val">${ct.items.length}</div></div>
+          <div class="s-card sc-bk"><div class="s-label">Booking</div><div class="s-val">${fmt(ct.totalBk)}</div></div>
+          <div class="s-card sc-tx"><div class="s-label">Thực xuất</div><div class="s-val">${fmt(ct.totalTx)}</div></div>
+          <div class="s-card sc-diff"><div class="s-label">Chênh lệch</div><div class="s-val">${fmt(ct.totalDiff)}</div></div>
+        </div>
+      </div>
+      <div class="detail-wrap">
+      <table class="detail-table">
+        <thead><tr>
+          <th>#</th><th class="th-cat">Loại hàng</th><th class="th-temp">Hàng</th>
+          <th class="th-code">Code</th><th class="th-name">Tên sản phẩm</th><th class="th-unit">ĐVT</th>
+          <th class="th-num">Booking</th><th class="th-num">Số Xuất</th><th class="th-num">Nhập QC</th><th class="th-num">Hàng QC rớt</th><th class="th-num">Hold</th>
+          <th class="th-num">SL pick rớt</th><th class="th-note">Ghi chú</th><th class="th-tf">T/F</th><th class="th-pct">Tỉ lệ Pick</th>
+        </tr></thead><tbody>`;
+    ct.items.forEach((it, idx) => {
+      const pc = it.pct === 0 ? 'd-pct-bad' : it.pct < 50 ? 'd-pct-warn' : 'd-pct-good';
+      const fv = v => v === null ? '' : (v === 0 ? '0' : fmt(v));
+      html += `<tr>
+        <td>${idx+1}</td>
+        <td class="d-cat">${it.cat}</td>
+        <td class="d-temp" style="color:${it.temp==='ĐÔNG'?'var(--blue)':'var(--green)'}">${it.temp}</td>
+        <td class="d-code">${it.code}</td><td class="d-name">${it.name}</td><td class="d-unit">${it.unit}</td>
+        <td class="d-bk">${fmt(it.bk)}</td>
+        <td class="d-tx">${fv(it.sx)}</td>
+        <td class="d-qcr">${fv(it.nqc)}</td>
+        <td class="d-qcr">${fv(it.qcr)}</td>
+        <td class="d-hold">${fv(it.hold)}</td>
+        <td class="d-diff">${fmt(it.diff)}</td>
+        <td class="d-note">${it.note||''}</td>
+        <td class="d-tf">${it.diff > 0 ? 'FALSE' : 'TRUE'}</td>
+        <td class="${pc}">${it.pct > 0 ? it.pct.toFixed(2)+'%' : '0.00%'}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>
+    </div>
+    </div>`;
+  }
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function prev() {
+  if (currentTab === 'xuat') { if(curIdx>0){curIdx--;render();window.scrollTo(0,0);} }
+  else { if(nhapIdx>0){nhapIdx--;renderNhap();window.scrollTo(0,0);} }
+}
+function next() {
+  if (currentTab === 'xuat') { if(curIdx<D.length-1){curIdx++;render();window.scrollTo(0,0);} }
+  else { if(nhapIdx<DN.length-1){nhapIdx++;renderNhap();window.scrollTo(0,0);} }
+}
+
+// Keyboard nav
+document.addEventListener('keydown', e => {
+  if(e.key==='ArrowLeft') prev();
+  if(e.key==='ArrowRight') next();
+});
+
+render();
+
+// SKU đã xử lý xong → loại khỏi Bảng 4
+const WARN_EXCLUDE = ['9300658407505'];
+
+renderWarning();
+
+function renderWarning() {
+  // Aggregate: code -> { name, cat, entries:[{date, bk, sx, diff}] }
+  const codeMap = {};
+  for (const [dateKey, dayData] of Object.entries(CT)) {
+    dayData.items.forEach(it => {
+      if (WARN_EXCLUDE.includes(it.code)) return;
+      if (!codeMap[it.code]) {
+        codeMap[it.code] = { name:it.name, cat:it.cat, entries:[] };
+      }
+      codeMap[it.code].entries.push({ date:dateKey, bk:it.bk, sx:it.sx, diff:it.diff });
+    });
+  }
+
+  // Filter codes with >= 3 days
+  const warns = Object.entries(codeMap)
+    .filter(([_, v]) => v.entries.length >= 3)
+    .sort((a,b) => b[1].entries.length - a[1].entries.length || 
+      b[1].entries.reduce((s,e)=>s+e.diff,0) - a[1].entries.reduce((s,e)=>s+e.diff,0));
+
+  const el = document.getElementById('warning-section');
+  if (warns.length === 0) {
+    el.innerHTML = '';
+    return;
+  }
+
+  let html = `
+  <div class="table-block warn-block" style="animation:fadeIn 0.3s ease">
+    <div class="warn-title-bar">⚠️ Bảng 4 — Warning: SKU pick rớt lặp lại ≥ 3 ngày<span class="warn-badge">${warns.length} SKU</span></div>
+    <table class="warn-table">
+      <thead><tr>
+        <th>#</th>
+        <th class="wt-code">Code</th>
+        <th class="wt-name">Tên sản phẩm</th>
+        <th class="wt-cat">Loại hàng</th>
+        <th class="wt-days">Số ngày</th>
+        <th class="wt-num">Ngày</th>
+        <th class="wt-num">Booking</th>
+        <th class="wt-num">Số Xuất</th>
+        <th class="wt-num">SL rớt</th>
+      </tr></thead><tbody>`;
+
+  warns.forEach(([code, v], idx) => {
+    const n = v.entries.length;
+    const daysCls = n >= 5 ? 'wc-days-5' : n >= 4 ? 'wc-days-4' : 'wc-days-3';
+    v.entries.forEach((e, i) => {
+      html += `<tr${i === 0 ? ' class="warn-group-first"' : ''}>`;
+      if (i === 0) {
+        html += `
+          <td rowspan="${n}">${idx+1}</td>
+          <td class="wc-code" rowspan="${n}">${code}</td>
+          <td class="wc-name" rowspan="${n}">${v.name}</td>
+          <td class="wc-cat" rowspan="${n}">${v.cat}</td>
+          <td class="wc-days ${daysCls}" rowspan="${n}">${n}</td>`;
+      }
+      html += `
+          <td class="wc-dates">${e.date}</td>
+          <td class="wc-num">${fmt(e.bk)}</td>
+          <td class="wc-num">${fmt(e.sx)}</td>
+          <td class="wc-num">${fmt(e.diff)}</td>
+        </tr>`;
+    });
+  });
+
+  html += `</tbody></table></div>`;
+  el.innerHTML = html;
+}
+
+// ===================== NHẬP HÀNG =====================
+const DN = [
+{d:'1-Apr',w:'Mon',wk:'W1',po:96,qcN:17,qc:[131,128,25778,25611,7532,7500],lkN:47,lk:[188,180,86295,83165,16561,16010],tqcN:6,tqc:[17,17,5846,5815,4314,4303],tlhN:3,tlh:[6,4,1990,1950,1658,1650],ti:[119909,116541],ts:[342,329],tk:[30064,29464],dongN:23,dong:[64,64,13604,13503,4351,4331],matN:27,mat:[130,120,74681,71612,13867,13329],qc2N:23,qc2:[148,145,31624,31426,11845,11803]},
+{d:'2-Apr',w:'Tue',wk:'W1',po:77,qcN:16,qc:[104,103,18331,18305,4623,4618],lkN:30,lk:[127,121,65062,63551,17953,17564],tqcN:6,tqc:[21,21,7306,6441,4747,4525],tlhN:3,tlh:[4,4,1065,1065,890,890],ti:[91764,89362],ts:[256,249],tk:[28213,27598],dongN:9,dong:[30,28,8810,8410,3554,3423],matN:24,mat:[101,97,57317,56206,15289,15031],qc2N:22,qc2:[125,124,25637,24746,9370,9144]},
+{d:'3-Apr',w:'Wed',wk:'W1',po:89,qcN:15,qc:[124,123,29240,28571,7679,7516],lkN:42,lk:[158,152,88939,87704,15539,15328],tqcN:6,tqc:[18,18,3884,3882,2920,2919],tlhN:3,tlh:[6,6,3200,3200,2920,2920],ti:[125263,123357],ts:[306,299],tk:[29058,28682],dongN:19,dong:[67,67,16918,16905,4631,4628],matN:26,mat:[97,91,75221,73999,13827,13620],qc2N:21,qc2:[142,141,33124,32453,10599,10434]},
+{d:'4-Apr',w:'Thu',wk:'W1',po:77,qcN:24,qc:[138,137,34417,34031,8084,7831],lkN:26,lk:[139,130,55406,51627,14110,13495],tqcN:6,tqc:[20,20,6903,6716,6354,6116],tlhN:3,tlh:[8,8,5112,4989,4937,4814],ti:[101838,97363],ts:[305,295],tk:[33484,32256],dongN:9,dong:[34,34,7221,7221,1966,1966],matN:20,mat:[113,104,53297,49395,17081,16343],qc2N:30,qc2:[158,157,41320,40747,14437,13946]},
+{d:'5-Apr',w:'Fri',wk:'W1',off:true},
+{d:'6-Apr',w:'Mon',wk:'W2',po:79,qcN:17,qc:[123,123,25897,25642,6766,6707],lkN:40,lk:[148,143,82264,74646,14517,13636],tqcN:6,tqc:[17,17,3048,3048,2338,2338],tlhN:2,tlh:[5,4,1477,1307,1477,1307],ti:[112686,104643],ts:[293,287],tk:[25099,23989],dongN:24,dong:[60,60,15030,14926,3874,3823],matN:18,mat:[93,87,68711,61027,12120,11121],qc2N:23,qc2:[140,140,28945,28690,9105,9045]},
+{d:'7-Apr',w:'Tue',wk:'W2',po:72,qcN:19,qc:[111,110,16511,16241,4328,4179],lkN:27,lk:[128,125,77209,75880,13491,13090],tqcN:4,tqc:[17,17,3926,3918,2334,2331],tlhN:2,tlh:[4,4,3295,3295,3295,3295],ti:[100941,99334],ts:[260,256],tk:[23449,22895],dongN:6,dong:[29,28,5569,5280,1453,1375],matN:23,mat:[103,101,74935,73895,15334,15010],qc2N:23,qc2:[128,127,20437,20159,6662,6510]},
+{d:'8-Apr',w:'Wed',wk:'W2',po:91,qcN:18,qc:[130,129,28340,27770,7604,7318],lkN:40,lk:[164,158,77640,71631,17836,16663],tqcN:4,tqc:[19,18,6664,6560,4435,4334],tlhN:2,tlh:[7,6,4510,4340,4510,4340],ti:[117154,110301],ts:[320,311],tk:[34385,32655],dongN:18,dong:[51,50,12493,12411,3070,3053],matN:24,mat:[120,114,69657,63560,19276,17949],qc2N:22,qc2:[149,147,35004,34330,12039,11652]},
+{d:'9-Apr',w:'Thu',wk:'W2',po:78,qcN:19,qc:[117,116,19389,19166,4534,4321],lkN:27,lk:[127,124,67648,67245,13730,13639],tqcN:5,tqc:[22,22,7644,7591,4364,4314],tlhN:3,tlh:[9,8,6256,4096,6206,4046],ti:[100937,98098],ts:[275,270],tk:[28833,26320],dongN:7,dong:[33,33,9349,9301,2145,2133],matN:23,mat:[103,99,64555,62040,17790,15551],qc2N:24,qc2:[139,138,27033,26757,8898,8635]},
+{d:'10-Apr',w:'Fri',wk:'W2',po:92,qcN:16,qc:[126,125,29912,28278,7643,7044],lkN:40,lk:[187,183,92048,90451,16567,16137],tqcN:7,tqc:[20,19,7612,6979,5024,4815],tlhN:2,tlh:[6,5,3610,2890,3610,2890],ti:[133182,128598],ts:[339,332],tk:[32843,30886],dongN:22,dong:[74,73,15379,14443,4458,4204],matN:20,mat:[119,115,80279,78898,15719,14823],qc2N:23,qc2:[146,144,37524,35257,12666,11859]},
+{d:'11-Apr',w:'Sat',wk:'W2',po:80,qcN:20,qc:[139,138,32036,31840,7179,7004],lkN:29,lk:[111,108,52399,48332,10611,9839],tqcN:6,tqc:[23,23,9701,9020,6202,6029],tlhN:3,tlh:[6,6,3515,3515,3395,3395],ti:[97651,92707],ts:[279,275],tk:[27387,26266],dongN:7,dong:[26,26,5609,5393,1755,1695],matN:25,mat:[91,88,50305,46454,12251,11539],qc2N:26,qc2:[162,161,41737,40860,13381,13033]},
+{d:'12-Apr',w:'Sun',wk:'W2',off:true},
+{d:'13-Apr',w:'Mon',wk:'W3',po:94,qcN:18,qc:[132,130,26553,25385,8091,7448],lkN:44,lk:[155,153,46718,44794,9925,9636],tqcN:5,tqc:[20,18,4268,4077,2866,2705],tlhN:4,tlh:[10,10,6348,6093,6348,6093],ti:[83887,80349],ts:[317,311],tk:[27230,25883],dongN:24,dong:[74,74,17037,17005,4125,4113],matN:24,mat:[91,89,36029,33882,12148,11616],qc2N:23,qc2:[152,148,30821,29462,10957,10153]},
+{d:'14-Apr',w:'Tue',wk:'W3',po:80,qcN:16,qc:[111,108,20616,20071,5758,5341],lkN:30,lk:[144,134,94229,89077,20874,20166],tqcN:7,tqc:[22,21,6646,6489,4632,4534],tlhN:5,tlh:[9,8,5010,4444,4630,4214],ti:[126501,120081],ts:[286,271],tk:[35894,34255],dongN:7,dong:[27,27,11657,11652,4177,4175],matN:28,mat:[126,115,87582,81869,21328,20205],qc2N:23,qc2:[133,129,27262,26560,10389,9875]},
+{d:'15-Apr',w:'Wed',wk:'W3',po:103,qcN:20,qc:[143,142,39141,37969,11911,11122],lkN:41,lk:[191,185,97188,86123,20344,18577],tqcN:6,tqc:[23,22,9570,7959,6230,5718],tlhN:3,tlh:[5,5,620,620,429,429],ti:[146519,132671],ts:[362,354],tk:[38913,35846],dongN:23,dong:[65,65,12771,12759,3394,3391],matN:21,mat:[131,125,85037,73984,17378,15615],qc2N:26,qc2:[166,164,48711,45928,18140,16840]},
+{d:'16-Apr',w:'Thu',wk:'W3',po:80,qcN:18,qc:[123,121,20535,19765,5814,5251],lkN:27,lk:[128,119,96013,83921,18514,16423],tqcN:4,tqc:[22,21,6574,6413,4326,4168],tlhN:3,tlh:[8,8,3557,3539,3532,3514],ti:[126679,113638],ts:[281,269],tk:[32186,29356],dongN:7,dong:[25,25,11392,11123,3851,3732],matN:23,mat:[111,102,88178,76337,18195,16205],qc2N:22,qc2:[145,142,27109,26178,10140,9419]},
+{d:'17-Apr',w:'Fri',wk:'W3',po:94,qcN:18,qc:[133,129,33433,30846,9581,8354],lkN:39,lk:[202,196,112956,108724,22286,21675],tqcN:6,tqc:[22,22,5692,5450,4112,4080],tlhN:2,tlh:[4,4,1185,1059,1185,1059],ti:[153266,146079],ts:[361,351],tk:[37164,35167],dongN:20,dong:[69,69,17620,17592,5188,5179],matN:21,mat:[137,131,96521,92191,18283,17555],qc2N:24,qc2:[155,151,39125,36296,13693,12434]},
+{d:'18-Apr',w:'Sat',wk:'W3',po:81,qcN:22,qc:[146,144,42309,40819,11283,10852],lkN:26,lk:[106,98,69501,65654,12353,11399],tqcN:5,tqc:[24,23,8088,7437,5036,4866],tlhN:3,tlh:[7,7,3850,3850,3850,3850],ti:[123748,117760],ts:[283,272],tk:[32523,30967],dongN:4,dong:[23,21,6469,6237,2046,2003],matN:25,mat:[90,84,66882,63267,14157,13246],qc2N:27,qc2:[170,167,50397,48256,16319,15718]},
+{d:'19-Apr',w:'Sun',wk:'W3',off:true},
+{d:'20-Apr',w:'Mon',wk:'W4',po:99,qcN:19,qc:[132,132,31589,31366,8753,8687],lkN:50,lk:[186,181,84928,78761,14827,14146],tqcN:5,tqc:[27,25,7534,6836,6171,5202],tlhN:4,tlh:[10,9,4595,3434,4390,3229],ti:[128646,120397],ts:[355,347],tk:[34142,31264],dongN:27,dong:[63,62,13004,12864,2901,2866],matN:27,mat:[133,128,76519,69331,16316,14508],qc2N:24,qc2:[159,157,39123,38202,14925,13889]},
+{d:'21-Apr',w:'Tue',wk:'W4',po:83,qcN:21,qc:[121,120,20479,20003,6053,5933],lkN:24,lk:[146,135,86657,81008,19682,18587],tqcN:4,tqc:[27,23,4948,3648,3281,1962],tlhN:3,tlh:[7,7,7645,7614,5895,5875],ti:[119729,112273],ts:[301,285],tk:[34910,32358],dongN:6,dong:[32,32,8000,7960,3968,3952],matN:21,mat:[121,110,86302,80662,21608,20510],qc2N:25,qc2:[148,143,25427,23651,9334,7895]},
+{d:'22-Apr',w:'Wed',wk:'W4',po:101,qcN:19,qc:[133,133,32343,32171,9303,9278],lkN:41,lk:[171,159,93080,82665,15726,14362],tqcN:4,tqc:[27,25,4920,4509,5054,4867],tlhN:3,tlh:[11,10,5209,5189,4568,4564],ti:[135552,124534],ts:[342,327],tk:[34652,33071],dongN:21,dong:[74,74,17697,17527,4983,4900],matN:23,mat:[108,95,80592,70327,15311,14025],qc2N:23,qc2:[160,158,37263,36680,14357,14145]},
+{d:'23-Apr',w:'Thu',wk:'W4',po:86,qcN:19,qc:[119,119,23498,23393,5892,5858],lkN:28,lk:[140,133,92590,87902,19594,18170],tqcN:5,tqc:[26,24,5406,4977,3026,2830],tlhN:3,tlh:[8,8,3389,3379,3389,3379],ti:[124883,119651],ts:[293,284],tk:[31901,30237],dongN:9,dong:[38,37,13384,12732,4066,3870],matN:21,mat:[109,103,81095,77049,18917,17679],qc2N:24,qc2:[145,143,28904,28370,8918,8688]},
+{d:'24-Apr',w:'Fri',wk:'W4',po:98,qcN:18,qc:[124,124,30624,30422,8269,8226],lkN:43,lk:[175,168,108660,95178,23273,19968],tqcN:4,tqc:[29,25,6370,5397,3472,3010],tlhN:2,tlh:[6,6,1795,1492,1470,1349],ti:[147449,132489],ts:[334,323],tk:[36484,32553],dongN:22,dong:[67,67,19479,19476,5025,5024],matN:23,mat:[113,106,90476,76694,19718,16293],qc2N:22,qc2:[153,149,36994,35819,11741,11236]},
+{d:'25-Apr',w:'Sat',wk:'W4',po:82,qcN:22,qc:[136,135,34611,34057,8449,8312],lkN:35,lk:[106,100,52921,49692,11098,10668],tqcN:0,tqc:[27,25,8318,7805,5223,4970],tlhN:4,tlh:[4,4,1020,1020,720,720],ti:[96870,92574],ts:[273,264],tk:[25490,24670],dongN:13,dong:[40,37,12901,12023,3776,3604],matN:29,mat:[69,66,40040,37689,8042,7783],qc2N:22,qc2:[163,160,42929,41862,13672,13282]},
+{d:'26-Apr',w:'Sun',wk:'W4',off:true},
+{d:'27-Apr',w:'Mon',wk:'W5',po:33,qcN:14,qc:[94,94,18914,18045,3146,2930],lkN:3,lk:[5,5,3776,3775,555,555],tqcN:4,tqc:[28,24,4939,4423,2829,2495],tlhN:2,tlh:[3,3,460,458,260,259],ti:[28089,26701],ts:[130,126],tk:[6790,6238],dongN:0,dong:[0,0,0,0,0,0],matN:4,mat:[7,7,3736,3733,815,813],qc2N:18,qc2:[122,118,23853,22468,5975,5425]},
+{d:'28-Apr',w:'Tue',wk:'W5',off:true},
+];
+
+nhapIdx = DN.length - 1;
+// Find last non-off day for nhap
+while(nhapIdx > 0 && DN[nhapIdx].off) nhapIdx--;
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabXuat').className = tab==='xuat' ? 'tab-btn active' : 'tab-btn';
+  document.getElementById('tabNhap').className = tab==='nhap' ? 'tab-btn active-nhap' : 'tab-btn';
+  document.getElementById('headerSub').textContent = tab==='xuat' ? 'XUẤT HÀNG' : 'NHẬP HÀNG';
+  document.getElementById('headerSub').style.color = tab==='xuat' ? '#ef4444' : '#f59e0b';
+  document.getElementById('warning-section').style.display = tab==='xuat' ? '' : 'none';
+  document.querySelector('.legend').style.display = tab==='xuat' ? '' : 'none';
+  if (tab === 'xuat') { render(); }
+  else { renderNhap(); }
+}
+
+// Nhap: row helper [bk, tn] -> formatted row
+function nhRow(label, bk, tn, isFirst, ncc) {
+  const cls = isFirst ? ' class="cat-first"' : '';
+  const pct = bk > 0 ? ((bk-tn)/bk*100) : 0;
+  const pctTxt = bk > 0 ? pct.toFixed(2)+'%' : '—';
+  const pCls = pct > 1 ? 'pick-warn' : 'pick-ok';
+  if (ncc !== undefined) {
+    // NCC row - single value, no tn
+    return `<tr${cls}><td class="c-info" style="padding-left:16px">Số lượng NCC</td><td class="c-bk">${fmt(ncc)}</td><td class="c-tx"></td><td class="c-pk"></td></tr>`;
+  }
+  return `<tr${cls}><td class="c-info" style="padding-left:16px">${label}</td><td class="c-bk">${fmt(bk)}</td><td class="c-tx">${fmt(tn)}</td><td class="c-pk ${pCls}">${pctTxt}</td></tr>`;
+}
+
+function nhCatBlock(catLabel, arr, nccVal, isFirst) {
+  // arr = [sku_bk, sku_tn, item_bk, item_tn, kg_bk, kg_tn]
+  let h = `<tr${isFirst?' class="cat-first"':''}>
+    <td class="c-cat" rowspan="4">${catLabel}</td>`;
+  // NCC row
+  h += `<td class="c-info">Số lượng NCC</td><td class="c-bk">${fmt(nccVal)}</td><td class="c-tx c-empty"></td><td class="c-pk c-empty"></td></tr>`;
+  // SKU
+  const skuPct = arr[0]>0 ? ((arr[0]-arr[1])/arr[0]*100) : 0;
+  h += `<tr><td class="c-info">Số lượng SKU</td><td class="c-bk">${fmt(arr[0])}</td><td class="c-tx">${fmt(arr[1])}</td><td class="c-pk ${skuPct>1?'pick-warn':'pick-ok'}">${arr[0]>0?skuPct.toFixed(2)+'%':'0.00%'}</td></tr>`;
+  // ITEM
+  const iPct = arr[2]>0 ? ((arr[2]-arr[3])/arr[2]*100) : 0;
+  h += `<tr class="row-2"><td class="c-info">Số lượng (ITEM)</td><td class="c-bk">${fmt(arr[2])}</td><td class="c-tx">${fmt(arr[3])}</td><td class="c-pk ${iPct>1?'pick-warn':'pick-ok'}">${arr[2]>0?iPct.toFixed(2)+'%':'0.00%'}</td></tr>`;
+  // KG
+  const kPct = arr[4]>0 ? ((arr[4]-arr[5])/arr[4]*100) : 0;
+  h += `<tr class="row-3"><td class="c-info">Trọng lượng (kg)</td><td class="c-bk">${fmt(arr[4])}</td><td class="c-tx">${fmt(arr[5])}</td><td class="c-pk ${kPct>1?'pick-warn':'pick-ok'}">${arr[4]>0?kPct.toFixed(2)+'%':'0.00%'}</td></tr>`;
+  return h;
+}
+
+function nhTableHead(day) {
+  return `<colgroup>
+    <col style="width:110px"><col style="width:120px">
+    <col style="width:90px"><col style="width:90px"><col style="width:90px">
+  </colgroup>
+  <thead><tr><th class="h-cat" colspan="2"></th><th class="date-head" colspan="3">${day.d} — ${day.w}</th></tr>
+  <tr><th class="h-cat">Loại hàng</th><th class="h-info">Thông tin</th><th>Booking</th><th>Thực nhập</th><th>Tỉ lệ pick rớt</th></tr></thead>`;
+}
+
+function renderNhap() {
+  const day = DN[nhapIdx];
+  document.getElementById('navDate').textContent = day.d;
+  document.getElementById('navDow').textContent = day.w;
+  document.getElementById('navWeek').textContent = day.wk;
+  document.getElementById('btnPrev').disabled = nhapIdx === 0;
+  document.getElementById('btnNext').disabled = nhapIdx === DN.length-1;
+
+  if (day.off) {
+    document.getElementById('content').innerHTML = `<div class="table-block"><div class="off-msg">📅 ${day.d} (${day.w}) — Ngày nghỉ, không có dữ liệu</div></div>`;
+    return;
+  }
+
+  // Summary cards above tables
+  const tiPct = day.ti[0]>0 ? ((day.ti[0]-day.ti[1])/day.ti[0]*100) : 0;
+  const tsPct = day.ts[0]>0 ? ((day.ts[0]-day.ts[1])/day.ts[0]*100) : 0;
+  const tkPct = day.tk[0]>0 ? ((day.tk[0]-day.tk[1])/day.tk[0]*100) : 0;
+  const sumHtml = `
+  <tr class="summary cat-first"><td class="c-cat" rowspan="3" style="vertical-align:top">TỔNG</td>
+    <td class="c-info">Total ITEM</td><td class="c-bk">${fmt(day.ti[0])}</td><td class="c-tx">${fmt(day.ti[1])}</td><td class="c-pk ${tiPct>1?'pick-warn':'pick-ok'}">${tiPct.toFixed(2)}%</td></tr>
+  <tr class="summary row-2"><td class="c-info">Total SKUs</td><td class="c-bk">${fmt(day.ts[0])}</td><td class="c-tx">${fmt(day.ts[1])}</td><td class="c-pk ${tsPct>1?'pick-warn':'pick-ok'}">${tsPct.toFixed(2)}%</td></tr>
+  <tr class="summary row-3"><td class="c-info">Total trọng lượng</td><td class="c-bk">${fmt(day.tk[0])}</td><td class="c-tx">${fmt(day.tk[1])}</td><td class="c-pk ${tkPct>1?'pick-warn':'pick-ok'}">${tkPct.toFixed(2)}%</td></tr>`;
+
+  let html = `<div class="table-block nh-cards">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div class="s-card" style="border-color:#f59e0b"><div class="s-label" style="color:#f59e0b">PO NCC giao</div><div class="s-val">${fmt(day.po)}</div></div>
+      <div class="s-card" style="border-color:#22d3ee"><div class="s-label">Total ITEM Bk</div><div class="s-val">${fmt(day.ti[0])}</div></div>
+      <div class="s-card" style="border-color:#22d3ee"><div class="s-label">Total ITEM Nhập</div><div class="s-val">${fmt(day.ti[1])}</div></div>
+      <div class="s-card" style="border-color:${tiPct>1?'#f87171':'#22d3ee'}"><div class="s-label">Tỉ lệ rớt</div><div class="s-val" style="color:${tiPct>1?'#f87171':'#22d3ee'}">${tiPct.toFixed(2)}%</div></div>
+      <div class="s-card" style="border-color:#a78bfa"><div class="s-label">Total SKUs</div><div class="s-val">${fmt(day.ts[0])} → ${fmt(day.ts[1])}</div></div>
+    </div>
+  </div>
+
+  <div class="table-block nh-compact"><div class="table-title" style="color:#f59e0b">📥 Bảng 1 — Nhập hàng theo loại vận chuyển</div>
+    <table>${nhTableHead(day)}<tbody>
+    ${nhCatBlock('Hàng Quá Cảnh', day.qc, day.qcN, true)}
+    ${nhCatBlock('Hàng Lưu Kho', day.lk, day.lkN, true)}
+    ${nhCatBlock('TCNK Quá Cảnh', day.tqc, day.tqcN, true)}
+    ${nhCatBlock('TCNK Lưu Hàng', day.tlh, day.tlhN, true)}
+    ${sumHtml}
+    </tbody></table></div>`;
+
+  // Bảng 2
+  html += `<div class="table-block nh-compact"><div class="table-title" style="color:#f59e0b">🌡️ Bảng 2 — Nhập hàng theo Đông / Mát</div>
+    <table>${nhTableHead(day)}<tbody>
+    ${nhCatBlock('Lưu Hàng Đông', day.dong, day.dongN, true)}
+    ${nhCatBlock('Lưu Hàng Mát', day.mat, day.matN, true)}
+    ${nhCatBlock('Hàng Quá Cảnh', day.qc2, day.qc2N, true)}
+    </tbody></table></div>`;
+
+  document.getElementById('content').innerHTML = html;
+}
+
+</script>
+</body>
+</html>
