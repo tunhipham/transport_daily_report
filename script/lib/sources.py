@@ -20,6 +20,7 @@ YECAU_FOLDER_URL = "https://drive.google.com/drive/folders/1DpDon0QHhDRoX7_ZnEyg
 # ── Local Google Drive sync paths ──
 KH_DONG_LOCAL = r"G:\My Drive\DOCS\DAILY\KH HÀNG ĐÔNG"
 KH_MAT_LOCAL = r"G:\My Drive\DOCS\DAILY\KH HÀNG MÁT"
+KH_MEAT_LOCAL = r"G:\My Drive\DOCS\DAILY\KH MEAT"
 TRANSFER_LOCAL = r"G:\My Drive\DOCS\DAILY\transfer"
 
 # ── Inventory (ton_aba) local data ──

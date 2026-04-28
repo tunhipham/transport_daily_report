@@ -23,19 +23,19 @@ from lib.sources import (
     MASTER_SHEET_URL,
     TRANSFER_FOLDER_URL,
     YECAU_FOLDER_URL,
-    KH_MEAT_FOLDER_URL,
     KH_DONG_LOCAL,
     KH_MAT_LOCAL,
+    KH_MEAT_LOCAL,
     TRANSFER_LOCAL,
 )
 
 KH_DRIVE_FOLDERS = [
-    ("KH MEAT", "THỊT CÁ", 11, KH_MEAT_FOLDER_URL),
 ]
-# KH ĐÔNG + MÁT: read from local Google Drive sync (Drive API folder IDs no longer valid)
+# KH from local Google Drive sync (Drive API folder scraping unreliable)
 KH_LOCAL_FOLDERS = [
     ("KH HÀNG ĐÔNG", "ĐÔNG MÁT", 9, KH_DONG_LOCAL),
     ("KH HÀNG MÁT", "ĐÔNG MÁT", 9, KH_MAT_LOCAL),
+    ("KH MEAT", "THỊT CÁ", 11, KH_MEAT_LOCAL),
 ]
 
 # ── Kho mapping (PT raw kho → report kho) ──
