@@ -2375,7 +2375,10 @@
           <div class="chart-box" style="margin-bottom:1rem"><div class="chart-title">Trend Chính Xác Item</div><div class="chart-wrap" style="height:280px"><canvas id="invChartItem"></canvas></div><div id="invInsightItem" class="insight-bar"></div></div>
           <div class="chart-box" style="margin-bottom:1rem"><div class="chart-title">Trend Chính Xác SKU</div><div class="chart-wrap" style="height:280px"><canvas id="invChartSKU"></canvas></div><div id="invInsightSKU" class="insight-bar"></div></div>
           <div class="chart-box" style="margin-bottom:1rem"><div class="chart-title">Trend Chính Xác KG</div><div class="chart-wrap" style="height:280px"><canvas id="invChartKG"></canvas></div><div id="invInsightKG" class="insight-bar"></div></div>
-          <div class="chart-box"><div class="chart-title">Tỷ Trọng KG theo Phân Loại</div><div id="invPie" class="donut-section" style="min-height:200px"></div></div>
+          <div class="chart-grid" style="grid-template-columns:repeat(2,1fr)">
+            <div class="chart-box"><div class="chart-title">Tỷ Trọng Item theo Phân Loại</div><div id="invPieItem" class="donut-section" style="min-height:200px"></div></div>
+            <div class="chart-box"><div class="chart-title">Tỷ Trọng KG theo Phân Loại</div><div id="invPie" class="donut-section" style="min-height:200px"></div></div>
+          </div>
         </div>`;
       }
 
@@ -2622,8 +2625,27 @@
         renderInsights(trend.sku_acc, start, end, 'invInsightSKU');
         renderInsights(trend.kg_acc, start, end, 'invInsightKG');
 
-        // Pie
+        // Pie charts
         const pieDay = dailyAll[end - 1] || latestDay;
+
+        // Pie Item
+        const pieItemEl = document.getElementById('invPieItem');
+        if (pieItemEl && pieDay) {
+          const vals = cats.map(c => pieDay.categories[c]?.item_KFM || 0);
+          const total = vals.reduce((a, b) => a + b, 0);
+          if (total > 0) {
+            let stops = [], legs = '', cum = 0;
+            cats.forEach((c, i) => {
+              const pct = vals[i] / total * 100;
+              stops.push(`${catColors[c]} ${cum.toFixed(1)}% ${(cum + pct).toFixed(1)}%`);
+              legs += `<div class="legend-item"><span class="legend-color" style="background:${catColors[c]}"></span>${catLabels[c]} ${vals[i].toLocaleString()} (${pct.toFixed(1)}%)</div>`;
+              cum += pct;
+            });
+            pieItemEl.innerHTML = `<div class="donut" style="background:conic-gradient(${stops.join(', ')})"><div class="donut-hole"><span class="donut-val">${total.toLocaleString()}</span><span class="donut-lbl">Items</span></div></div><div class="legend">${legs}</div>`;
+          }
+        }
+
+        // Pie KG
         const pieEl = document.getElementById('invPie');
         if (pieEl && pieDay) {
           const vals = cats.map(c => pieDay.categories[c]?.kg_KFM || 0);
@@ -2633,7 +2655,7 @@
             cats.forEach((c, i) => {
               const pct = vals[i] / total * 100;
               stops.push(`${catColors[c]} ${cum.toFixed(1)}% ${(cum + pct).toFixed(1)}%`);
-              legs += `<div class="legend-item"><span class="legend-color" style="background:${catColors[c]}"></span>${catLabels[c]} ${pct.toFixed(1)}%</div>`;
+              legs += `<div class="legend-item"><span class="legend-color" style="background:${catColors[c]}"></span>${catLabels[c]} ${vals[i].toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1})} (${pct.toFixed(1)}%)</div>`;
               cum += pct;
             });
             pieEl.innerHTML = `<div class="donut" style="background:conic-gradient(${stops.join(', ')})"><div class="donut-hole"><span class="donut-val">${(total / 1000).toFixed(1)}T</span><span class="donut-lbl">Tấn</span></div></div><div class="legend">${legs}</div>`;
