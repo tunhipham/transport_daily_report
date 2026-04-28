@@ -207,12 +207,12 @@ _DEFAULT_STORES = [
         "original_date": None,
     },
     {
-        "code": "A189",
-        "name_system": "KFM_BDU_DAN",
+        "code": "A195",
+        "name_system": "KFM_HCM_TPH",
         "name_full": "91-93 Nguyễn Sơn",
         "name_mail": "91-93 Nguyễn Sơn",
-        "opening_date": "15/05/2026",
-        "version": 1500,
+        "opening_date": "07/05/2026",
+        "version": 2000,
         "original_date": None,
     },
     {
