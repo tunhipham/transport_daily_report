@@ -25,7 +25,7 @@
     </CalendarTrigger>
     <!-- Thứ 3 09:00 — scan mode -->
     <CalendarTrigger>
-      <StartBoundary>2026-04-29T09:00:00</StartBoundary>
+      <StartBoundary>2026-04-28T09:00:00</StartBoundary>
       <Enabled>true</Enabled>
       <ScheduleByWeek>
         <DaysOfWeek><Tuesday /></DaysOfWeek>
@@ -34,7 +34,7 @@
     </CalendarTrigger>
     <!-- Thứ 3 09:30 — finalize mode -->
     <CalendarTrigger>
-      <StartBoundary>2026-04-29T09:30:00</StartBoundary>
+      <StartBoundary>2026-04-28T09:30:00</StartBoundary>
       <Enabled>true</Enabled>
       <ScheduleByWeek>
         <DaysOfWeek><Tuesday /></DaysOfWeek>

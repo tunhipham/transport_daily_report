@@ -1,9 +1,9 @@
 {
-  "_updated": "27/04/2026 16:14",
+  "_updated": "28/04/2026 09:44",
   "stats": {
-    "total": 27,
+    "total": 24,
     "upcoming": 13,
-    "opening": 6,
+    "opening": 3,
     "reschedule": 8
   },
   "stores": [
@@ -14,30 +14,6 @@
       "iso_date": "2026-06-19",
       "status_type": "reschedule",
       "status_text": "Dời lịch: 23/04/2026 → 19/06/2026"
-    },
-    {
-      "name": "KFM_HCM_NBE - G16 Celesta Rise",
-      "code": "A178",
-      "opening_date": "24/04/2026",
-      "iso_date": "2026-04-24",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
-    },
-    {
-      "name": "KFM_HCM_Q01 - 35 Nguyễn Hữu Cầu",
-      "code": "A191",
-      "opening_date": "24/04/2026",
-      "iso_date": "2026-04-24",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
-    },
-    {
-      "name": "KFM_HCM_NBE - A.1.05 Sunrise Riverside",
-      "code": "A176",
-      "opening_date": "24/04/2026",
-      "iso_date": "2026-04-24",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
     },
     {
       "name": "KFM_HCM_TPH - S2.0.28 Block A6 Alnata Plus Celadon City",
@@ -230,24 +206,6 @@
       "label": "A185 - VHGP Q9 - BS1501",
       "code": "A185",
       "type": "reschedule"
-    },
-    {
-      "date": "2026-04-24",
-      "label": "A178 - Celesta Rise G16",
-      "code": "A178",
-      "type": "opening"
-    },
-    {
-      "date": "2026-04-24",
-      "label": "A191 - 35-37 Nguyễn Hữu Cầu",
-      "code": "A191",
-      "type": "opening"
-    },
-    {
-      "date": "2026-04-24",
-      "label": "A176 - Sunrise Riverside",
-      "code": "A176",
-      "type": "opening"
     },
     {
       "date": "2026-04-25",
