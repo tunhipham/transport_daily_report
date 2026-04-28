@@ -2340,15 +2340,17 @@
       html += `<div class="section">
         <div class="section-header"><span class="icon">📋</span><h2>Thống Kê Sản Lượng Theo Phân Nhóm</h2></div>
         <div class="filter-bar" id="invSlFilter">
-          <label>📅 Ngày:</label>
+          <div class="pill-bar" style="margin-left:0">
+            <button class="pill active" id="invSlModeDay" onclick="invSlToggle('day')">📅 Ngày</button>
+            <button class="pill" id="invSlModeWeek" onclick="invSlToggle('week')">📆 Tuần</button>
+          </div>
           <select id="invSlDate" onchange="invSlChange()">
             ${dailyAll.map(d => `<option value="${d.iso}"${d === latestDay ? ' selected' : ''}>${d.date}</option>`).join('')}
           </select>
-          <label style="margin-left:.8rem">Tuần:</label>
-          <select id="invSlWeek" onchange="invSlWeekChange()">
-            <option value="">— Chọn ngày —</option>
-            ${availWeeks.map(w => `<option value="${w}">${w}</option>`).join('')}
+          <select id="invSlWeek" onchange="invSlWeekChange()" style="display:none">
+            ${availWeeks.map(w => `<option value="${w}"${w === latestWeek ? ' selected' : ''}>${w}</option>`).join('')}
           </select>
+          <span class="filter-info" id="invSlInfo"></span>
         </div>
         <div class="table-wrap"><table>
           <thead><tr><th>Phân Loại</th><th class="tr">SKU</th><th class="tr">Item KFM</th><th class="tr">Item ABA</th><th class="tr">KG KFM</th><th class="tr">KG ABA</th></tr></thead>
@@ -2386,14 +2388,15 @@
       html += `<div class="section">
         <div class="section-header"><span class="icon">🔍</span><h2>Chi Tiết Mã Bị Lệch</h2></div>
         <div class="filter-bar">
-          <label>📅 Ngày:</label>
+          <div class="pill-bar" style="margin-left:0">
+            <button class="pill active" id="invDiscModeDay" onclick="invDiscToggle('day')">📅 Ngày</button>
+            <button class="pill" id="invDiscModeWeek" onclick="invDiscToggle('week')">📆 Tuần</button>
+          </div>
           <select id="invDiscDate" onchange="invDiscChange()">
             ${dailyAll.map(d => `<option value="${d.iso}"${d === latestDay ? ' selected' : ''}>${d.date}</option>`).join('')}
           </select>
-          <label style="margin-left:.8rem">Tuần:</label>
-          <select id="invDiscWeek" onchange="invDiscWeekChange()">
-            <option value="">— Chọn ngày —</option>
-            ${availWeeks.map(w => `<option value="${w}">${w}</option>`).join('')}
+          <select id="invDiscWeek" onchange="invDiscWeekChange()" style="display:none">
+            ${availWeeks.map(w => `<option value="${w}"${w === latestWeek ? ' selected' : ''}>${w}</option>`).join('')}
           </select>
           <span class="filter-info" id="invDiscCount"></span>
         </div>
@@ -2511,18 +2514,62 @@
         renderKpiCards(day);
       }
 
+      // ── Section 3 toggle: Ngày / Tuần ──
+      window.invSlToggle = function(mode) {
+        const dayBtn = document.getElementById('invSlModeDay');
+        const weekBtn = document.getElementById('invSlModeWeek');
+        const dayEl = document.getElementById('invSlDate');
+        const weekEl = document.getElementById('invSlWeek');
+        if (mode === 'day') {
+          dayBtn.classList.add('active'); weekBtn.classList.remove('active');
+          dayEl.style.display = ''; weekEl.style.display = 'none';
+          invSlChange();
+        } else {
+          weekBtn.classList.add('active'); dayBtn.classList.remove('active');
+          weekEl.style.display = ''; dayEl.style.display = 'none';
+          invSlWeekChange();
+        }
+      };
       window.invSlChange = function() {
         const iso = document.getElementById('invSlDate').value;
-        document.getElementById('invSlWeek').value = '';
-        renderSlTable(dailyByIso[iso] || latestDay);
+        const day = dailyByIso[iso] || latestDay;
+        document.getElementById('invSlInfo').textContent = '';
+        renderSlTable(day);
       };
       window.invSlWeekChange = function() {
         const wk = document.getElementById('invSlWeek').value;
         if (wk && weeks[wk]) {
           const wkDates = weeks[wk];
-          const lastIso = wkDates[wkDates.length - 1];
-          document.getElementById('invSlDate').value = lastIso;
-          renderSlTable(dailyByIso[lastIso] || latestDay);
+          const wkDays = wkDates.map(iso => dailyByIso[iso]).filter(Boolean);
+          if (wkDays.length) {
+            // Aggregate: average across all days in the week
+            const avgDay = { categories: {}, acc_item: 0, acc_sku: 0, acc_kg: 0, total_sku: 0 };
+            cats.forEach(cat => {
+              const agg = { sku: 0, item_KFM: 0, item_ABA: 0, kg_KFM: 0, kg_ABA: 0 };
+              wkDays.forEach(d => {
+                const cs = d.categories[cat] || {};
+                agg.sku += cs.sku || 0;
+                agg.item_KFM += cs.item_KFM || 0;
+                agg.item_ABA += cs.item_ABA || 0;
+                agg.kg_KFM += cs.kg_KFM || 0;
+                agg.kg_ABA += cs.kg_ABA || 0;
+              });
+              const n = wkDays.length;
+              avgDay.categories[cat] = {
+                sku: Math.round(agg.sku / n),
+                item_KFM: Math.round(agg.item_KFM / n),
+                item_ABA: Math.round(agg.item_ABA / n),
+                kg_KFM: Math.round(agg.kg_KFM / n * 100) / 100,
+                kg_ABA: Math.round(agg.kg_ABA / n * 100) / 100,
+              };
+            });
+            avgDay.acc_item = Math.round(wkDays.reduce((s, d) => s + d.acc_item, 0) / wkDays.length * 100) / 100;
+            avgDay.acc_sku = Math.round(wkDays.reduce((s, d) => s + d.acc_sku, 0) / wkDays.length * 100) / 100;
+            avgDay.acc_kg = Math.round(wkDays.reduce((s, d) => s + d.acc_kg, 0) / wkDays.length * 100) / 100;
+            avgDay.total_sku = Math.round(wkDays.reduce((s, d) => s + (d.total_sku || 0), 0) / wkDays.length);
+            document.getElementById('invSlInfo').textContent = `TB ${wkDays.length} ngày`;
+            renderSlTable(avgDay);
+          }
         }
       };
 
@@ -2776,16 +2823,29 @@
         tfoot.innerHTML = `<tr class="total-row"><td colspan="11" style="color:var(--org)">⚠ Tổng số mã lệch: <strong>${uniqueBarcodes.size}</strong> / ${totalSKU.toLocaleString()} SKU</td></tr>`;
       }
 
+      // ── Section 5 toggle: Ngày / Tuần ──
+      window.invDiscToggle = function(mode) {
+        const dayBtn = document.getElementById('invDiscModeDay');
+        const weekBtn = document.getElementById('invDiscModeWeek');
+        const dayEl = document.getElementById('invDiscDate');
+        const weekEl = document.getElementById('invDiscWeek');
+        if (mode === 'day') {
+          dayBtn.classList.add('active'); weekBtn.classList.remove('active');
+          dayEl.style.display = ''; weekEl.style.display = 'none';
+          invDiscChange();
+        } else {
+          weekBtn.classList.add('active'); dayBtn.classList.remove('active');
+          weekEl.style.display = ''; dayEl.style.display = 'none';
+          invDiscWeekChange();
+        }
+      };
       window.invDiscChange = function() {
-        document.getElementById('invDiscWeek').value = '';
         const iso = document.getElementById('invDiscDate').value;
         renderDiscTable(iso);
       };
       window.invDiscWeekChange = function() {
         const wk = document.getElementById('invDiscWeek').value;
         if (wk && weeks[wk]) {
-          const wkDates = weeks[wk];
-          document.getElementById('invDiscDate').value = wkDates[wkDates.length - 1];
           renderDiscTable(null);
         }
       };
