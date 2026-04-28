@@ -113,7 +113,7 @@ _DEFAULT_STORES = [
         "name_full": "B2.01.05 Tháp B Opal Boulevard",
         "name_mail": "Opal Boulevard",
         "opening_date": "23/04/2026",
-        "version": None,  # TODO: cần bổ sung version từ DSST col H
+        "version": 1500,
         "original_date": None,
     },
     {
@@ -121,9 +121,9 @@ _DEFAULT_STORES = [
         "name_system": "KFM_HCM_TDU",
         "name_full": "BS15 Vinhomes Grand Park",
         "name_mail": "VHGP Q9 - BS1501",
-        "opening_date": "25/04/2026",
-        "version": None,  # TODO: cần bổ sung version từ DSST col H
-        "original_date": "23/04/2026",  # Dời từ 23/04 sang 25/04
+        "opening_date": "19/06/2026",
+        "version": 700,
+        "original_date": "23/04/2026",
     },
     {
         "code": "A178",
@@ -131,7 +131,7 @@ _DEFAULT_STORES = [
         "name_full": "G16 Celesta Rise",
         "name_mail": "Celesta Rise G16",
         "opening_date": "24/04/2026",
-        "version": None,  # TODO: cần bổ sung version từ DSST col H
+        "version": 1000,
         "original_date": None,
     },
     {
@@ -140,7 +140,7 @@ _DEFAULT_STORES = [
         "name_full": "35 Nguyễn Hữu Cầu",
         "name_mail": "35-37 Nguyễn Hữu Cầu",
         "opening_date": "24/04/2026",
-        "version": None,  # TODO: cần bổ sung version từ DSST col H
+        "version": 2000,
         "original_date": None,
     },
     {
@@ -149,7 +149,7 @@ _DEFAULT_STORES = [
         "name_full": "A.1.05 Sunrise Riverside",
         "name_mail": "Sunrise Riverside",
         "opening_date": "24/04/2026",
-        "version": None,  # TODO: cần bổ sung version từ DSST col H
+        "version": 1000,
         "original_date": None,
     },
     {
@@ -158,7 +158,7 @@ _DEFAULT_STORES = [
         "name_full": "S2.0.28 Block A6 Alnata Plus Celadon City",
         "name_mail": "Celadon Boulevard",
         "opening_date": "25/04/2026",
-        "version": None,  # TODO: cần bổ sung version từ DSST col H
+        "version": 1000,
         "original_date": None,
     },
     {
@@ -167,7 +167,7 @@ _DEFAULT_STORES = [
         "name_full": "TM1.15 Chung Cư 9 View",
         "name_mail": "Shophouse 9 View",
         "opening_date": "25/04/2026",
-        "version": None,  # TODO: cần bổ sung version từ DSST col H
+        "version": 700,
         "original_date": None,
     },
     {
@@ -176,7 +176,7 @@ _DEFAULT_STORES = [
         "name_full": "61 Bùi Đình Túy",
         "name_mail": "61 Bùi Đình Túy",
         "opening_date": "25/04/2026",
-        "version": None,  # TODO: cần bổ sung version từ DSST col H
+        "version": 2000,
         "original_date": None,
     },
     {
@@ -184,9 +184,9 @@ _DEFAULT_STORES = [
         "name_system": "KFM_HCM_TPH",
         "name_full": "H.38 Melody Residences Âu Cơ",
         "name_mail": "Melody Residence",
-        "opening_date": "07/05/2026",
-        "version": None,  # TODO: cần bổ sung version từ DSST col H
-        "original_date": "30/04/2026",  # Dời trễ 1 tuần
+        "opening_date": "16/05/2026",
+        "version": 1000,
+        "original_date": "30/04/2026",
     },
     {
         "code": "A181",
@@ -194,67 +194,76 @@ _DEFAULT_STORES = [
         "name_full": "Đường M-KP Nhị Đồng - Dĩ An",
         "name_mail": "Masterise Center Point",
         "opening_date": "07/05/2026",
-        "version": None,  # TODO: cần bổ sung version từ DSST col H
+        "version": 1000,
         "original_date": "30/04/2026",  # Dời trễ 1 tuần
     },
     {
         "code": "A175",
-        "name_system": None,  # Chưa tìm thấy trên Quai
+        "name_system": "KFM_HCM_PNH",
         "name_full": "Golden Mansion 119 Phổ Quang",
         "name_mail": "Golden Mansion 119 Phổ Quang",
         "opening_date": "15/05/2026",
-        "version": None,
+        "version": 700,
         "original_date": None,
     },
     {
         "code": "A189",
-        "name_system": None,  # Chưa tìm thấy trên Quai
+        "name_system": "KFM_BDU_DAN",
         "name_full": "91-93 Nguyễn Sơn",
         "name_mail": "91-93 Nguyễn Sơn",
         "opening_date": "15/05/2026",
-        "version": None,
+        "version": 1500,
         "original_date": None,
     },
     {
         "code": "A171",
-        "name_system": None,  # Chưa tìm thấy trên Quai
+        "name_system": "KFM_HCM_Q08",
         "name_full": "819-821 Phạm Thế Hiển - Q8",
         "name_mail": "819-821 Phạm Thế Hiển",
         "opening_date": "08/05/2026",
-        "version": None,
+        "version": 2000,
         "original_date": None,
     },
     {
         "code": "A190",
-        "name_system": None,  # Chưa tìm thấy trên Quai
+        "name_system": "KFM_HCM_PNH",
         "name_full": "Botanica Premier - PNH",
         "name_mail": "BOTANICA PREMIER",
         "opening_date": "09/05/2026",
-        "version": None,
+        "version": 700,
         "original_date": None,
     },
     {
         "code": "A188",
-        "name_system": None,  # Chưa tìm thấy trên Quai
+        "name_system": "KFM_HCM_Q11",
         "name_full": "Chung cư Thuận Việt - Q11",
         "name_mail": "CC Thuận Việt",
         "opening_date": "09/05/2026",
-        "version": None,
+        "version": 700,
         "original_date": None,
     },
     {
         "code": "A184",
-        "name_system": None,  # Chưa tìm thấy trên Quai
+        "name_system": "KFM_HCM_BCH",
         "name_full": "Saigon Mia - L1-08",
         "name_mail": "Saigon Mia - L1-08",
         "opening_date": "15/05/2026",
-        "version": None,
+        "version": 1000,
         "original_date": None,
     },
 ]
 
 # Load from JSON (fallback to _DEFAULT_STORES above)
 STORES = load_stores()
+
+# =====================================================
+# DSST CACHE — tên chuẩn hệ thống (branch_name)
+# =====================================================
+DSST_CACHE_PATH = os.path.join(REPO_ROOT, "data", "dsst_cache.json")
+_DSST_CACHE = {}
+if os.path.exists(DSST_CACHE_PATH):
+    with open(DSST_CACHE_PATH, "r", encoding="utf-8") as _f:
+        _DSST_CACHE = _json.load(_f)
 
 # =====================================================
 # HELPER FUNCTIONS
@@ -274,7 +283,10 @@ def day_name(d):
     return DAY_NAMES[d.weekday()]
 
 def get_display_name(store):
-    """System name preferred, fallback to mail name."""
+    """Tên chuẩn từ DSST (branch_name) nếu có code, fallback name_system - name_full."""
+    code = store.get("code")
+    if code and code in _DSST_CACHE:
+        return _DSST_CACHE[code]["branch_name"]
     if store["name_system"]:
         return f'{store["name_system"]} - {store["name_full"]}'
     return store["name_mail"]

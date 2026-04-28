@@ -1,5 +1,5 @@
 {
-  "_updated": "28/04/2026 09:44",
+  "_updated": "28/04/2026 11:31",
   "stats": {
     "total": 24,
     "upcoming": 13,
@@ -48,7 +48,7 @@
       "status_text": "Dời lịch: 30/04/2026 → 16/05/2026"
     },
     {
-      "name": "KFM_BDU_DAN - Đường M-KP Nhị Đồng - Dĩ An",
+      "name": "KFM_HCM_TDU - B6-D.TMDV.02 Masteri Center Point",
       "code": "A181",
       "opening_date": "15/05/2026",
       "iso_date": "2026-05-15",
@@ -56,7 +56,7 @@
       "status_text": "Dời lịch: 30/04/2026 → 15/05/2026"
     },
     {
-      "name": "KFM_HCM_PNH - Golden Mansion 119 Phổ Quang",
+      "name": "KFM_HCM_PNH - GM-1.06 Golden Mansion",
       "code": "A175",
       "opening_date": "15/05/2026",
       "iso_date": "2026-05-15",
@@ -64,7 +64,7 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_BDU_DAN - 91-93 Nguyễn Sơn",
+      "name": "KFM_BDU_DAN - 9 Đường M, Khu Phố Nhị Đồng 2",
       "code": "A189",
       "opening_date": "07/05/2026",
       "iso_date": "2026-05-07",
@@ -72,7 +72,7 @@
       "status_text": "Đôn lịch: 15/05/2026 → 07/05/2026"
     },
     {
-      "name": "KFM_HCM_Q08 - 819-821 Phạm Thế Hiển - Q8",
+      "name": "KFM_HCM_Q08 - 819 Phạm Thế Hiển",
       "code": "A171",
       "opening_date": "08/05/2026",
       "iso_date": "2026-05-08",
@@ -80,7 +80,7 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_PNH - Botanica Premier - PNH",
+      "name": "KFM_HCM_PNH - BPB-01.08 Botanica Premier",
       "code": "A190",
       "opening_date": "09/05/2026",
       "iso_date": "2026-05-09",
@@ -88,7 +88,7 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_Q11 - Chung cư Thuận Việt - Q11",
+      "name": "KFM_HCM_Q11 - CH0.08 Chung Cư Thuận Việt",
       "code": "A188",
       "opening_date": "09/05/2026",
       "iso_date": "2026-05-09",
@@ -96,7 +96,7 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_BCH - Saigon Mia - L1-08",
+      "name": "KFM_HCM_BCH - L1.08 Saigon Mia",
       "code": "A184",
       "opening_date": "15/05/2026",
       "iso_date": "2026-05-15",
@@ -160,7 +160,7 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_TDU - 86C-88 Đường 339 - Phước Long B",
+      "name": "KFM_HCM_TDU - 05 Đường D3 Phước Long",
       "code": "A107",
       "opening_date": "29/05/2026",
       "iso_date": "2026-05-29",
@@ -168,7 +168,7 @@
       "status_text": "Đôn lịch: 26/06/2026 → 29/05/2026"
     },
     {
-      "name": "KFM_HCM_GVA - 173 Lê Văn Chí - Thủ Đức",
+      "name": "KFM_HCM_GVA - 308 Lê Văn Thọ",
       "code": "LVT",
       "opening_date": "05/09/2026",
       "iso_date": "2026-09-05",
@@ -176,7 +176,7 @@
       "status_text": "Dời lịch: 03/07/2026 → 05/09/2026"
     },
     {
-      "name": "KFM_HCM_Q07 - 1652 Huỳnh Tấn Phát - Phú Xuân",
+      "name": "KFM_HCM_Q07 - 571 Huỳnh Tấn Phát",
       "code": "HTP",
       "opening_date": "25/09/2026",
       "iso_date": "2026-09-25",
