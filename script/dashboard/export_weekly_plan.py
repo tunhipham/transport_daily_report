@@ -366,17 +366,12 @@ def cross_check_inventory(week_data, inventory):
                     # Wrong! Clear it back to empty
                     store["days"][i] = ""
         
-        # Step 2: Mark correct D and D-1 as Kiểm kê
+        # Step 2: Mark correct D and D-1 as Kiểm kê (unconditionally)
         for i, wd in enumerate(week_dates):
             if wd is None:
                 continue
             if wd == inv_dt or wd == inv_dt - timedelta(days=1):
-                current = store["days"][i]
-                if current and current.lower() in ("ngày", "đêm"):
-                    store["days"][i] = "Kiểm kê"
-                elif not current:
-                    if wd == inv_dt:
-                        store["days"][i] = "Kiểm kê"
+                store["days"][i] = "Kiểm kê"
         
         store["inventory_date"] = inv_dt.strftime("%d/%m/%Y")
 
