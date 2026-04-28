@@ -186,6 +186,7 @@ def load_master_data():
     # Manual overrides for products not found in master data
     CATEGORY_OVERRIDES = {
         '8938527710565': 'MÁT',  # SEAPRODEX - TÔM SÚ THỊT SINH THÁI 71/90 200G
+        '1102969': 'TCNK',       # TÁO GREEN DRAGON MỸ
     }
 
     wb = openpyxl.load_workbook(MASTER_DATA_FILE, data_only=True, read_only=True)
