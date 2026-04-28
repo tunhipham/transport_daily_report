@@ -1,8 +1,8 @@
 {
-  "_updated": "28/04/2026 11:31",
+  "_updated": "28/04/2026 13:18",
   "stats": {
-    "total": 24,
-    "upcoming": 13,
+    "total": 27,
+    "upcoming": 16,
     "opening": 3,
     "reschedule": 8
   },
@@ -198,6 +198,30 @@
       "iso_date": "2026-06-26",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "KFM_HCM_Q12 - 170 Nguyễn Thị Búp",
+      "code": "A155",
+      "opening_date": "28/05/2026",
+      "iso_date": "2026-05-28",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "DS10 Bình Hưng",
+      "code": "",
+      "opening_date": "05/06/2026",
+      "iso_date": "2026-06-05",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "KFM_HCM_GVA - 410 Phan Huy Ích",
+      "code": "PHI",
+      "opening_date": "03/07/2026",
+      "iso_date": "2026-07-03",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
     }
   ],
   "calendar_events": [
@@ -343,6 +367,24 @@
       "date": "2026-06-26",
       "label": "None - KDC Thới An - Q12",
       "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-05-28",
+      "label": "A155 - Tân Thới Nhất 17 - Q12",
+      "code": "A155",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-05",
+      "label": "None - DS10 Bình Hưng",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-07-03",
+      "label": "PHI - DS1 An Hội Đông - GVA",
+      "code": "PHI",
       "type": "upcoming"
     }
   ],
