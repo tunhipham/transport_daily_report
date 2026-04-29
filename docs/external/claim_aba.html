@@ -566,7 +566,7 @@
             <div class="panel-header">
                 <div class="panel-title">
                     <div class="icon-box" style="background:linear-gradient(135deg,#f5576c,#ff6b6b);">📦</div>
-                    <h2>Item Thiếu vs Dư & Tỷ lệ chính xác (ST)<small>Số lượng item thiếu/dư kèm % chính xác theo siêu thị mỗi ngày T04/2026</small></h2>
+                    <h2>Item Thiếu vs Dư & Tỷ lệ chính xác (ITEM)<small>Số lượng item thiếu/dư kèm % chính xác item mỗi ngày T04/2026</small></h2>
                 </div>
                 <span class="badge badge-neutral" id="badge-item-daily">—</span>
             </div>
@@ -582,7 +582,7 @@
                 <div class="legend-item"><div class="legend-dot" style="background:#f5576c;"></div> Item thiếu</div>
                 <div class="legend-item"><div class="legend-dot" style="background:#fbbf24;"></div> Item dư</div>
                 <div class="legend-item"><div class="legend-line" style="background:linear-gradient(90deg,#43e97b,#38f9d7);"></div> Xu hướng tổng (Trend)</div>
-                <div class="legend-item"><div class="legend-line" style="background:linear-gradient(90deg,#4facfe,#00f2fe);"></div> % Chính xác (ST)</div>
+                <div class="legend-item"><div class="legend-line" style="background:linear-gradient(90deg,#4facfe,#00f2fe);"></div> % Chính xác (ITEM)</div>
             </div>
         </div>
 
@@ -650,32 +650,32 @@ Chart.register(ChartDataLabels);
 //  DATA
 // ═══════════════════════════════════════════════════════
 const daily = [
-    { week:14, date:"01/04", day:1,  sai:57,  tong:153, rate:63, ithieu:237, idu:43 },
-    { week:14, date:"02/04", day:2,  sai:58,  tong:154, rate:62, ithieu:173, idu:24 },
-    { week:14, date:"03/04", day:3,  sai:59,  tong:157, rate:62, ithieu:168, idu:51 },
-    { week:14, date:"04/04", day:4,  sai:43,  tong:155, rate:72, ithieu:96,  idu:22 },
-    { week:14, date:"05/04", day:5,  sai:73,  tong:156, rate:53, ithieu:254, idu:32 },
-    { week:15, date:"07/04", day:7,  sai:71,  tong:155, rate:54, ithieu:180, idu:5 },
-    { week:15, date:"08/04", day:8,  sai:53,  tong:155, rate:66, ithieu:167, idu:8 },
-    { week:15, date:"09/04", day:9,  sai:63,  tong:157, rate:60, ithieu:210, idu:81 },
-    { week:15, date:"10/04", day:10, sai:56,  tong:160, rate:65, ithieu:240, idu:11 },
-    { week:15, date:"11/04", day:11, sai:55,  tong:160, rate:66, ithieu:206, idu:20 },
-    { week:15, date:"12/04", day:12, sai:76,  tong:159, rate:52, ithieu:356, idu:69 },
-    { week:16, date:"14/04", day:14, sai:79,  tong:160, rate:51, ithieu:244, idu:24 },
-    { week:16, date:"15/04", day:15, sai:47,  tong:159, rate:70, ithieu:288, idu:29 },
-    { week:16, date:"16/04", day:16, sai:62,  tong:162, rate:62, ithieu:209, idu:30 },
-    { week:16, date:"17/04", day:17, sai:70,  tong:163, rate:57, ithieu:190, idu:46 },
-    { week:16, date:"18/04", day:18, sai:75,  tong:164, rate:54, ithieu:213, idu:40 },
-    { week:16, date:"19/04", day:19, sai:84,  tong:163, rate:48, ithieu:465, idu:112 },
-    { week:17, date:"21/04", day:21, sai:88,  tong:163, rate:46, ithieu:532, idu:178 },
-    { week:17, date:"22/04", day:22, sai:54,  tong:164, rate:67, ithieu:411, idu:40 },
-    { week:17, date:"23/04", day:23, sai:80,  tong:167, rate:52, ithieu:465, idu:131 },
-    { week:17, date:"24/04", day:24, sai:57,  tong:171, rate:67, ithieu:231, idu:13 },
-    { week:17, date:"25/04", day:25, sai:64,  tong:171, rate:63, ithieu:176, idu:20 },
-    { week:17, date:"26/04", day:26, sai:66,  tong:171, rate:61, ithieu:218, idu:25 },
-    { week:18, date:"27/04", day:27, sai:0,   tong:171, rate:100, ithieu:0,  idu:0 },
-    { week:18, date:"28/04", day:28, sai:6,   tong:171, rate:96, ithieu:0,   idu:29 },
-    { week:18, date:"29/04", day:29, sai:0,   tong:171, rate:100, ithieu:0,  idu:0 },
+    { week:14, date:"01/04", day:1,  sai:57,  tong:153, rate:63, ithieu:237, idu:43, irate:99.74 },
+    { week:14, date:"02/04", day:2,  sai:58,  tong:154, rate:62, ithieu:173, idu:24, irate:99.80 },
+    { week:14, date:"03/04", day:3,  sai:59,  tong:157, rate:62, ithieu:168, idu:51, irate:99.79 },
+    { week:14, date:"04/04", day:4,  sai:43,  tong:155, rate:72, ithieu:96,  idu:22, irate:98.83 },
+    { week:14, date:"05/04", day:5,  sai:73,  tong:156, rate:53, ithieu:254, idu:32, irate:99.75 },
+    { week:15, date:"07/04", day:7,  sai:71,  tong:155, rate:54, ithieu:180, idu:5,  irate:99.83 },
+    { week:15, date:"08/04", day:8,  sai:53,  tong:155, rate:66, ithieu:167, idu:8,  irate:99.82 },
+    { week:15, date:"09/04", day:9,  sai:63,  tong:157, rate:60, ithieu:210, idu:81, irate:99.72 },
+    { week:15, date:"10/04", day:10, sai:56,  tong:160, rate:65, ithieu:240, idu:11, irate:99.73 },
+    { week:15, date:"11/04", day:11, sai:55,  tong:160, rate:66, ithieu:206, idu:20, irate:99.78 },
+    { week:15, date:"12/04", day:12, sai:76,  tong:159, rate:52, ithieu:356, idu:69, irate:99.65 },
+    { week:16, date:"14/04", day:14, sai:79,  tong:160, rate:51, ithieu:244, idu:24, irate:99.78 },
+    { week:16, date:"15/04", day:15, sai:47,  tong:159, rate:70, ithieu:288, idu:29, irate:99.70 },
+    { week:16, date:"16/04", day:16, sai:62,  tong:162, rate:62, ithieu:209, idu:30, irate:99.81 },
+    { week:16, date:"17/04", day:17, sai:70,  tong:163, rate:57, ithieu:190, idu:46, irate:99.76 },
+    { week:16, date:"18/04", day:18, sai:75,  tong:164, rate:54, ithieu:213, idu:40, irate:97.67 },
+    { week:16, date:"19/04", day:19, sai:84,  tong:163, rate:48, ithieu:465, idu:112, irate:99.54 },
+    { week:17, date:"21/04", day:21, sai:88,  tong:163, rate:46, ithieu:532, idu:178, irate:99.45 },
+    { week:17, date:"22/04", day:22, sai:54,  tong:164, rate:67, ithieu:411, idu:40, irate:99.60 },
+    { week:17, date:"23/04", day:23, sai:80,  tong:167, rate:52, ithieu:465, idu:131, irate:99.45 },
+    { week:17, date:"24/04", day:24, sai:57,  tong:171, rate:67, ithieu:231, idu:13, irate:99.78 },
+    { week:17, date:"25/04", day:25, sai:64,  tong:171, rate:63, ithieu:176, idu:20, irate:98.23 },
+    { week:17, date:"26/04", day:26, sai:66,  tong:171, rate:61, ithieu:218, idu:25, irate:99.80 },
+    { week:18, date:"27/04", day:27, sai:0,   tong:171, rate:100, ithieu:0,  idu:0,  irate:null },
+    { week:18, date:"28/04", day:28, sai:6,   tong:171, rate:96, ithieu:0,   idu:29, irate:99.97 },
+    { week:18, date:"29/04", day:29, sai:0,   tong:171, rate:100, ithieu:0,  idu:0,  irate:null },
 ];
 
 // ═══════════════════════════════════════════════════════
@@ -1518,8 +1518,8 @@ function buildItemDailyChart(data) {
     const trendReg = activeIdx.length > 1 ? linearRegression(activeIdx, activeVals) : null;
     const trendLine = data.map((_,i)=> trendReg ? Math.max(0, Math.round(trendReg.predict(i))) : null);
 
-    // ST accuracy rate line data
-    const rateData = data.map(d => d.rate > 0 ? d.rate : null);
+    // ITEM accuracy rate line data
+    const rateData = data.map(d => d.irate !== null && d.irate !== undefined ? d.irate : null);
 
     iChart1 = new Chart(ctx, {
         type: 'bar',
@@ -1529,7 +1529,7 @@ function buildItemDailyChart(data) {
                 { label:'Item thiếu', data:data.map(d=>d.ithieu), backgroundColor:'rgba(245,87,108,0.55)', borderColor:'#f5576c', borderWidth:1.5, borderRadius:6, borderSkipped:false, order:3, barPercentage:0.8, categoryPercentage:0.7, yAxisID:'y' },
                 { label:'Item dư', data:data.map(d=>d.idu), backgroundColor:'rgba(251,191,36,0.55)', borderColor:'#fbbf24', borderWidth:1.5, borderRadius:6, borderSkipped:false, order:3, barPercentage:0.8, categoryPercentage:0.7, yAxisID:'y' },
                 { type:'line', label:'Xu hướng tổng', data:trendLine, borderColor:'#43e97b', borderWidth:2.5, pointRadius:0, pointHoverRadius:5, pointBackgroundColor:'#43e97b', fill:false, tension:0, order:2, spanGaps:true, yAxisID:'y' },
-                { type:'line', label:'% Chính xác (ST)', data:rateData, borderColor:'#4facfe', borderWidth:2.5, pointRadius:4, pointHoverRadius:7, pointBackgroundColor:data.map(d=>d.rate>=70?'#43e97b':d.rate>=60?'#4facfe':'#f5576c'), pointBorderColor:'#fff', pointBorderWidth:1.5, fill:false, tension:0.2, order:1, spanGaps:true, yAxisID:'y1' },
+                { type:'line', label:'% Chính xác (ITEM)', data:rateData, borderColor:'#4facfe', borderWidth:2.5, pointRadius:4, pointHoverRadius:7, pointBackgroundColor:data.map(d=>{ const r=d.irate; if(r===null) return '#5a5e7e'; return r>=99.7?'#43e97b':r>=99?'#4facfe':'#f5576c'; }), pointBorderColor:'#fff', pointBorderWidth:1.5, fill:false, tension:0.2, order:1, spanGaps:true, yAxisID:'y1' },
             ]
         },
         options: {
@@ -1539,21 +1539,21 @@ function buildItemDailyChart(data) {
                 legend:{display:false},
                 datalabels:{
                     display:function(ctx){
-                        if(ctx.datasetIndex===3) return true;
+                        if(ctx.datasetIndex===3) return data[ctx.dataIndex].irate !== null;
                         if(ctx.datasetIndex<=1) return data[ctx.dataIndex][ctx.datasetIndex===0?'ithieu':'idu'] > 0;
                         return false;
                     },
-                    anchor:function(ctx){ return ctx.datasetIndex===3 ? 'end' : 'end'; },
+                    anchor:function(ctx){ return 'end'; },
                     align:function(ctx){ return ctx.datasetIndex===3 ? 'top' : 'end'; },
                     offset:function(ctx){ return ctx.datasetIndex===3 ? 4 : 1; },
                     formatter:function(v,ctx){
-                        if(ctx.datasetIndex===3) return v !== null ? v+'%' : '';
+                        if(ctx.datasetIndex===3) return v !== null ? v.toFixed(2)+'%' : '';
                         return v > 0 ? v : '';
                     },
                     color:function(ctx){
                         if(ctx.datasetIndex===3){
-                            const r=data[ctx.dataIndex].rate;
-                            return r>=70?'#43e97b':r>=60?'#4facfe':'#f5576c';
+                            const r=data[ctx.dataIndex].irate;
+                            return r>=99.7?'#43e97b':r>=99?'#4facfe':'#f5576c';
                         }
                         return ctx.datasetIndex===0 ? '#f5576c' : '#fbbf24';
                     },
@@ -1569,28 +1569,17 @@ function buildItemDailyChart(data) {
                             const d=data[ctx.dataIndex];
                             if(ctx.datasetIndex===0) return ` Thiếu: ${d.ithieu.toLocaleString()}`;
                             if(ctx.datasetIndex===1) return ` Dư: ${d.idu.toLocaleString()}`;
-                            if(ctx.datasetIndex===3) return ` Chính xác (ST): ${d.rate}% (Sai ${d.sai}/${d.tong})`;
+                            if(ctx.datasetIndex===3) return d.irate !== null ? ` Chính xác (ITEM): ${d.irate}%` : ` Chính xác (ITEM): không có dữ liệu`;
                             return ` Trend: ${ctx.raw !== null ? ctx.raw.toLocaleString() : '-'}`;
                         },
                         afterBody:ctx=>{ const d=data[ctx[0].dataIndex]; return `  Tổng item lỗi: ${(d.ithieu+d.idu).toLocaleString()}`; }
-                    }
-                },
-                annotation:{
-                    annotations:{
-                        target70i:{
-                            type:'line', yScaleID:'y1', yMin:70, yMax:70,
-                            borderColor:'rgba(67,233,123,0.15)', borderWidth:1, borderDash:[4,4],
-                            label:{ display:true, content:'Mục tiêu 70%', position:'end',
-                                backgroundColor:'rgba(67,233,123,0.15)', color:'#43e97b',
-                                font:{family:'Inter',size:9,weight:'600'}, padding:{x:5,y:2}, borderRadius:4 }
-                        }
                     }
                 }
             },
             scales:{
                 x:{grid:{color:'rgba(255,255,255,0.03)'}, ticks:{color:'#5a5e7e',font:{family:'Inter',size:11,weight:'600'}}},
                 y:{position:'left', title:{display:true,text:'Số item',color:'#5a5e7e',font:{family:'Inter',size:10}}, grid:{color:'rgba(255,255,255,0.035)'}, ticks:{color:'#5a5e7e',font:{family:'Inter',size:11}}},
-                y1:{position:'right', min:0, max:110, title:{display:true,text:'% Chính xác (ST)',color:'#4facfe',font:{family:'Inter',size:10}}, grid:{drawOnChartArea:false}, ticks:{color:'#4facfe',font:{family:'Inter',size:11}, callback:v=>v+'%', stepSize:10}}
+                y1:{position:'right', min:96, max:100.5, title:{display:true,text:'% Chính xác (ITEM)',color:'#4facfe',font:{family:'Inter',size:10}}, grid:{drawOnChartArea:false}, ticks:{color:'#4facfe',font:{family:'Inter',size:11}, callback:v=>v.toFixed(1)+'%', stepSize:0.5}}
             }
         }
     });
