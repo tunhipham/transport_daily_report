@@ -1,9 +1,9 @@
 {
-  "_updated": "28/04/2026 13:18",
+  "_updated": "29/04/2026 11:43",
   "stats": {
-    "total": 27,
+    "total": 24,
     "upcoming": 16,
-    "opening": 3,
+    "opening": 0,
     "reschedule": 8
   },
   "stores": [
@@ -14,30 +14,6 @@
       "iso_date": "2026-06-19",
       "status_type": "reschedule",
       "status_text": "Dời lịch: 23/04/2026 → 19/06/2026"
-    },
-    {
-      "name": "KFM_HCM_TPH - S2.0.28 Block A6 Alnata Plus Celadon City",
-      "code": "A163",
-      "opening_date": "25/04/2026",
-      "iso_date": "2026-04-25",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
-    },
-    {
-      "name": "KFM_HCM_TDU - TM1.15 Chung Cư 9 View",
-      "code": "A167",
-      "opening_date": "25/04/2026",
-      "iso_date": "2026-04-25",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
-    },
-    {
-      "name": "KFM_HCM_BTH - 61 Bùi Đình Túy",
-      "code": "A192",
-      "opening_date": "25/04/2026",
-      "iso_date": "2026-04-25",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
     },
     {
       "name": "KFM_HCM_TPH - H.38 Melody Residences Âu Cơ",
@@ -64,8 +40,8 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_BDU_DAN - 9 Đường M, Khu Phố Nhị Đồng 2",
-      "code": "A189",
+      "name": "KFM_HCM_TPH - 91 Nguyễn Sơn",
+      "code": "A195",
       "opening_date": "07/05/2026",
       "iso_date": "2026-05-07",
       "status_type": "reschedule",
@@ -232,24 +208,6 @@
       "type": "reschedule"
     },
     {
-      "date": "2026-04-25",
-      "label": "A163 - Celadon Boulevard",
-      "code": "A163",
-      "type": "opening"
-    },
-    {
-      "date": "2026-04-25",
-      "label": "A167 - Shophouse 9 View",
-      "code": "A167",
-      "type": "opening"
-    },
-    {
-      "date": "2026-04-25",
-      "label": "A192 - 61 Bùi Đình Túy",
-      "code": "A192",
-      "type": "opening"
-    },
-    {
       "date": "2026-05-16",
       "label": "A186 - Melody Residence",
       "code": "A186",
@@ -269,8 +227,8 @@
     },
     {
       "date": "2026-05-07",
-      "label": "A189 - 91-93 Nguyễn Sơn",
-      "code": "A189",
+      "label": "A195 - 91-93 Nguyễn Sơn",
+      "code": "A195",
       "type": "reschedule"
     },
     {

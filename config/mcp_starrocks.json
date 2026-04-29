@@ -1,0 +1,11 @@
+{
+  "project": "logistics_ai",
+  "engine": "StarRocks",
+  "mcp_server": "mcp-server-starrocks",
+  "host": "103.147.122.56",
+  "port": 9030,
+  "user": "kfm_scm_lam_nguyen",
+  "password": "QPYZfjWWhJcHNi5ab5Au",
+  "database": "kfm_scm",
+  "note": "StarRocks MCP connection for AI assistant. Uses same server as ClickHouse (logistics_ai_clickhouse.json)."
+}
