@@ -566,7 +566,7 @@
             <div class="panel-header">
                 <div class="panel-title">
                     <div class="icon-box" style="background:linear-gradient(135deg,#f5576c,#ff6b6b);">📦</div>
-                    <h2>Item Thiếu vs Dư theo Ngày<small>Số lượng item chia thiếu và dư mỗi ngày làm việc T04/2026</small></h2>
+                    <h2>Item Thiếu vs Dư & Tỷ lệ chính xác (ST)<small>Số lượng item thiếu/dư kèm % chính xác theo siêu thị mỗi ngày T04/2026</small></h2>
                 </div>
                 <span class="badge badge-neutral" id="badge-item-daily">—</span>
             </div>
@@ -582,6 +582,7 @@
                 <div class="legend-item"><div class="legend-dot" style="background:#f5576c;"></div> Item thiếu</div>
                 <div class="legend-item"><div class="legend-dot" style="background:#fbbf24;"></div> Item dư</div>
                 <div class="legend-item"><div class="legend-line" style="background:linear-gradient(90deg,#43e97b,#38f9d7);"></div> Xu hướng tổng (Trend)</div>
+                <div class="legend-item"><div class="legend-line" style="background:linear-gradient(90deg,#4facfe,#00f2fe);"></div> % Chính xác (ST)</div>
             </div>
         </div>
 
@@ -1517,14 +1518,18 @@ function buildItemDailyChart(data) {
     const trendReg = activeIdx.length > 1 ? linearRegression(activeIdx, activeVals) : null;
     const trendLine = data.map((_,i)=> trendReg ? Math.max(0, Math.round(trendReg.predict(i))) : null);
 
+    // ST accuracy rate line data
+    const rateData = data.map(d => d.rate > 0 ? d.rate : null);
+
     iChart1 = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: data.map(d => d.date),
             datasets: [
-                { label:'Item thiếu', data:data.map(d=>d.ithieu), backgroundColor:'rgba(245,87,108,0.55)', borderColor:'#f5576c', borderWidth:1.5, borderRadius:6, borderSkipped:false, order:3, barPercentage:0.8, categoryPercentage:0.7 },
-                { label:'Item dư', data:data.map(d=>d.idu), backgroundColor:'rgba(251,191,36,0.55)', borderColor:'#fbbf24', borderWidth:1.5, borderRadius:6, borderSkipped:false, order:3, barPercentage:0.8, categoryPercentage:0.7 },
-                { type:'line', label:'Xu hướng tổng', data:trendLine, borderColor:'#43e97b', borderWidth:2.5, pointRadius:0, pointHoverRadius:5, pointBackgroundColor:'#43e97b', fill:false, tension:0, order:1, spanGaps:true },
+                { label:'Item thiếu', data:data.map(d=>d.ithieu), backgroundColor:'rgba(245,87,108,0.55)', borderColor:'#f5576c', borderWidth:1.5, borderRadius:6, borderSkipped:false, order:3, barPercentage:0.8, categoryPercentage:0.7, yAxisID:'y' },
+                { label:'Item dư', data:data.map(d=>d.idu), backgroundColor:'rgba(251,191,36,0.55)', borderColor:'#fbbf24', borderWidth:1.5, borderRadius:6, borderSkipped:false, order:3, barPercentage:0.8, categoryPercentage:0.7, yAxisID:'y' },
+                { type:'line', label:'Xu hướng tổng', data:trendLine, borderColor:'#43e97b', borderWidth:2.5, pointRadius:0, pointHoverRadius:5, pointBackgroundColor:'#43e97b', fill:false, tension:0, order:2, spanGaps:true, yAxisID:'y' },
+                { type:'line', label:'% Chính xác (ST)', data:rateData, borderColor:'#4facfe', borderWidth:2.5, pointRadius:4, pointHoverRadius:7, pointBackgroundColor:data.map(d=>d.rate>=70?'#43e97b':d.rate>=60?'#4facfe':'#f5576c'), pointBorderColor:'#fff', pointBorderWidth:1.5, fill:false, tension:0.2, order:1, spanGaps:true, yAxisID:'y1' },
             ]
         },
         options: {
@@ -1533,10 +1538,25 @@ function buildItemDailyChart(data) {
             plugins:{
                 legend:{display:false},
                 datalabels:{
-                    display:ctx=>ctx.datasetIndex <= 1 && data[ctx.dataIndex][ctx.datasetIndex===0?'ithieu':'idu'] > 0,
-                    anchor:'end', align:'end', offset:1,
-                    formatter:v=>v > 0 ? v : '',
-                    color:ctx=>ctx.datasetIndex===0 ? '#f5576c' : '#fbbf24',
+                    display:function(ctx){
+                        if(ctx.datasetIndex===3) return true;
+                        if(ctx.datasetIndex<=1) return data[ctx.dataIndex][ctx.datasetIndex===0?'ithieu':'idu'] > 0;
+                        return false;
+                    },
+                    anchor:function(ctx){ return ctx.datasetIndex===3 ? 'end' : 'end'; },
+                    align:function(ctx){ return ctx.datasetIndex===3 ? 'top' : 'end'; },
+                    offset:function(ctx){ return ctx.datasetIndex===3 ? 4 : 1; },
+                    formatter:function(v,ctx){
+                        if(ctx.datasetIndex===3) return v !== null ? v+'%' : '';
+                        return v > 0 ? v : '';
+                    },
+                    color:function(ctx){
+                        if(ctx.datasetIndex===3){
+                            const r=data[ctx.dataIndex].rate;
+                            return r>=70?'#43e97b':r>=60?'#4facfe':'#f5576c';
+                        }
+                        return ctx.datasetIndex===0 ? '#f5576c' : '#fbbf24';
+                    },
                     font:{family:'Inter',size:9,weight:'700'}
                 },
                 tooltip:{
@@ -1549,15 +1569,28 @@ function buildItemDailyChart(data) {
                             const d=data[ctx.dataIndex];
                             if(ctx.datasetIndex===0) return ` Thiếu: ${d.ithieu.toLocaleString()}`;
                             if(ctx.datasetIndex===1) return ` Dư: ${d.idu.toLocaleString()}`;
+                            if(ctx.datasetIndex===3) return ` Chính xác (ST): ${d.rate}% (Sai ${d.sai}/${d.tong})`;
                             return ` Trend: ${ctx.raw !== null ? ctx.raw.toLocaleString() : '-'}`;
                         },
-                        afterBody:ctx=>{ const d=data[ctx[0].dataIndex]; return `  Tổng: ${(d.ithieu+d.idu).toLocaleString()}`; }
+                        afterBody:ctx=>{ const d=data[ctx[0].dataIndex]; return `  Tổng item lỗi: ${(d.ithieu+d.idu).toLocaleString()}`; }
+                    }
+                },
+                annotation:{
+                    annotations:{
+                        target70i:{
+                            type:'line', yScaleID:'y1', yMin:70, yMax:70,
+                            borderColor:'rgba(67,233,123,0.15)', borderWidth:1, borderDash:[4,4],
+                            label:{ display:true, content:'Mục tiêu 70%', position:'end',
+                                backgroundColor:'rgba(67,233,123,0.15)', color:'#43e97b',
+                                font:{family:'Inter',size:9,weight:'600'}, padding:{x:5,y:2}, borderRadius:4 }
+                        }
                     }
                 }
             },
             scales:{
                 x:{grid:{color:'rgba(255,255,255,0.03)'}, ticks:{color:'#5a5e7e',font:{family:'Inter',size:11,weight:'600'}}},
-                y:{grid:{color:'rgba(255,255,255,0.035)'}, ticks:{color:'#5a5e7e',font:{family:'Inter',size:11}}}
+                y:{position:'left', title:{display:true,text:'Số item',color:'#5a5e7e',font:{family:'Inter',size:10}}, grid:{color:'rgba(255,255,255,0.035)'}, ticks:{color:'#5a5e7e',font:{family:'Inter',size:11}}},
+                y1:{position:'right', min:0, max:110, title:{display:true,text:'% Chính xác (ST)',color:'#4facfe',font:{family:'Inter',size:10}}, grid:{drawOnChartArea:false}, ticks:{color:'#4facfe',font:{family:'Inter',size:11}, callback:v=>v+'%', stepSize:10}}
             }
         }
     });
