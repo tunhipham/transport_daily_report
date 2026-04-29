@@ -22,6 +22,7 @@ KH_DONG_LOCAL = r"G:\My Drive\DOCS\DAILY\KH HÀNG ĐÔNG"
 KH_MAT_LOCAL = r"G:\My Drive\DOCS\DAILY\KH HÀNG MÁT"
 KH_MEAT_LOCAL = r"G:\My Drive\DOCS\DAILY\KH MEAT"
 TRANSFER_LOCAL = r"G:\My Drive\DOCS\DAILY\transfer"
+YECAU_LOCAL = r"G:\My Drive\DOCS\DAILY\yeu_cau_chuyen_hang_thuong"
 
 # ── Inventory (ton_aba) local data ──
 DOI_SOAT_DIR = r"G:\My Drive\DOCS\DAILY\ton_aba\data\doi_soat"

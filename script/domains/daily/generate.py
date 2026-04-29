@@ -27,6 +27,7 @@ from lib.sources import (
     KH_MAT_LOCAL,
     KH_MEAT_LOCAL,
     TRANSFER_LOCAL,
+    YECAU_LOCAL,
 )
 
 KH_DRIVE_FOLDERS = [
@@ -526,29 +527,46 @@ def read_pt_data(date_str, master_tl):
     else:
         warnings.append(f"Transfer: no file available for {date_tag}")
 
-    # 2. Yeu cau — from Google Drive folder (may have _nso files too)
-    print(f"  → Yeu cau (Google Drive, tag={date_tag})...")
+    # 2. Yeu cau — try local Google Drive sync first, then online
+    print(f"  → Yeu cau (tag={date_tag})...")
     yc_row_count = 0
-    try:
-        yc_files = _list_drive_folder(YECAU_FOLDER_URL)
-        # Find ALL files matching this date (main + _nso variants)
-        targets = []
-        for fid, fname in yc_files:
-            if date_tag in fname and "yeu_cau_chuyen_hang_thuong" in fname:
-                targets.append((fid, fname))
+    yc_workbooks = []  # list of (wb, source_label)
 
-        if not targets:
-            warnings.append(f"Yeu cau: file yeu_cau_{date_tag} not found")
-        
-        for target_fid, target_fname in targets:
-            print(f"    ↳ {target_fname}")
-            # Use filename-based backup (supports _nso variants)
-            bk_name = target_fname.replace(' ', '_')
-            wb = _download_drive_file(target_fid, backup_name=bk_name)
-            if not wb:
-                warnings.append(f"Yeu cau: download failed for {target_fname}")
-                continue
-            
+    # 2a. Try local files first
+    if os.path.isdir(YECAU_LOCAL):
+        for fname in os.listdir(YECAU_LOCAL):
+            if date_tag in fname and "yeu_cau_chuyen_hang_thuong" in fname and fname.endswith('.xlsx') and not fname.startswith('~'):
+                local_path = os.path.join(YECAU_LOCAL, fname)
+                try:
+                    wb = load_workbook(local_path, read_only=True, data_only=True)
+                    yc_workbooks.append((wb, f"Local: {fname}"))
+                except Exception as e:
+                    warnings.append(f"Yeu cau: lỗi đọc local {fname} — {e}")
+
+    # 2b. Fallback to online Drive scraping if no local files found
+    if not yc_workbooks:
+        try:
+            yc_files = _list_drive_folder(YECAU_FOLDER_URL)
+            targets = []
+            for fid, fname in yc_files:
+                if date_tag in fname and "yeu_cau_chuyen_hang_thuong" in fname:
+                    targets.append((fid, fname))
+            if not targets:
+                warnings.append(f"Yeu cau: file yeu_cau_{date_tag} not found")
+            for target_fid, target_fname in targets:
+                bk_name = target_fname.replace(' ', '_')
+                wb = _download_drive_file(target_fid, backup_name=bk_name)
+                if wb:
+                    yc_workbooks.append((wb, f"Online: {target_fname}"))
+                else:
+                    warnings.append(f"Yeu cau: download failed for {target_fname}")
+        except Exception as e:
+            warnings.append(f"Yeu cau: error — {e}")
+
+    # 2c. Process all matched workbooks
+    for wb, source_label in yc_workbooks:
+        try:
+            print(f"    ↳ {source_label}")
             ws = None
             for name in wb.sheetnames:
                 if name == 'KF':
@@ -593,10 +611,10 @@ def read_pt_data(date_str, master_tl):
                 rows.append({"kho": report_kho, "sl": sl, "tl_grams": tl})
                 yc_row_count += 1
             wb.close()
-        if yc_row_count > 0:
-            print(f"    {yc_row_count} PT rows from yeu_cau ({len(targets)} file(s))")
-    except Exception as e:
-        warnings.append(f"Yeu cau: error — {e}")
+        except Exception as e:
+            warnings.append(f"Yeu cau: error processing {source_label} — {e}")
+    if yc_row_count > 0:
+        print(f"    {yc_row_count} PT rows from yeu_cau ({len(yc_workbooks)} file(s))")
 
     return rows, warnings
 
