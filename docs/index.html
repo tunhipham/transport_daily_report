@@ -1257,6 +1257,7 @@
         <div class="tab" data-tab="nso" id="tab-nso">🏪 NSO</div>
         <div class="tab" data-tab="weekly_plan" id="tab-weekly_plan">📅 Lịch Tuần</div>
         <div class="tab" data-tab="nhap_xuat" id="tab-nhap_xuat">📊 Nhập/Xuất ĐM</div>
+        <div class="tab" data-tab="claim_aba" id="tab-claim_aba">📋 Claim ABA</div>
       </div>
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Chuyển giao diện Sáng / Tối">🌙</button>
       <div class="meta">
@@ -1317,6 +1318,18 @@
                 loading="lazy"
                 title="Báo Cáo Nhập/Xuất Đông Mát"
                 onerror="nxFallback()"></iframe>
+      </div>
+    </div>
+
+    <!-- ═══ CLAIM ABA TAB (IFRAME — ISOLATED) ═══ -->
+    <div class="tab-content" id="content-claim_aba">
+      <div class="nx-iframe-wrap" id="claim-wrap">
+        <iframe id="claim-iframe" class="nx-iframe"
+                src="external/claim_aba.html"
+                sandbox="allow-scripts"
+                loading="lazy"
+                title="Dashboard Claim ABA"
+                onerror="claimFallback()"></iframe>
       </div>
     </div>
   </div>
@@ -1398,10 +1411,13 @@
         contents.forEach(c => c.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById('content-' + target).classList.add('active');
-        // nhap_xuat uses iframe — no JSON to load
+        // nhap_xuat & claim_aba use iframe — no JSON to load
         if (target === 'nhap_xuat') {
           loaded[target] = true;
           nxInit();
+        } else if (target === 'claim_aba') {
+          loaded[target] = true;
+          claimInit();
         } else if (!loaded[target]) {
           loadTab(target);
         }
@@ -1427,6 +1443,26 @@
         <div class="nx-fallback">
           <div class="nx-icon">📊</div>
           <div class="nx-msg">Chưa có dữ liệu Nhập/Xuất Đông Mát</div>
+          <div class="nx-sub">File chưa được deploy. Liên hệ người phụ trách để cập nhật.</div>
+        </div>`;
+    }
+
+    // ═══════════════════════════════════════════════
+    // CLAIM ABA — iframe helpers
+    // ═══════════════════════════════════════════════
+    function claimInit() {
+      const iframe = document.getElementById('claim-iframe');
+      if (!iframe) return;
+      iframe.addEventListener('load', () => {});
+      iframe.addEventListener('error', claimFallback);
+    }
+
+    function claimFallback() {
+      const wrap = document.getElementById('claim-wrap');
+      if (wrap) wrap.innerHTML = `
+        <div class="nx-fallback">
+          <div class="nx-icon">📋</div>
+          <div class="nx-msg">Chưa có dữ liệu Claim ABA</div>
           <div class="nx-sub">File chưa được deploy. Liên hệ người phụ trách để cập nhật.</div>
         </div>`;
     }
