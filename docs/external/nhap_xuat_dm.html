@@ -1436,6 +1436,8 @@ function renderDapUng() {
   document.querySelector('.day-info .date').textContent = navDate;
   document.querySelector('.day-info .dow').textContent = isWk ? 'Tổng tuần' : r.w;
   document.querySelector('.day-info .week').textContent = r.wk;
+  document.getElementById('btnPrev').disabled = daIdx === 0;
+  document.getElementById('btnNext').disabled = daIdx === DA.length - 1;
   const badge = isWk ? `<span style="background:#10b981;color:#fff;padding:2px 10px;border-radius:8px;font-size:.75rem;margin-left:8px">TUẦN</span>` : '';
   const duColor = r.du >= 99.5 ? '#10b981' : r.du >= 99 ? '#f59e0b' : '#ef4444';
   const duTlColor = r.duTl >= 99.5 ? '#10b981' : r.duTl >= 99 ? '#f59e0b' : '#ef4444';
