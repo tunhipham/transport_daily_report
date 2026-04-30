@@ -1490,6 +1490,41 @@ function renderDapUng() {
     });
   }
 
+  // Compute monthly totals and insert after each month group
+  if (!daSummary) {
+    const months = [...new Set(filtered.filter(r => !r.wkTotal && !r.mTotal).map(r => getMonth(r.d)).filter(m => m > 0))];
+    let withTotals = [];
+    let lastMonth = 0;
+    filtered.forEach(r => {
+      const m = r.wkTotal ? 0 : getMonth(r.d);
+      // If month changed and we had a previous month, insert monthly total
+      if (m > 0 && lastMonth > 0 && m !== lastMonth && months.includes(lastMonth)) {
+        const mDays = filtered.filter(x => !x.wkTotal && !x.mTotal && getMonth(x.d) === lastMonth);
+        if (mDays.length > 0) {
+          const tot = {mTotal:true, d:`Tháng ${lastMonth}`, fc:0, bkTon:0, tx:0, diff:0, tlFc:0, tlBkTon:0, tlTx:0, tlDiff:0};
+          mDays.forEach(x => { tot.fc+=x.fc; tot.bkTon+=x.bkTon; tot.tx+=x.tx; tot.diff+=x.diff; tot.tlFc+=x.tlFc; tot.tlBkTon+=x.tlBkTon; tot.tlTx+=x.tlTx; tot.tlDiff+=x.tlDiff; });
+          tot.du = tot.bkTon > 0 ? Math.round(tot.tx/tot.bkTon*10000)/100 : 0;
+          tot.duTl = tot.tlBkTon > 0 ? Math.round(tot.tlTx/tot.tlBkTon*10000)/100 : 0;
+          withTotals.push(tot);
+        }
+      }
+      if (m > 0) lastMonth = m;
+      withTotals.push(r);
+    });
+    // Add total for the last month
+    if (lastMonth > 0 && months.includes(lastMonth)) {
+      const mDays = filtered.filter(x => !x.wkTotal && !x.mTotal && getMonth(x.d) === lastMonth);
+      if (mDays.length > 0) {
+        const tot = {mTotal:true, d:`Tháng ${lastMonth}`, fc:0, bkTon:0, tx:0, diff:0, tlFc:0, tlBkTon:0, tlTx:0, tlDiff:0};
+        mDays.forEach(x => { tot.fc+=x.fc; tot.bkTon+=x.bkTon; tot.tx+=x.tx; tot.diff+=x.diff; tot.tlFc+=x.tlFc; tot.tlBkTon+=x.tlBkTon; tot.tlTx+=x.tlTx; tot.tlDiff+=x.tlDiff; });
+        tot.du = tot.bkTon > 0 ? Math.round(tot.tx/tot.bkTon*10000)/100 : 0;
+        tot.duTl = tot.tlBkTon > 0 ? Math.round(tot.tlTx/tot.tlBkTon*10000)/100 : 0;
+        withTotals.push(tot);
+      }
+    }
+    filtered = withTotals;
+  }
+
   // Dropdown style
   const selStyle = `background:#141938;color:#e2e8f0;border:1px solid #1e293b;border-radius:6px;padding:5px 8px;font-size:12px;font-family:Inter;cursor:pointer`;
   const btnAct = (on) => `padding:6px 14px;border-radius:8px;border:1px solid ${on?'#10b981':'#1e293b'};background:${on?'rgba(16,185,129,0.15)':'#141938'};color:${on?'#10b981':'#94a3b8'};font-size:12px;font-weight:${on?'700':'500'};cursor:pointer;font-family:Inter`;
@@ -1520,17 +1555,21 @@ function renderDapUng() {
   let rows = '';
   filtered.forEach(r => {
     const isWk = r.wkTotal;
-    const bg = isWk ? 'background:rgba(16,185,129,0.08);' : '';
-    const bdr = isWk ? 'border-top:2px solid rgba(16,185,129,0.3);border-bottom:2px solid rgba(16,185,129,0.3);' : '';
-    const fw = isWk ? 'font-weight:800;' : '';
-    const label = isWk ? `⚡ ${r.d}` : r.d;
-    const dayCol = isWk ? 'color:#10b981;' : 'color:#94a3b8;';
+    const isMt = r.mTotal;
+    const isSpecial = isWk || isMt;
+    const specColor = isMt ? '245,158,11' : '16,185,129'; // orange for month, green for week
+    const specHex = isMt ? '#f59e0b' : '#10b981';
+    const bg = isSpecial ? `background:rgba(${specColor},0.08);` : '';
+    const bdr = isSpecial ? `border-top:2px solid rgba(${specColor},0.3);border-bottom:2px solid rgba(${specColor},0.3);` : '';
+    const fw = isSpecial ? 'font-weight:800;' : '';
+    const label = isMt ? `🔶 ${r.d}` : isWk ? `⚡ ${r.d}` : r.d;
+    const dayCol = isSpecial ? `color:${specHex};` : 'color:#94a3b8;';
     const m = getMonth(r.d);
-    const mLabel = isWk ? '' : (m===3?'T3':m===4?'T4':'');
+    const mLabel = isSpecial ? '' : (m===3?'T3':m===4?'T4':'');
 
     rows += `<tr style="${bg}${bdr}">
       <td style="${fw}color:#e2e8f0;white-space:nowrap">${label}</td>
-      <td style="${dayCol}${fw}text-align:center;font-size:10px">${isWk ? r.wkRange : r.w}</td>
+      <td style="${dayCol}${fw}text-align:center;font-size:10px">${isWk ? r.wkRange||'' : isMt ? 'Tổng' : r.w||''}</td>
       <td style="text-align:center;color:#f59e0b;font-size:10px;${fw}">${mLabel}</td>
       <td style="text-align:right;color:#818cf8;${fw}">${fmt(r.fc)}</td>
       <td style="text-align:right;color:#22d3ee;${fw}">${fmt(r.bkTon)}</td>
