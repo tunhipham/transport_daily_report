@@ -20,6 +20,9 @@ Hoặc chỉ định ngày:
 python -u script/domains/daily/generate.py --date DD/MM/YYYY --send
 ```
 
+> **⚠ Validation Gate**: Nếu thiếu data kho nào theo lịch giao hàng, Telegram sẽ bị **CHẶN**.
+> Review/update data rồi chạy lại `--send`.
+
 ## Expected Output
 
 - Summary cards: Tổng Tấn, Xe, Siêu thị, Items

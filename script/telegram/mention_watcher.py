@@ -105,6 +105,7 @@ async def run_watcher():
     """Main event loop — listens for mentions 24/7."""
     from telethon import TelegramClient, events
     from telethon.errors import FloodWaitError
+    from telethon.errors.common import TypeNotFoundError
     from telethon.tl.types import (
         MessageEntityMention, MessageEntityMentionName,
         InputMessageEntityMentionName,
@@ -115,7 +116,14 @@ async def run_watcher():
     with open(CONFIG_FILE, "r", encoding="utf-8") as f:
         client_cfg = json.load(f)
 
-    client = TelegramClient(SESSION_FILE, client_cfg["api_id"], client_cfg["api_hash"])
+    client = TelegramClient(
+        SESSION_FILE,
+        client_cfg["api_id"],
+        client_cfg["api_hash"],
+        connection_retries=5,
+        retry_delay=5,
+        auto_reconnect=True,
+    )
     await client.start(phone=client_cfg.get("phone"))
 
     me = await client.get_me()
@@ -208,8 +216,14 @@ async def run_watcher():
         except Exception as e:
             log.exception(f"Handler error: {e}")
 
-    # Run forever
-    await client.run_until_disconnected()
+    # Run forever — catch TypeNotFoundError from stale TL schema
+    try:
+        await client.run_until_disconnected()
+    except TypeNotFoundError as e:
+        log.warning(f"TypeNotFoundError (stale TL schema): {str(e)[:200]}")
+        log.info("Disconnecting — will reconnect with fresh state...")
+        await client.disconnect()
+        raise  # Let the outer loop handle restart
 
 
 async def test_notify():
@@ -236,18 +250,22 @@ def main():
     if args.test:
         asyncio.run(test_notify())
     else:
-        # Auto-reconnect loop
+        # Auto-reconnect loop with exponential backoff
+        backoff = 10
+        max_backoff = 300  # 5 minutes max
         while True:
             try:
                 log.info("Starting mention watcher...")
                 asyncio.run(run_watcher())
+                backoff = 10  # Reset on clean exit
             except KeyboardInterrupt:
                 log.info("Mention watcher stopped by user.")
                 break
             except Exception as e:
                 log.exception(f"Watcher crashed: {e}")
-                log.info("Restarting in 10 seconds...")
-                time.sleep(10)
+                log.info(f"Restarting in {backoff} seconds...")
+                time.sleep(backoff)
+                backoff = min(backoff * 2, max_backoff)
 
 
 if __name__ == "__main__":

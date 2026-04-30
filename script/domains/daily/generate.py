@@ -2492,6 +2492,81 @@ def run_filter_report(mode, value):
 
 
 # ──────────────────────────────────────────
+#  Data Completeness Validation (vs Schedule Rules)
+# ──────────────────────────────────────────
+
+# Delivery schedule rules:
+#   THỊT CÁ: 7/7 (always)
+#   KRC:     7/7 (always)
+#   ĐÔNG MÁT: 6/7 — NO Monday (weekday 0)
+#   KSL:     6/7 — NO Sunday (weekday 6), except 1-3 trips for store openings
+
+def validate_data_completeness(result, date_str):
+    """Check if all expected kho have data based on delivery schedule rules.
+    Returns (is_valid, missing_khos, messages).
+    - is_valid: True if all expected data is present
+    - missing_khos: list of kho names missing data
+    - messages: list of human-readable validation messages
+    """
+    dt = datetime.strptime(date_str, "%d/%m/%Y")
+    weekday = dt.weekday()  # 0=Mon, 6=Sun
+    day_names = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"]
+    day_name = day_names[weekday]
+
+    # Define expected kho for this day of week
+    expected_khos = []
+    skip_reasons = {}
+
+    # THỊT CÁ: always (7/7)
+    expected_khos.append("THỊT CÁ")
+    # KRC: always (7/7)
+    expected_khos.append("KRC")
+    # ĐÔNG MÁT: skip Monday
+    if weekday == 0:
+        skip_reasons["ĐÔNG MÁT"] = "Không giao Thứ 2"
+    else:
+        expected_khos.append("ĐÔNG MÁT")
+    # KSL (Sáng + Tối): skip Sunday
+    if weekday == 6:
+        skip_reasons["KSL-SÁNG"] = "Không giao CN"
+        skip_reasons["KSL-TỐI"] = "Không giao CN"
+    else:
+        expected_khos.append("KSL-SÁNG")
+        expected_khos.append("KSL-TỐI")
+
+    missing_khos = []
+    messages = []
+
+    for kho in expected_khos:
+        kho_data = result["khos"].get(kho, {})
+        sl_sthi = kho_data.get("sl_sthi", 0)
+        sl_items = kho_data.get("sl_items", 0)
+        san_luong = kho_data.get("san_luong_tan", 0)
+
+        # Check: kho expected but has zero data in ALL metrics
+        if sl_sthi == 0 and sl_items == 0 and san_luong == 0:
+            missing_khos.append(kho)
+            messages.append(f"❌ {kho}: không có data (expected {day_name})")
+        elif sl_sthi == 0 or sl_items == 0 or san_luong == 0:
+            # Partial data — also flag as missing
+            parts = []
+            if sl_sthi == 0: parts.append("STHI=0")
+            if sl_items == 0: parts.append("Items=0")
+            if san_luong == 0: parts.append("Tấn=0")
+            missing_khos.append(kho)
+            messages.append(f"⚠️  {kho}: data không đủ ({', '.join(parts)})")
+
+    # Info about skipped khos
+    for kho, reason in skip_reasons.items():
+        kho_data = result["khos"].get(kho, {})
+        if kho_data.get("sl_sthi", 0) > 0 or kho_data.get("sl_items", 0) > 0:
+            messages.append(f"ℹ️  {kho}: có data dù {reason} (có thể khai trương)")
+
+    is_valid = len(missing_khos) == 0
+    return is_valid, missing_khos, messages
+
+
+# ──────────────────────────────────────────
 #  Main
 # ──────────────────────────────────────────
 
@@ -2568,6 +2643,21 @@ def main():
         print("\n⚠️  WARNINGS:")
         for w in sthi_warnings + pt_warnings:
             print(f"  • {w}")
+
+    # Step 4b: Validate data completeness vs delivery schedule rules
+    data_valid, missing_khos, val_messages = validate_data_completeness(result, date_str)
+    if val_messages:
+        print("\n🔍 DATA VALIDATION:")
+        for msg in val_messages:
+            print(f"  {msg}")
+    if data_valid:
+        print("  ✅ Đầy đủ data — sẵn sàng gửi Telegram")
+    else:
+        print(f"\n  🚫 THIẾU DATA: {', '.join(missing_khos)}")
+        if send_telegram:
+            send_telegram = False  # Block sending
+            print("  ❌ Telegram bị CHẶN do thiếu data.")
+            print(f"     → Review/update data rồi chạy lại: python script/domains/daily/generate.py --date {date_str} --send")
 
     # Step 5: Update history
     history = update_history(result)

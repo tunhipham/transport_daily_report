@@ -67,7 +67,7 @@ goto :skip_tele
 :send_tele
 echo.
 echo   [2/3] Sending Telegram group summary...
-python -u script/domains/nso/generate.py --send-telegram
+python -u script/domains/nso/generate.py --send-telegram --no-deploy
 goto :do_remind
 
 :skip_tele
@@ -95,5 +95,7 @@ goto :done
 
 :done
 echo.
-echo   Done — %time%
-echo ════════════════════════════════════════
+echo   ════════════════════════════════════════
+echo   Pipeline: fetch_nso_mail → nso_stores.json → export nso.json → deploy → generate → telegram/remind
+echo   Done — %date% %time%
+echo   ════════════════════════════════════════

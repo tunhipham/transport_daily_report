@@ -1162,10 +1162,12 @@ def build_telegram_message():
 # MAIN
 # =====================================================
 if __name__ == '__main__':
-    import argparse
+    import argparse, subprocess
     parser = argparse.ArgumentParser(description='NSO Dashboard Generator')
     parser.add_argument('--send-telegram', action='store_true',
                         help='Gửi thông báo tóm tắt qua Telegram sau khi generate')
+    parser.add_argument('--no-deploy', action='store_true',
+                        help='Bỏ qua bước export + deploy dashboard (chỉ generate local)')
     args = parser.parse_args()
 
     print("=" * 60)
@@ -1180,6 +1182,29 @@ if __name__ == '__main__':
     generate_khai_truong_xlsx()
     generate_lich_cham_hang_xlsx()
 
+    # ── Sync: export nso.json + deploy dashboard ──
+    # Always sync when sending Telegram (unless --no-deploy)
+    # This ensures dashboard & Telegram always show the same data
+    if not args.no_deploy:
+        print()
+        print("  📦 Syncing dashboard data (export + deploy)...")
+        try:
+            subprocess.run(
+                [sys.executable, os.path.join(REPO_ROOT, "script", "dashboard", "export_data.py"),
+                 "--domain", "nso"],
+                cwd=REPO_ROOT, timeout=60, check=True
+            )
+            subprocess.run(
+                [sys.executable, os.path.join(REPO_ROOT, "script", "dashboard", "deploy.py"),
+                 "--domain", "nso"],
+                cwd=REPO_ROOT, timeout=120, check=True
+            )
+            print("  ✅ Dashboard synced!")
+        except subprocess.CalledProcessError as e:
+            print(f"  ⚠️  Deploy failed (exit {e.returncode}) — Telegram vẫn gửi")
+        except Exception as e:
+            print(f"  ⚠️  Deploy error: {e} — Telegram vẫn gửi")
+
     if args.send_telegram:
         print()
         bot_token, chat_id = load_telegram_config()
@@ -1191,8 +1216,14 @@ if __name__ == '__main__':
         dashboard_file = os.path.join(OUTPUT_DIR, 'nso_dashboard.html')
         send_telegram_document(msg, dashboard_file, bot_token, chat_id)
 
+    # ── Pipeline summary ──
+    steps = ["nso_stores.json → HTML/Excel"]
+    if not args.no_deploy:
+        steps.append("export nso.json → deploy")
+    if args.send_telegram:
+        steps.append("telegram")
     print()
-    print("  🎉 Hoàn tất!")
+    print(f"  ✅ Pipeline complete: {' → '.join(steps)}")
     print(f"  → Mở file: {os.path.join(OUTPUT_DIR, 'nso_dashboard.html')}")
     print()
 

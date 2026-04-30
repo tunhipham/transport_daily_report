@@ -203,6 +203,20 @@ def generate_and_send():
     print(f"\n📅 Exporting weekly plan JSON...")
     subprocess.run([sys.executable, export_script], cwd=REPO_ROOT, timeout=120)
     
+    # Step 2b: Deploy dashboard
+    print(f"🚀 Deploying dashboard...")
+    try:
+        subprocess.run(
+            [sys.executable, os.path.join(REPO_ROOT, "script", "dashboard", "deploy.py"),
+             "--domain", "weekly_plan"],
+            cwd=REPO_ROOT, timeout=120, check=True
+        )
+        print("  ✅ Dashboard deployed!")
+    except subprocess.CalledProcessError as e:
+        print(f"  ⚠️  Deploy failed (exit {e.returncode}) — continuing")
+    except Exception as e:
+        print(f"  ⚠️  Deploy error: {e} — continuing")
+    
     # Step 3: Save Thursday baseline snapshot for Monday diff
     _save_thursday_baseline(week_num)
     
@@ -225,7 +239,7 @@ def generate_and_send():
     
     mid = send_telegram_document(excel_path, caption, bot_token, chat_id)
     if mid:
-        print(f"\n✅ Excel sent to Telegram for review (msg_id={mid})")
+        print(f"\n✅ Pipeline complete: generate Excel → export JSON → deploy → telegram")
     else:
         print("\n❌ Failed to send Excel to Telegram")
 

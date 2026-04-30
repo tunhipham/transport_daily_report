@@ -744,7 +744,15 @@ def main():
                 driver.quit()
             except Exception:
                 pass
-        print(f"\n  🎉 Done!")
+        # ── Pipeline summary ──
+        steps = ["scan mail"]
+        if not args.dry_run:
+            steps.append("merge → nso_stores.json")
+        if not args.no_deploy and not args.dry_run:
+            steps.append("export nso.json → deploy")
+        else:
+            steps.append("(no deploy)")
+        print(f"\n  ✅ Pipeline complete: {' → '.join(steps)}")
         print(f"{'='*55}\n")
 
 
