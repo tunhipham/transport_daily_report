@@ -1397,7 +1397,6 @@ function renderNhap() {
   document.getElementById('content').innerHTML = html;
 }
 // === TỶ LỆ ĐÁP ỨNG — AUTO FETCH FROM GOOGLE SHEETS ===
-const DA_URL = 'https://docs.google.com/spreadsheets/d/19XDx4Nb0N9qzFfe5IzDP10ATSUDd-lA4fAl6w8RemqY/gviz/tq?tqx=out:csv&sheet=T%E1%BB%B7%20l%E1%BB%87%20%C4%91%C3%A1p%20%E1%BB%A9ng&range=F7:X55';
 let DA = [];
 let daLoaded = false;
 let daIdx = 0;
@@ -1407,10 +1406,7 @@ function pN(s){return parseInt((s||'').replace(/,/g,''))||0;}
 function pP(s){return parseFloat((s||'').replace(/%/g,''))||0;}
 function fmtDt(d){const p=d.split('-');const day=p[0].padStart(2,'0');const m={'Mar':'03','Apr':'04','May':'05'}[p[1]]||'??';return day+'/'+m;}
 
-async function loadDA(){
-  if(daLoaded) return;
-  const resp = await fetch(DA_URL);
-  const text = await resp.text();
+function parseCSV(text){
   const lines = text.split('\n').filter(l=>l.trim());
   DA=[];
   let wkNum=14, wkDays=[];
@@ -1435,9 +1431,26 @@ async function loadDA(){
     }
   }
   daLoaded=true;daIdx=DA.length-1;
-  // Update week range for filters
   const wks=[...new Set(DA.map(r=>parseInt(r.wk.replace('W',''))))];
   daWkFrom=Math.min(...wks);daWkTo=Math.max(...wks);
+}
+
+function loadDA(){
+  return new Promise((resolve,reject)=>{
+    if(daLoaded){resolve();return;}
+    const url='https://docs.google.com/spreadsheets/d/19XDx4Nb0N9qzFfe5IzDP10ATSUDd-lA4fAl6w8RemqY/gviz/tq?tqx=out:csv'
+      +'&sheet=T%E1%BB%B7%20l%E1%BB%87%20%C4%91%C3%A1p%20%E1%BB%A9ng&range=F3:X55';
+    const xhr=new XMLHttpRequest();
+    xhr.open('GET',url,true);
+    xhr.timeout=10000;
+    xhr.onload=function(){
+      if(xhr.status===200){try{parseCSV(xhr.responseText);resolve();}catch(e){reject(e);}}
+      else reject(new Error('HTTP '+xhr.status));
+    };
+    xhr.onerror=function(){reject(new Error('Network error'));};
+    xhr.ontimeout=function(){reject(new Error('Timeout'));};
+    xhr.send();
+  });
 }
 
 let daWkFrom = 14, daWkTo = 18, daMonth = 0;
