@@ -1,0 +1,63 @@
+# ═══════════════════════════════════════════════════════════
+# Auto-approve PRs that ONLY touch docs/external/ files
+# ═══════════════════════════════════════════════════════════
+# External collaborator tạo PR sửa file trong docs/external/
+# → Action tự approve + merge nếu KHÔNG đụng file ngoài scope.
+# → Nếu sửa file ngoài scope (index.html, script/, v.v.) → BLOCK.
+# ═══════════════════════════════════════════════════════════
+
+name: Auto-approve external PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  check-and-approve:
+    runs-on: ubuntu-latest
+    # Only run for PRs from collaborators (not the owner)
+    if: github.event.pull_request.user.login != 'tunhipham'
+
+    steps:
+      - name: Get changed files
+        id: files
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            external_only:
+              - 'docs/external/**'
+            protected:
+              - 'docs/index.html'
+              - 'docs/data/**'
+              - 'script/**'
+              - 'config/**'
+              - 'agents/**'
+              - '.agents/**'
+              - '.github/**'
+              - '*.md'
+              - '*.py'
+
+      - name: Block if protected files touched
+        if: steps.files.outputs.protected == 'true'
+        run: |
+          echo "🚨 PR sửa file NGOÀI SCOPE cho phép!"
+          echo "❌ External chỉ được sửa file trong docs/external/"
+          echo ""
+          echo "Files protected bị sửa — cần review thủ công từ @tunhipham"
+          exit 1
+
+      - name: Auto-approve if only external files
+        if: steps.files.outputs.external_only == 'true' && steps.files.outputs.protected == 'false'
+        uses: hmarr/auto-approve-action@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-merge
+        if: steps.files.outputs.external_only == 'true' && steps.files.outputs.protected == 'false'
+        run: gh pr merge ${{ github.event.pull_request.number }} --squash --auto
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
