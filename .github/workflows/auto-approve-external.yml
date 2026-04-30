@@ -2,8 +2,8 @@
 # Auto-approve PRs that ONLY touch WHITELISTED external files
 # ═══════════════════════════════════════════════════════════
 # Whitelist cứng: chỉ 2 file được auto-approve.
-# File mới trong docs/external/ → BLOCK, cần owner review.
-# File ngoài docs/external/ → BLOCK, cần owner review.
+# Dùng commit-based check: chỉ kiểm tra file trong commit
+# của PR, KHÔNG bị ảnh hưởng khi main thay đổi.
 # ═══════════════════════════════════════════════════════════
 
 name: Auto-approve external PRs
@@ -22,21 +22,35 @@ jobs:
     if: github.event.pull_request.user.login != 'tunhipham'
 
     steps:
-      - name: Get list of changed files
+      - name: Check files in PR commits (drift-proof)
         id: changed
         uses: actions/github-script@v7
         with:
           script: |
-            const files = await github.rest.pulls.listFiles({
+            const pr = context.payload.pull_request.number;
+
+            // ── Lấy danh sách commits trong PR ──
+            const commits = await github.rest.pulls.listCommits({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
+              pull_number: pr,
               per_page: 100
             });
 
-            const changedFiles = files.data.map(f => f.filename);
-            core.setOutput('files', JSON.stringify(changedFiles));
-            core.setOutput('count', changedFiles.length);
+            // ── Lấy files từ TỪNG commit (không bị drift) ──
+            const touchedFiles = new Set();
+            for (const c of commits.data) {
+              const detail = await github.rest.repos.getCommit({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: c.sha,
+              });
+              for (const f of detail.data.files) {
+                touchedFiles.add(f.filename);
+              }
+            }
+
+            const changedFiles = [...touchedFiles];
 
             // ── WHITELIST CỨNG — chỉ 2 file này được auto-approve ──
             const WHITELIST = [
@@ -47,10 +61,13 @@ jobs:
             const allWhitelisted = changedFiles.every(f => WHITELIST.includes(f));
             const hasUnknown = changedFiles.some(f => !WHITELIST.includes(f));
 
+            core.setOutput('files', JSON.stringify(changedFiles));
+            core.setOutput('count', changedFiles.length);
             core.setOutput('all_whitelisted', allWhitelisted.toString());
             core.setOutput('has_unknown', hasUnknown.toString());
 
-            console.log(`Changed files: ${changedFiles.join(', ')}`);
+            console.log(`PR #${pr} — ${commits.data.length} commits`);
+            console.log(`Files touched: ${changedFiles.join(', ')}`);
             console.log(`All whitelisted: ${allWhitelisted}`);
             console.log(`Has unknown files: ${hasUnknown}`);
 
@@ -61,7 +78,7 @@ jobs:
           echo "🚨  BLOCK — PR chứa file NGOÀI whitelist!"
           echo "🚨 ════════════════════════════════════════════"
           echo ""
-          echo "Files trong PR:"
+          echo "Files trong PR commits:"
           echo '${{ steps.changed.outputs.files }}' | python3 -c "import sys,json; [print(f'  → {f}') for f in json.loads(sys.stdin.read())]"
           echo ""
           echo "Chỉ các file sau được auto-approve:"
@@ -76,6 +93,10 @@ jobs:
         uses: hmarr/auto-approve-action@v4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout repo (needed for gh CLI)
+        if: steps.changed.outputs.all_whitelisted == 'true'
+        uses: actions/checkout@v4
 
       - name: Auto-merge
         if: steps.changed.outputs.all_whitelisted == 'true'
