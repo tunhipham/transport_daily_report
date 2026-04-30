@@ -63,7 +63,19 @@ KHO_COLORS = {"KRC": "#4caf50", "THỊT CÁ": "#e53935", "ĐÔNG MÁT": "#1e88e5
 def parse_time_hour(time_text):
     if not time_text:
         return -1
-    m = re.match(r'(\d{1,2}):', str(time_text).strip())
+    # Handle Excel datetime/time objects directly
+    from datetime import datetime as _dt, time as _time
+    if isinstance(time_text, _dt):
+        return time_text.hour
+    if isinstance(time_text, _time):
+        return time_text.hour
+    # Fallback: parse "HH:MM" string format
+    s = str(time_text).strip()
+    # Handle "1900-01-01 HH:MM:SS" datetime strings from Excel
+    dt_match = re.search(r'(\d{1,2}):(\d{2})(?::(\d{2}))?$', s)
+    if dt_match:
+        return int(dt_match.group(1))
+    m = re.match(r'(\d{1,2}):', s)
     return int(m.group(1)) if m else -1
 
 
@@ -2639,21 +2651,31 @@ def main():
     # Step 4: Calculate and print summary
     result = calculate_summary(sthi_rows, pt_rows, date_str)
 
-    if sthi_warnings or pt_warnings:
-        print("\n⚠️  WARNINGS:")
-        for w in sthi_warnings + pt_warnings:
-            print(f"  • {w}")
-
     # Step 4b: Validate data completeness vs delivery schedule rules
+    #   Check 1: Source-level warnings (KFM, KRC, KH, Transfer, Yeu cau)
+    #   Check 2: Result-level kho completeness vs delivery schedule
+    all_warnings = sthi_warnings + pt_warnings
     data_valid, missing_khos, val_messages = validate_data_completeness(result, date_str)
+    has_source_warnings = len(all_warnings) > 0
+    has_missing_khos = not data_valid
+
+    print("\n🔍 DATA VALIDATION:")
+    if all_warnings:
+        print("  ── Source warnings ──")
+        for w in all_warnings:
+            print(f"  ⚠️  {w}")
     if val_messages:
-        print("\n🔍 DATA VALIDATION:")
+        print("  ── Schedule check ──")
         for msg in val_messages:
             print(f"  {msg}")
-    if data_valid:
+
+    if not has_source_warnings and not has_missing_khos:
         print("  ✅ Đầy đủ data — sẵn sàng gửi Telegram")
     else:
-        print(f"\n  🚫 THIẾU DATA: {', '.join(missing_khos)}")
+        if has_missing_khos:
+            print(f"\n  🚫 THIẾU DATA (kho): {', '.join(missing_khos)}")
+        if has_source_warnings:
+            print(f"\n  🚫 THIẾU DATA (source): {len(all_warnings)} warning(s)")
         if send_telegram:
             send_telegram = False  # Block sending
             print("  ❌ Telegram bị CHẶN do thiếu data.")
