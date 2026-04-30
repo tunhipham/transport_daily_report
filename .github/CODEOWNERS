@@ -1,0 +1,28 @@
+# ═══════════════════════════════════════════════════════════
+# CODEOWNERS — Bảo vệ dashboard architecture
+# ═══════════════════════════════════════════════════════════
+# Mọi thay đổi vào file dưới đây BẮT BUỘC phải có review
+# từ @tunhipham trước khi merge vào main.
+#
+# External collaborator KHÔNG ĐƯỢC sửa trực tiếp các file này.
+# ═══════════════════════════════════════════════════════════
+
+# ── Dashboard master layout — CẤM external sửa ──
+docs/index.html                     @tunhipham
+
+# ── Data folder — chỉ pipeline nội bộ được sửa ──
+docs/data/                          @tunhipham
+
+# ── Scripts — chỉ owner ──
+script/                             @tunhipham
+
+# ── Config — chỉ owner ──
+config/                             @tunhipham
+
+# ── Agents/workflows — chỉ owner ──
+.agents/                            @tunhipham
+agents/                             @tunhipham
+
+# ── External content — vẫn cần review nhưng ưu tiên thấp hơn ──
+# External có thể tạo PR sửa file trong đây, owner review trước khi merge
+docs/external/                      @tunhipham
