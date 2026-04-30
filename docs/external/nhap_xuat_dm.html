@@ -1295,6 +1295,10 @@ function switchTab(tab) {
   document.getElementById('headerSub').style.color = colors[tab];
   document.getElementById('warning-section').style.display = tab==='xuat' ? '' : 'none';
   document.querySelector('.legend').style.display = tab==='xuat' ? '' : 'none';
+  // Show/hide nav buttons for table view
+  const btnDisplay = tab==='dapung' ? 'none' : '';
+  document.getElementById('btnPrev').style.display = btnDisplay;
+  document.getElementById('btnNext').style.display = btnDisplay;
   if (tab === 'xuat') { render(); }
   else if (tab === 'nhap') { renderNhap(); }
   else { renderDapUng(); }
@@ -1430,62 +1434,66 @@ const DA = [
 let daIdx = DA.length - 1;
 
 function renderDapUng() {
-  const r = DA[daIdx];
-  const isWk = r.wkTotal;
-  const title = isWk ? `📊 Tổng tuần ${r.d}` : `📅 ${r.d} (${r.w})`;
-  // Sync day-nav header
-  const navDate = isWk ? `Tuần ${r.d}` : r.d;
-  document.querySelector('.day-info .date').textContent = navDate;
-  document.querySelector('.day-info .dow').textContent = isWk ? 'Tổng tuần' : r.w;
-  document.querySelector('.day-info .week').textContent = r.wk;
-  document.getElementById('btnPrev').disabled = daIdx === 0;
-  document.getElementById('btnNext').disabled = daIdx === DA.length - 1;
-  const badge = isWk ? `<span style="background:#10b981;color:#fff;padding:2px 10px;border-radius:8px;font-size:.75rem;margin-left:8px">TUẦN</span>` : '';
-  const duColor = r.du >= 99.5 ? '#10b981' : r.du >= 99 ? '#f59e0b' : '#ef4444';
-  const duTlColor = r.duTl >= 99.5 ? '#10b981' : r.duTl >= 99 ? '#f59e0b' : '#ef4444';
+  // Hide day-nav buttons (not needed for table view)
+  document.getElementById('btnPrev').style.display = 'none';
+  document.getElementById('btnNext').style.display = 'none';
+  document.querySelector('.day-info .date').textContent = 'Tỷ lệ đáp ứng';
+  document.querySelector('.day-info .dow').textContent = 'T4/2026';
+  document.querySelector('.day-info .week').textContent = 'Tổng hợp';
 
-  let html = `<div class="table-block" style="margin-top:1rem">
-    <div style="text-align:center;margin-bottom:1rem">
-      <span style="font-size:1.1rem;font-weight:700;color:#e2e8f0">${title}</span>${badge}
-      <div style="color:#64748b;font-size:.78rem;margin-top:4px">${r.wk}</div>
-    </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:1.2rem">
-      <div class="s-card" style="border-color:#6366f1"><div class="s-label" style="color:#6366f1">ITEM FC</div><div class="s-val">${fmt(r.fc)}</div></div>
-      <div class="s-card" style="border-color:#22d3ee"><div class="s-label">Booking theo tồn</div><div class="s-val">${fmt(r.bkTon)}</div></div>
-      <div class="s-card" style="border-color:#a78bfa"><div class="s-label">Thực xuất</div><div class="s-val">${fmt(r.tx)}</div></div>
-      <div class="s-card" style="border-color:${duColor}"><div class="s-label">Chênh lệch</div><div class="s-val" style="color:${r.diff>50?'#f87171':'#10b981'}">${fmt(r.diff)}</div></div>
-      <div class="s-card" style="border-color:${duColor};min-width:140px"><div class="s-label">% Đáp ứng ITEM</div><div class="s-val" style="color:${duColor};font-size:1.6rem">${r.du.toFixed(2)}%</div></div>
-    </div>
-  </div>
+  function duClr(v) { return v >= 99.5 ? '#10b981' : v >= 99 ? '#f59e0b' : '#ef4444'; }
+  function diffClr(v) { return Math.abs(v) > 100 ? '#f87171' : '#10b981'; }
 
-  <div class="table-block"><div class="table-title" style="color:#10b981">📈 Chi tiết Tỷ lệ đáp ứng</div>
-    <table>
-    <thead><tr>
-      <th style="width:120px">Chỉ tiêu</th>
-      <th>FC</th>
-      <th>Booking theo tồn</th>
-      <th>Thực xuất</th>
-      <th>Chênh lệch</th>
-      <th>% Đáp ứng</th>
-    </tr></thead>
-    <tbody>
-    <tr>
-      <td style="font-weight:700;color:#22d3ee">📦 ITEM</td>
-      <td class="c-bk">${fmt(r.fc)}</td>
-      <td class="c-bk">${fmt(r.bkTon)}</td>
-      <td class="c-tx">${fmt(r.tx)}</td>
-      <td style="color:${r.diff>50?'#f87171':'#10b981'}">${fmt(r.diff)}</td>
-      <td style="font-weight:800;font-size:1.05rem;color:${duColor}">${r.du.toFixed(2)}%</td>
-    </tr>
-    <tr>
-      <td style="font-weight:700;color:#a78bfa">⚖️ Trọng lượng</td>
-      <td class="c-bk">${fmt(r.tlFc)}</td>
-      <td class="c-bk">${fmt(r.tlBkTon)}</td>
-      <td class="c-tx">${fmt(r.tlTx)}</td>
-      <td style="color:${r.tlDiff>50?'#f87171':'#10b981'}">${fmt(r.tlDiff)}</td>
-      <td style="font-weight:800;font-size:1.05rem;color:${duTlColor}">${r.duTl.toFixed(2)}%</td>
-    </tr>
-    </tbody></table>
+  let rows = '';
+  DA.forEach(r => {
+    const isWk = r.wkTotal;
+    const bg = isWk ? 'background:rgba(16,185,129,0.08);' : '';
+    const bdr = isWk ? 'border-top:2px solid rgba(16,185,129,0.3);border-bottom:2px solid rgba(16,185,129,0.3);' : '';
+    const fw = isWk ? 'font-weight:800;' : '';
+    const label = isWk ? `⚡ ${r.d}` : r.d;
+    const dayCol = isWk ? 'color:#10b981;' : 'color:#94a3b8;';
+
+    rows += `<tr style="${bg}${bdr}">
+      <td style="${fw}color:#e2e8f0;white-space:nowrap">${label}</td>
+      <td style="${dayCol}${fw}text-align:center">${isWk ? 'Tuần' : r.w}</td>
+      <td style="text-align:right;color:#818cf8;${fw}">${fmt(r.fc)}</td>
+      <td style="text-align:right;color:#22d3ee;${fw}">${fmt(r.bkTon)}</td>
+      <td style="text-align:right;color:#a78bfa;${fw}">${fmt(r.tx)}</td>
+      <td style="text-align:right;color:${diffClr(r.diff)};${fw}">${fmt(r.diff)}</td>
+      <td style="text-align:right;font-weight:800;color:${duClr(r.du)}">${r.du.toFixed(2)}%</td>
+      <td style="text-align:right;color:#818cf8;${fw}">${fmt(r.tlFc)}</td>
+      <td style="text-align:right;color:#22d3ee;${fw}">${fmt(r.tlBkTon)}</td>
+      <td style="text-align:right;color:#a78bfa;${fw}">${fmt(r.tlTx)}</td>
+      <td style="text-align:right;color:${diffClr(r.tlDiff)};${fw}">${fmt(r.tlDiff)}</td>
+      <td style="text-align:right;font-weight:800;color:${duClr(r.duTl)}">${r.duTl.toFixed(2)}%</td>
+    </tr>`;
+  });
+
+  let html = `<div class="table-block" style="max-width:1200px;overflow-x:auto">
+    <div class="table-title" style="color:#10b981">📈 Tỷ lệ đáp ứng — Tổng hợp T4/2026</div>
+    <table style="table-layout:auto;font-size:11.5px">
+    <thead>
+      <tr>
+        <th rowspan="2" style="width:75px;position:sticky;left:0;background:#141938;z-index:2">Ngày</th>
+        <th rowspan="2" style="width:45px">Thứ</th>
+        <th colspan="5" style="text-align:center;color:#22d3ee;border-bottom:2px solid #22d3ee">📦 ITEM</th>
+        <th colspan="5" style="text-align:center;color:#a78bfa;border-bottom:2px solid #a78bfa">⚖️ Trọng lượng (kg)</th>
+      </tr>
+      <tr>
+        <th style="color:#818cf8">FC</th>
+        <th style="color:#22d3ee">Bk Tồn</th>
+        <th style="color:#a78bfa">Thực xuất</th>
+        <th>CL</th>
+        <th style="color:#10b981">% ĐU</th>
+        <th style="color:#818cf8">FC</th>
+        <th style="color:#22d3ee">Bk Tồn</th>
+        <th style="color:#a78bfa">Thực xuất</th>
+        <th>CL</th>
+        <th style="color:#10b981">% ĐU</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+    </table>
   </div>`;
 
   document.getElementById('content').innerHTML = html;
