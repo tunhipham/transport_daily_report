@@ -2066,14 +2066,30 @@
       // Chart boxes — single-column layout
       const chartConfigs = [
         ['perfChartSLA', '1. Đúng Giờ SLA', 'filterPerfSLA'],
-        ['perfChartPlan', '2. On Time Per Dest', 'filterPerfPlan'],
-        ['perfChartPlanCmp', '3. Đúng Kế Hoạch', 'filterPerfPlanCmp'],
-        ['perfChartTrips', '4. Số Chuyến & Hoàn Thành', 'filterPerfTrips'],
+        ['perfChartPlanCmp', '2. Đúng Kế Hoạch', 'filterPerfPlanCmp'],
+        ['perfChartTrips', '3. Số Chuyến & Hoàn Thành', 'filterPerfTrips'],
       ];
+
+      // SLA info per warehouse
+      const slaInfo = {
+        'KRC': '≤ 05:30', 'THỊT CÁ': '≤ 06:00',
+        'ĐÔNG MÁT': '09:00–16:00', 'ĐÔNG': '09:00–16:00', 'MÁT': '09:00–16:00',
+        'KSL-Sáng': '≤ 14:00', 'KSL-Tối': '22:00–00:30',
+      };
 
       html += '<div class="chart-grid perf-1col">';
       chartConfigs.forEach(([id, title, filterId]) => {
-        html += `<div class="chart-box"><div style="display:flex;align-items:center;flex-wrap:wrap;margin-bottom:.6rem"><h3 style="font-size:.88rem;font-weight:700;color:var(--t1)">${title}</h3><span class="pill-bar" id="${filterId}"></span></div><div class="chart-wrap"><canvas id="${id}"></canvas></div></div>`;
+        let subtitle = '';
+        if (id === 'perfChartSLA') {
+          const tags = khoNames.map(k => {
+            const s = slaInfo[k];
+            if (!s) return '';
+            const c = khoColors[k] || 'var(--t2)';
+            return `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 6px 2px 0;font-size:.72rem;"><span style="width:10px;height:10px;border-radius:3px;background:${c};display:inline-block"></span><span style="color:var(--t2);font-weight:500">${k}</span><span style="color:var(--t3)">${s}</span></span>`;
+          }).filter(Boolean).join('');
+          subtitle = `<div style="text-align:center;margin-bottom:.5rem;line-height:1.8">${tags}</div>`;
+        }
+        html += `<div class="chart-box"><div style="display:flex;align-items:center;flex-wrap:wrap;margin-bottom:.6rem"><h3 style="font-size:.88rem;font-weight:700;color:var(--t1)">${title}</h3><span class="pill-bar" id="${filterId}"></span></div>${subtitle}<div class="chart-wrap"><canvas id="${id}"></canvas></div></div>`;
       });
       html += '</div>';
 
@@ -2083,7 +2099,6 @@
     <thead><tr><th>Chỉ Tiêu</th><th>Ý Nghĩa</th></tr></thead>
     <tbody>
       <tr><td>% Đúng Giờ SLA</td><td>Thời gian đến siêu thị thực tế nằm trong khung giờ cam kết (SLA) của từng kho. VD: KRC phải giao trước 05:30, ĐÔNG MÁT phải giao trước 16:00.</td></tr>
-      <tr><td>% On Time Per Dest</td><td>Thời gian giao đến siêu thị thực tế ≤ thời gian dự kiến giao theo kế hoạch (planned time). Đánh giá độ chính xác so với kế hoạch.</td></tr>
       <tr><td>% Đúng Kế Hoạch</td><td>Tỉ lệ điểm giao được thực hiện đúng thứ tự tuyến kế hoạch — so sánh vị trí thực tế của từng siêu thị trong chuyến với thứ tự kế hoạch.</td></tr>
       <tr><td>% Hoàn Thành</td><td>Tỉ lệ chuyến xe hoàn thành giao hàng (status = "Hoàn thành") trên tổng số chuyến của mỗi kho.</td></tr>
     </tbody>
@@ -2185,16 +2200,14 @@
       }
 
       function initSLA(k) { buildBarTrend('perfChartSLA', 'sla', 'Đúng SLA', 'Trễ SLA', '% SLA', 95, k) }
-      function initPlan(k) { buildBarTrend('perfChartPlan', 'plan', 'Đúng Kế Hoạch', 'Trễ Kế Hoạch', '% Kế Hoạch', 95, k) }
       function initPlanCmp(k) { buildBarTrend('perfChartPlanCmp', 'plan_compliance', 'Đúng Kế Hoạch', 'Sai Kế Hoạch', '% Kế Hoạch', null, k) }
       function initTrips(k) { buildBarTrend('perfChartTrips', 'trips_completion', 'Hoàn Thành', 'Chưa Hoàn Thành', '% Hoàn Thành', null, k) }
 
       makePills('filterPerfSLA', initSLA);
-      makePills('filterPerfPlan', initPlan);
       makePills('filterPerfPlanCmp', initPlanCmp);
       makePills('filterPerfTrips', initTrips);
 
-      initSLA(null); initPlan(null); initPlanCmp(null); initTrips(null);
+      initSLA(null); initPlanCmp(null); initTrips(null);
 
       // ── Single date picker → summary tables ──
       window.perfOnDatePick = function (isoDate) {
@@ -2218,7 +2231,7 @@
           if (src.kho_bars) { for (const k of Object.keys(src.kho_bars)) { if (!dst.kho_bars) dst.kho_bars = {}; if (!dst.kho_bars[k]) dst.kho_bars[k] = {}; dst.kho_bars[k].on = src.kho_bars[k].on.slice(si, ei); dst.kho_bars[k].late = src.kho_bars[k].late.slice(si, ei); } }
           if (src.trends) { for (let i = 0; i < src.trends.length; i++) { if (dst.trends[i]) dst.trends[i].data = src.trends[i].data.slice(si, ei); } }
         }
-        initSLA(null); initPlan(null); initPlanCmp(null); initTrips(null);
+        initSLA(null); initPlanCmp(null); initTrips(null);
         document.getElementById('perfRangeInfo').textContent = pd.labels.length + ' ngày';
       }
 
@@ -2245,7 +2258,7 @@
           pd.labels.length = 0;
           pd.fullLabels.forEach(l => pd.labels.push(l));
           pd.charts = JSON.parse(JSON.stringify(pd.fullCharts));
-          initSLA(null); initPlan(null); initPlanCmp(null); initTrips(null);
+          initSLA(null); initPlanCmp(null); initTrips(null);
           document.getElementById('perfRangeInfo').textContent = pd.labels.length + ' ngày';
         } else {
           const n = pd.isoDates.length;
@@ -2360,7 +2373,6 @@
 
       container.innerHTML = `<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
     ${cardTbl('📊 Đúng Giờ SLA', 'sla')}
-    ${cardTbl('📅 On Time Per Dest', 'plan')}
     ${cardTbl('📋 Đúng Kế Hoạch', 'plancmp')}
   </div>`;
     }

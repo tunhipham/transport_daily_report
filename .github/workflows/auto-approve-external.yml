@@ -1,0 +1,84 @@
+# ═══════════════════════════════════════════════════════════
+# Auto-approve PRs that ONLY touch WHITELISTED external files
+# ═══════════════════════════════════════════════════════════
+# Whitelist cứng: chỉ 2 file được auto-approve.
+# File mới trong docs/external/ → BLOCK, cần owner review.
+# File ngoài docs/external/ → BLOCK, cần owner review.
+# ═══════════════════════════════════════════════════════════
+
+name: Auto-approve external PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  check-and-approve:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login != 'tunhipham'
+
+    steps:
+      - name: Get list of changed files
+        id: changed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const files = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              per_page: 100
+            });
+
+            const changedFiles = files.data.map(f => f.filename);
+            core.setOutput('files', JSON.stringify(changedFiles));
+            core.setOutput('count', changedFiles.length);
+
+            // ── WHITELIST CỨNG — chỉ 2 file này được auto-approve ──
+            const WHITELIST = [
+              'docs/external/nhap_xuat_dm.html',
+              'docs/external/claim_aba.html'
+            ];
+
+            const allWhitelisted = changedFiles.every(f => WHITELIST.includes(f));
+            const hasUnknown = changedFiles.some(f => !WHITELIST.includes(f));
+
+            core.setOutput('all_whitelisted', allWhitelisted.toString());
+            core.setOutput('has_unknown', hasUnknown.toString());
+
+            console.log(`Changed files: ${changedFiles.join(', ')}`);
+            console.log(`All whitelisted: ${allWhitelisted}`);
+            console.log(`Has unknown files: ${hasUnknown}`);
+
+      - name: Block if any file outside whitelist
+        if: steps.changed.outputs.has_unknown == 'true'
+        run: |
+          echo "🚨 ════════════════════════════════════════════"
+          echo "🚨  BLOCK — PR chứa file NGOÀI whitelist!"
+          echo "🚨 ════════════════════════════════════════════"
+          echo ""
+          echo "Files trong PR:"
+          echo '${{ steps.changed.outputs.files }}' | python3 -c "import sys,json; [print(f'  → {f}') for f in json.loads(sys.stdin.read())]"
+          echo ""
+          echo "Chỉ các file sau được auto-approve:"
+          echo "  ✅ docs/external/nhap_xuat_dm.html"
+          echo "  ✅ docs/external/claim_aba.html"
+          echo ""
+          echo "⚠ PR này cần review thủ công từ @tunhipham"
+          exit 1
+
+      - name: Auto-approve whitelisted files only
+        if: steps.changed.outputs.all_whitelisted == 'true'
+        uses: hmarr/auto-approve-action@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-merge
+        if: steps.changed.outputs.all_whitelisted == 'true'
+        run: gh pr merge ${{ github.event.pull_request.number }} --squash --auto
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
