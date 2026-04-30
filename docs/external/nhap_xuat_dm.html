@@ -408,6 +408,7 @@ tbody tr.summary td.c-tx { color:var(--cyan) !important; }
 .tab-btn:hover { color:var(--txt); background:rgba(255,255,255,0.03); }
 .tab-btn.active { color:var(--cyan); border-bottom-color:var(--cyan); }
 .tab-btn.active-nhap { color:#f59e0b; border-bottom-color:#f59e0b; }
+.tab-btn.active-du { color:#10b981; border-bottom-color:#10b981; }
 /* Import table header */
 .nh-head { background:linear-gradient(135deg,#3d2e0c,#2d2108) !important; color:#f59e0b !important; }
 .date-head-nh { background:linear-gradient(90deg,#3d2e0c,#2d2108) !important; color:#fbbf24 !important; }
@@ -435,6 +436,7 @@ tbody tr.summary td.c-tx { color:var(--cyan) !important; }
 <div class="tab-nav">
   <button class="tab-btn active" id="tabXuat" onclick="switchTab('xuat')">📦 XUẤT HÀNG</button>
   <button class="tab-btn" id="tabNhap" onclick="switchTab('nhap')">📥 NHẬP HÀNG</button>
+  <button class="tab-btn" id="tabDapUng" onclick="switchTab('dapung')">📈 TỶ LỆ ĐÁP ỨNG</button>
 </div>
 
 <div class="day-nav">
@@ -1155,11 +1157,13 @@ function render() {
 
 function prev() {
   if (currentTab === 'xuat') { if(curIdx>0){curIdx--;render();window.scrollTo(0,0);} }
-  else { if(nhapIdx>0){nhapIdx--;renderNhap();window.scrollTo(0,0);} }
+  else if (currentTab === 'nhap') { if(nhapIdx>0){nhapIdx--;renderNhap();window.scrollTo(0,0);} }
+  else { if(daIdx>0){daIdx--;renderDapUng();window.scrollTo(0,0);} }
 }
 function next() {
   if (currentTab === 'xuat') { if(curIdx<D.length-1){curIdx++;render();window.scrollTo(0,0);} }
-  else { if(nhapIdx<DN.length-1){nhapIdx++;renderNhap();window.scrollTo(0,0);} }
+  else if (currentTab === 'nhap') { if(nhapIdx<DN.length-1){nhapIdx++;renderNhap();window.scrollTo(0,0);} }
+  else { if(daIdx<DA.length-1){daIdx++;renderDapUng();window.scrollTo(0,0);} }
 }
 
 // Keyboard nav
@@ -1284,12 +1288,16 @@ function switchTab(tab) {
   currentTab = tab;
   document.getElementById('tabXuat').className = tab==='xuat' ? 'tab-btn active' : 'tab-btn';
   document.getElementById('tabNhap').className = tab==='nhap' ? 'tab-btn active-nhap' : 'tab-btn';
-  document.getElementById('headerSub').textContent = tab==='xuat' ? 'XUẤT HÀNG' : 'NHẬP HÀNG';
-  document.getElementById('headerSub').style.color = tab==='xuat' ? '#ef4444' : '#f59e0b';
+  document.getElementById('tabDapUng').className = tab==='dapung' ? 'tab-btn active-du' : 'tab-btn';
+  const labels = {xuat:'XUẤT HÀNG',nhap:'NHẬP HÀNG',dapung:'TỶ LỆ ĐÁP ỨNG'};
+  const colors = {xuat:'#ef4444',nhap:'#f59e0b',dapung:'#10b981'};
+  document.getElementById('headerSub').textContent = labels[tab];
+  document.getElementById('headerSub').style.color = colors[tab];
   document.getElementById('warning-section').style.display = tab==='xuat' ? '' : 'none';
   document.querySelector('.legend').style.display = tab==='xuat' ? '' : 'none';
   if (tab === 'xuat') { render(); }
-  else { renderNhap(); }
+  else if (tab === 'nhap') { renderNhap(); }
+  else { renderDapUng(); }
 }
 
 // Nhap: row helper [bk, tn] -> formatted row
@@ -1381,6 +1389,94 @@ function renderNhap() {
     ${nhCatBlock('Lưu Hàng Mát', day.mat, day.matN, true)}
     ${nhCatBlock('Hàng Quá Cảnh', day.qc2, day.qc2N, true)}
     </tbody></table></div>`;
+
+  document.getElementById('content').innerHTML = html;
+}
+
+// === TỶ LỆ ĐÁP ỨNG DATA ===
+const DA = [
+{d:'1-Apr',w:'T4',wk:'W1',fc:94710,bkTon:106211,tx:106187,diff:24,du:99.98,tlFc:30288,tlBkTon:26667,tlTx:26660,tlDiff:6,duTl:99.98},
+{d:'2-Apr',w:'T5',wk:'W1',fc:100332,bkTon:97710,tx:97707,diff:3,du:100.00,tlFc:33258,tlBkTon:27230,tlTx:27229,tlDiff:1,duTl:100.00},
+{d:'3-Apr',w:'T6',wk:'W1',fc:93092,bkTon:103630,tx:103522,diff:108,du:99.90,tlFc:31202,tlBkTon:28239,tlTx:28224,tlDiff:15,duTl:99.95},
+{d:'4-Apr',w:'T7',wk:'W1',fc:105889,bkTon:101228,tx:101210,diff:18,du:99.98,tlFc:33512,tlBkTon:27267,tlTx:27257,tlDiff:11,duTl:99.96},
+{d:'5-Apr',w:'CN',wk:'W1',fc:110075,bkTon:116434,tx:116317,diff:117,du:99.90,tlFc:35267,tlBkTon:32815,tlTx:32721,tlDiff:94,duTl:99.71},
+{d:'W1',w:'T2',wk:'W1',wkTotal:true,fc:604304,bkTon:648133,tx:647805,diff:328,du:99.95,tlFc:193522,tlBkTon:175886,tlTx:175736,tlDiff:151,duTl:99.91},
+{d:'7-Apr',w:'T3',wk:'W2',fc:99582,bkTon:110095,tx:110088,diff:7,du:99.99,tlFc:29798,tlBkTon:27679,tlTx:27678,tlDiff:1,duTl:100.00},
+{d:'8-Apr',w:'T4',wk:'W2',fc:97873,bkTon:97794,tx:97746,diff:48,du:99.95,tlFc:28862,tlBkTon:24686,tlTx:24678,tlDiff:8,duTl:99.97},
+{d:'9-Apr',w:'T5',wk:'W2',fc:95233,bkTon:103777,tx:103723,diff:54,du:99.95,tlFc:29638,tlBkTon:29283,tlTx:29271,tlDiff:12,duTl:99.96},
+{d:'10-Apr',w:'T6',wk:'W2',fc:94303,bkTon:91389,tx:91323,diff:66,du:99.93,tlFc:29415,tlBkTon:25462,tlTx:25450,tlDiff:13,duTl:99.95},
+{d:'11-Apr',w:'T7',wk:'W2',fc:106021,bkTon:104057,tx:103319,diff:738,du:99.29,tlFc:31085,tlBkTon:26838,tlTx:26112,tlDiff:726,duTl:97.30},
+{d:'12-Apr',w:'CN',wk:'W2',fc:112703,bkTon:120926,tx:121034,diff:-108,du:100.09,tlFc:33628,tlBkTon:32770,tlTx:32949,tlDiff:-179,duTl:100.55},
+{d:'W2',w:'T2',wk:'W2',wkTotal:true,fc:605715,bkTon:628038,tx:627233,diff:805,du:99.87,tlFc:182426,tlBkTon:166719,tlTx:166138,tlDiff:581,duTl:99.65},
+{d:'14-Apr',w:'T3',wk:'W3',fc:99634,bkTon:120524,tx:120500,diff:24,du:99.98,tlFc:27601,tlBkTon:30194,tlTx:30188,tlDiff:6,duTl:99.98},
+{d:'15-Apr',w:'T4',wk:'W3',fc:95303,bkTon:107318,tx:107305,diff:13,du:99.99,tlFc:28345,tlBkTon:32963,tlTx:32960,tlDiff:3,duTl:99.99},
+{d:'16-Apr',w:'T5',wk:'W3',fc:96358,bkTon:128244,tx:128188,diff:56,du:99.96,tlFc:29945,tlBkTon:36456,tlTx:36446,tlDiff:10,duTl:99.97},
+{d:'17-Apr',w:'T6',wk:'W3',fc:94192,bkTon:100303,tx:100276,diff:27,du:99.97,tlFc:29409,tlBkTon:28319,tlTx:28313,tlDiff:6,duTl:99.98},
+{d:'18-Apr',w:'T7',wk:'W3',fc:103765,bkTon:108824,tx:108710,diff:114,du:99.90,tlFc:30634,tlBkTon:30654,tlTx:30559,tlDiff:95,duTl:99.69},
+{d:'19-Apr',w:'CN',wk:'W3',fc:110447,bkTon:126513,tx:126486,diff:27,du:99.98,tlFc:33177,tlBkTon:34854,tlTx:34847,tlDiff:7,duTl:99.98},
+{d:'W3',w:'T2',wk:'W3',wkTotal:true,fc:599699,bkTon:691726,tx:691465,diff:261,du:99.96,tlFc:179111,tlBkTon:193440,tlTx:193312,tlDiff:127,duTl:99.93},
+{d:'21-Apr',w:'T3',wk:'W4',fc:99127,bkTon:131553,tx:129217,diff:2336,du:98.22,tlFc:27452,tlBkTon:35423,tlTx:33131,tlDiff:2292,duTl:93.53},
+{d:'22-Apr',w:'T4',wk:'W4',fc:97873,bkTon:111581,tx:111546,diff:35,du:99.97,tlFc:28862,tlBkTon:28657,tlTx:28650,tlDiff:7,duTl:99.98},
+{d:'23-Apr',w:'T5',wk:'W4',fc:95955,bkTon:108985,tx:108939,diff:46,du:99.96,tlFc:29638,tlBkTon:32746,tlTx:32736,tlDiff:10,duTl:99.97},
+{d:'24-Apr',w:'T6',wk:'W4',fc:96655,bkTon:111592,tx:111568,diff:24,du:99.98,tlFc:29415,tlBkTon:28055,tlTx:28048,tlDiff:7,duTl:99.97},
+{d:'25-Apr',w:'T7',wk:'W4',fc:108748,bkTon:110983,tx:110960,diff:23,du:99.98,tlFc:31085,tlBkTon:29625,tlTx:29619,tlDiff:6,duTl:99.98},
+{d:'26-Apr',w:'CN',wk:'W4',fc:118048,bkTon:120084,tx:120045,diff:39,du:99.97,tlFc:33628,tlBkTon:31453,tlTx:31430,tlDiff:23,duTl:99.93},
+{d:'W4',w:'T2',wk:'W4',wkTotal:true,fc:616406,bkTon:694777,tx:692274,diff:2503,du:99.64,tlFc:180080,tlBkTon:185961,tlTx:183615,tlDiff:2346,duTl:98.74}
+];
+
+let daIdx = DA.length - 1;
+
+function renderDapUng() {
+  const r = DA[daIdx];
+  const isWk = r.wkTotal;
+  const title = isWk ? `📊 Tổng tuần ${r.d}` : `📅 ${r.d} (${r.w})`;
+  const badge = isWk ? `<span style="background:#10b981;color:#fff;padding:2px 10px;border-radius:8px;font-size:.75rem;margin-left:8px">TUẦN</span>` : '';
+  const duColor = r.du >= 99.5 ? '#10b981' : r.du >= 99 ? '#f59e0b' : '#ef4444';
+  const duTlColor = r.duTl >= 99.5 ? '#10b981' : r.duTl >= 99 ? '#f59e0b' : '#ef4444';
+
+  let html = `<div class="table-block" style="margin-top:1rem">
+    <div style="text-align:center;margin-bottom:1rem">
+      <span style="font-size:1.1rem;font-weight:700;color:#e2e8f0">${title}</span>${badge}
+      <div style="color:#64748b;font-size:.78rem;margin-top:4px">${r.wk}</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:1.2rem">
+      <div class="s-card" style="border-color:#6366f1"><div class="s-label" style="color:#6366f1">ITEM FC</div><div class="s-val">${fmt(r.fc)}</div></div>
+      <div class="s-card" style="border-color:#22d3ee"><div class="s-label">Booking theo tồn</div><div class="s-val">${fmt(r.bkTon)}</div></div>
+      <div class="s-card" style="border-color:#a78bfa"><div class="s-label">Thực xuất</div><div class="s-val">${fmt(r.tx)}</div></div>
+      <div class="s-card" style="border-color:${duColor}"><div class="s-label">Chênh lệch</div><div class="s-val" style="color:${r.diff>50?'#f87171':'#10b981'}">${fmt(r.diff)}</div></div>
+      <div class="s-card" style="border-color:${duColor};min-width:140px"><div class="s-label">% Đáp ứng ITEM</div><div class="s-val" style="color:${duColor};font-size:1.6rem">${r.du.toFixed(2)}%</div></div>
+    </div>
+  </div>
+
+  <div class="table-block"><div class="table-title" style="color:#10b981">📈 Chi tiết Tỷ lệ đáp ứng</div>
+    <table>
+    <thead><tr>
+      <th style="width:120px">Chỉ tiêu</th>
+      <th>FC</th>
+      <th>Booking theo tồn</th>
+      <th>Thực xuất</th>
+      <th>Chênh lệch</th>
+      <th>% Đáp ứng</th>
+    </tr></thead>
+    <tbody>
+    <tr>
+      <td style="font-weight:700;color:#22d3ee">📦 ITEM</td>
+      <td class="c-bk">${fmt(r.fc)}</td>
+      <td class="c-bk">${fmt(r.bkTon)}</td>
+      <td class="c-tx">${fmt(r.tx)}</td>
+      <td style="color:${r.diff>50?'#f87171':'#10b981'}">${fmt(r.diff)}</td>
+      <td style="font-weight:800;font-size:1.05rem;color:${duColor}">${r.du.toFixed(2)}%</td>
+    </tr>
+    <tr>
+      <td style="font-weight:700;color:#a78bfa">⚖️ Trọng lượng</td>
+      <td class="c-bk">${fmt(r.tlFc)}</td>
+      <td class="c-bk">${fmt(r.tlBkTon)}</td>
+      <td class="c-tx">${fmt(r.tlTx)}</td>
+      <td style="color:${r.tlDiff>50?'#f87171':'#10b981'}">${fmt(r.tlDiff)}</td>
+      <td style="font-weight:800;font-size:1.05rem;color:${duTlColor}">${r.duTl.toFixed(2)}%</td>
+    </tr>
+    </tbody></table>
+  </div>`;
 
   document.getElementById('content').innerHTML = html;
 }
