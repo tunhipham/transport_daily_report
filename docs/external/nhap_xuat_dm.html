@@ -1462,15 +1462,29 @@ function renderDapUng() {
   // Filter
   let filtered = DA;
   if (daSummary) {
-    filtered = DA.filter(r => r.wkTotal);
+    filtered = DA.filter(r => {
+      if (!r.wkTotal) return false;
+      const wn = parseInt(r.wk.replace('W',''));
+      if (wn < daWkFrom || wn > daWkTo) return false;
+      if (daMonth > 0) {
+        // Check if this week has any day in the selected month
+        const hasDay = DA.some(x => !x.wkTotal && x.wk === r.wk && getMonth(x.d) === daMonth);
+        if (!hasDay) return false;
+      }
+      return true;
+    });
   } else {
     filtered = DA.filter(r => {
       const wn = parseInt(r.wk.replace('W',''));
       if (wn < daWkFrom || wn > daWkTo) return false;
       if (daMonth > 0) {
+        if (r.wkTotal) {
+          // Only show weekly total if week has days in this month
+          const hasDay = DA.some(x => !x.wkTotal && x.wk === r.wk && getMonth(x.d) === daMonth);
+          return hasDay;
+        }
         const m = getMonth(r.d);
         if (m > 0 && m !== daMonth) return false;
-        if (r.wkTotal) return true; // always show weekly total in range
       }
       return true;
     });
