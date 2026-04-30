@@ -94,6 +94,10 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Checkout repo (needed for gh CLI)
+        if: steps.changed.outputs.all_whitelisted == 'true'
+        uses: actions/checkout@v4
+
       - name: Auto-merge
         if: steps.changed.outputs.all_whitelisted == 'true'
         run: gh pr merge ${{ github.event.pull_request.number }} --squash --auto
