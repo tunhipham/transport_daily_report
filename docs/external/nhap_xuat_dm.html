@@ -1434,8 +1434,9 @@ const DA = [
 
 let daIdx = DA.length - 1;
 
+let daFilter = 'all'; // 'all', 'W14', 'W15', ..., 'summary'
+
 function renderDapUng() {
-  // Hide day-nav buttons (not needed for table view)
   document.getElementById('btnPrev').style.display = 'none';
   document.getElementById('btnNext').style.display = 'none';
   document.querySelector('.day-info .date').textContent = 'Tỷ lệ đáp ứng';
@@ -1445,8 +1446,29 @@ function renderDapUng() {
   function duClr(v) { return v >= 99.5 ? '#10b981' : v >= 99 ? '#f59e0b' : '#ef4444'; }
   function diffClr(v) { return Math.abs(v) > 100 ? '#f87171' : '#10b981'; }
 
+  // Filter data
+  const weeks = [...new Set(DA.map(r => r.wk))];
+  let filtered = DA;
+  if (daFilter === 'summary') {
+    filtered = DA.filter(r => r.wkTotal);
+  } else if (daFilter !== 'all') {
+    filtered = DA.filter(r => r.wk === daFilter);
+  }
+
+  // Filter buttons
+  const btnStyle = (f) => `padding:6px 14px;border-radius:8px;border:1px solid ${daFilter===f?'#10b981':'#1e293b'};background:${daFilter===f?'rgba(16,185,129,0.15)':'#141938'};color:${daFilter===f?'#10b981':'#94a3b8'};font-size:12px;font-weight:${daFilter===f?'700':'500'};cursor:pointer;font-family:Inter`;
+  let filterHtml = `<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;padding:10px 16px;background:#0f1328;border-bottom:1px solid #1e293b">`;
+  filterHtml += `<button style="${btnStyle('all')}" onclick="daFilter='all';renderDapUng()">Tất cả</button>`;
+  weeks.forEach(w => {
+    const num = w.replace('W','');
+    filterHtml += `<button style="${btnStyle(w)}" onclick="daFilter='${w}';renderDapUng()">Tuần ${num}</button>`;
+  });
+  filterHtml += `<button style="${btnStyle('summary')}" onclick="daFilter='summary';renderDapUng()">📊 Tổng tuần</button>`;
+  filterHtml += `</div>`;
+
+  // Table rows
   let rows = '';
-  DA.forEach(r => {
+  filtered.forEach(r => {
     const isWk = r.wkTotal;
     const bg = isWk ? 'background:rgba(16,185,129,0.08);' : '';
     const bdr = isWk ? 'border-top:2px solid rgba(16,185,129,0.3);border-bottom:2px solid rgba(16,185,129,0.3);' : '';
@@ -1470,8 +1492,9 @@ function renderDapUng() {
     </tr>`;
   });
 
-  let html = `<div class="table-block" style="max-width:1200px;overflow-x:auto">
-    <div class="table-title" style="color:#10b981">📈 Tỷ lệ đáp ứng — Tổng hợp T4/2026</div>
+  let html = `${filterHtml}
+  <div class="table-block" style="max-width:1200px;overflow-x:auto">
+    <div class="table-title" style="color:#10b981">📈 Tỷ lệ đáp ứng — ${daFilter==='all'?'Tổng hợp T4/2026':daFilter==='summary'?'So sánh theo tuần':''+daFilter.replace('W','Tuần ')}</div>
     <table style="table-layout:auto;font-size:11.5px">
     <thead>
       <tr>
