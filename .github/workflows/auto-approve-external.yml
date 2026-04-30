@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════
-# Auto-approve PRs that ONLY touch docs/external/ files
+# Auto-approve PRs that ONLY touch WHITELISTED external files
 # ═══════════════════════════════════════════════════════════
-# External collaborator tạo PR sửa file trong docs/external/
-# → Action tự approve + merge nếu KHÔNG đụng file ngoài scope.
-# → Nếu sửa file ngoài scope (index.html, script/, v.v.) → BLOCK.
+# Whitelist cứng: chỉ 2 file được auto-approve.
+# File mới trong docs/external/ → BLOCK, cần owner review.
+# File ngoài docs/external/ → BLOCK, cần owner review.
 # ═══════════════════════════════════════════════════════════
 
 name: Auto-approve external PRs
@@ -19,45 +19,66 @@ permissions:
 jobs:
   check-and-approve:
     runs-on: ubuntu-latest
-    # Only run for PRs from collaborators (not the owner)
     if: github.event.pull_request.user.login != 'tunhipham'
 
     steps:
-      - name: Get changed files
-        id: files
-        uses: dorny/paths-filter@v3
+      - name: Get list of changed files
+        id: changed
+        uses: actions/github-script@v7
         with:
-          filters: |
-            external_only:
-              - 'docs/external/**'
-            protected:
-              - 'docs/index.html'
-              - 'docs/data/**'
-              - 'script/**'
-              - 'config/**'
-              - 'agents/**'
-              - '.agents/**'
-              - '.github/**'
-              - '*.md'
-              - '*.py'
+          script: |
+            const files = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              per_page: 100
+            });
 
-      - name: Block if protected files touched
-        if: steps.files.outputs.protected == 'true'
+            const changedFiles = files.data.map(f => f.filename);
+            core.setOutput('files', JSON.stringify(changedFiles));
+            core.setOutput('count', changedFiles.length);
+
+            // ── WHITELIST CỨNG — chỉ 2 file này được auto-approve ──
+            const WHITELIST = [
+              'docs/external/nhap_xuat_dm.html',
+              'docs/external/claim_aba.html'
+            ];
+
+            const allWhitelisted = changedFiles.every(f => WHITELIST.includes(f));
+            const hasUnknown = changedFiles.some(f => !WHITELIST.includes(f));
+
+            core.setOutput('all_whitelisted', allWhitelisted.toString());
+            core.setOutput('has_unknown', hasUnknown.toString());
+
+            console.log(`Changed files: ${changedFiles.join(', ')}`);
+            console.log(`All whitelisted: ${allWhitelisted}`);
+            console.log(`Has unknown files: ${hasUnknown}`);
+
+      - name: Block if any file outside whitelist
+        if: steps.changed.outputs.has_unknown == 'true'
         run: |
-          echo "🚨 PR sửa file NGOÀI SCOPE cho phép!"
-          echo "❌ External chỉ được sửa file trong docs/external/"
+          echo "🚨 ════════════════════════════════════════════"
+          echo "🚨  BLOCK — PR chứa file NGOÀI whitelist!"
+          echo "🚨 ════════════════════════════════════════════"
           echo ""
-          echo "Files protected bị sửa — cần review thủ công từ @tunhipham"
+          echo "Files trong PR:"
+          echo '${{ steps.changed.outputs.files }}' | python3 -c "import sys,json; [print(f'  → {f}') for f in json.loads(sys.stdin.read())]"
+          echo ""
+          echo "Chỉ các file sau được auto-approve:"
+          echo "  ✅ docs/external/nhap_xuat_dm.html"
+          echo "  ✅ docs/external/claim_aba.html"
+          echo ""
+          echo "⚠ PR này cần review thủ công từ @tunhipham"
           exit 1
 
-      - name: Auto-approve if only external files
-        if: steps.files.outputs.external_only == 'true' && steps.files.outputs.protected == 'false'
+      - name: Auto-approve whitelisted files only
+        if: steps.changed.outputs.all_whitelisted == 'true'
         uses: hmarr/auto-approve-action@v4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Auto-merge
-        if: steps.files.outputs.external_only == 'true' && steps.files.outputs.protected == 'false'
+        if: steps.changed.outputs.all_whitelisted == 'true'
         run: gh pr merge ${{ github.event.pull_request.number }} --squash --auto
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
