@@ -1434,7 +1434,17 @@ const DA = [
 
 let daIdx = DA.length - 1;
 
-let daFilter = 'all'; // 'all', 'W14', 'W15', ..., 'summary'
+let daWkFrom = 14, daWkTo = 18, daMonth = 0; // 0=all, 3=T3, 4=T4
+let daSummary = false;
+
+function getMonth(d) {
+  if (d.includes('Mar')) return 3;
+  if (d.includes('Apr')) return 4;
+  if (d.includes('May')) return 5;
+  if (d.startsWith('Tuần')) return 0; // weekly total
+  return 0;
+}
+function monthLabel(m) { return m===3?'Tháng 3':m===4?'Tháng 4':m===5?'Tháng 5':''; }
 
 function renderDapUng() {
   document.getElementById('btnPrev').style.display = 'none';
@@ -1446,25 +1456,51 @@ function renderDapUng() {
   function duClr(v) { return v >= 99.5 ? '#10b981' : v >= 99 ? '#f59e0b' : '#ef4444'; }
   function diffClr(v) { return Math.abs(v) > 100 ? '#f87171' : '#10b981'; }
 
-  // Filter data
   const weeks = [...new Set(DA.map(r => r.wk))];
+  const weekNums = weeks.map(w => parseInt(w.replace('W','')));
+
+  // Filter
   let filtered = DA;
-  if (daFilter === 'summary') {
+  if (daSummary) {
     filtered = DA.filter(r => r.wkTotal);
-  } else if (daFilter !== 'all') {
-    filtered = DA.filter(r => r.wk === daFilter);
+  } else {
+    filtered = DA.filter(r => {
+      const wn = parseInt(r.wk.replace('W',''));
+      if (wn < daWkFrom || wn > daWkTo) return false;
+      if (daMonth > 0) {
+        const m = getMonth(r.d);
+        if (m > 0 && m !== daMonth) return false;
+        if (r.wkTotal) return true; // always show weekly total in range
+      }
+      return true;
+    });
   }
 
-  // Filter buttons
-  const btnStyle = (f) => `padding:6px 14px;border-radius:8px;border:1px solid ${daFilter===f?'#10b981':'#1e293b'};background:${daFilter===f?'rgba(16,185,129,0.15)':'#141938'};color:${daFilter===f?'#10b981':'#94a3b8'};font-size:12px;font-weight:${daFilter===f?'700':'500'};cursor:pointer;font-family:Inter`;
-  let filterHtml = `<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;padding:10px 16px;background:#0f1328;border-bottom:1px solid #1e293b">`;
-  filterHtml += `<button style="${btnStyle('all')}" onclick="daFilter='all';renderDapUng()">Tất cả</button>`;
-  weeks.forEach(w => {
-    const num = w.replace('W','');
-    filterHtml += `<button style="${btnStyle(w)}" onclick="daFilter='${w}';renderDapUng()">Tuần ${num}</button>`;
-  });
-  filterHtml += `<button style="${btnStyle('summary')}" onclick="daFilter='summary';renderDapUng()">📊 Tổng tuần</button>`;
-  filterHtml += `</div>`;
+  // Dropdown style
+  const selStyle = `background:#141938;color:#e2e8f0;border:1px solid #1e293b;border-radius:6px;padding:5px 8px;font-size:12px;font-family:Inter;cursor:pointer`;
+  const btnAct = (on) => `padding:6px 14px;border-radius:8px;border:1px solid ${on?'#10b981':'#1e293b'};background:${on?'rgba(16,185,129,0.15)':'#141938'};color:${on?'#10b981':'#94a3b8'};font-size:12px;font-weight:${on?'700':'500'};cursor:pointer;font-family:Inter`;
+
+  // Week range options
+  let wkOpts = (sel) => weekNums.map(n => `<option value="${n}" ${n===sel?'selected':''}>${n}</option>`).join('');
+
+  let filterHtml = `<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:center;padding:10px 16px;background:#0f1328;border-bottom:1px solid #1e293b">
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="color:#64748b;font-size:11px;font-weight:600">📅 THÁNG:</span>
+      <button style="${btnAct(daMonth===0&&!daSummary)}" onclick="daMonth=0;daSummary=false;renderDapUng()">Tất cả</button>
+      <button style="${btnAct(daMonth===3)}" onclick="daMonth=3;daSummary=false;renderDapUng()">T3</button>
+      <button style="${btnAct(daMonth===4)}" onclick="daMonth=4;daSummary=false;renderDapUng()">T4</button>
+    </div>
+    <div style="width:1px;height:24px;background:#1e293b"></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="color:#64748b;font-size:11px;font-weight:600">📆 TUẦN:</span>
+      <span style="color:#94a3b8;font-size:11px">Từ</span>
+      <select style="${selStyle}" onchange="daWkFrom=+this.value;daSummary=false;renderDapUng()">${wkOpts(daWkFrom)}</select>
+      <span style="color:#94a3b8;font-size:11px">→</span>
+      <select style="${selStyle}" onchange="daWkTo=+this.value;daSummary=false;renderDapUng()">${wkOpts(daWkTo)}</select>
+    </div>
+    <div style="width:1px;height:24px;background:#1e293b"></div>
+    <button style="${btnAct(daSummary)}" onclick="daSummary=!daSummary;renderDapUng()">📊 Tổng tuần</button>
+  </div>`;
 
   // Table rows
   let rows = '';
@@ -1475,10 +1511,13 @@ function renderDapUng() {
     const fw = isWk ? 'font-weight:800;' : '';
     const label = isWk ? `⚡ ${r.d}` : r.d;
     const dayCol = isWk ? 'color:#10b981;' : 'color:#94a3b8;';
+    const m = getMonth(r.d);
+    const mLabel = isWk ? '' : (m===3?'T3':m===4?'T4':'');
 
     rows += `<tr style="${bg}${bdr}">
       <td style="${fw}color:#e2e8f0;white-space:nowrap">${label}</td>
       <td style="${dayCol}${fw}text-align:center;font-size:10px">${isWk ? r.wkRange : r.w}</td>
+      <td style="text-align:center;color:#f59e0b;font-size:10px;${fw}">${mLabel}</td>
       <td style="text-align:right;color:#818cf8;${fw}">${fmt(r.fc)}</td>
       <td style="text-align:right;color:#22d3ee;${fw}">${fmt(r.bkTon)}</td>
       <td style="text-align:right;color:#a78bfa;${fw}">${fmt(r.tx)}</td>
@@ -1492,14 +1531,22 @@ function renderDapUng() {
     </tr>`;
   });
 
+  // Title
+  let title = 'Tổng hợp';
+  if (daSummary) title = 'So sánh theo tuần';
+  else if (daMonth > 0) title = `Tháng ${daMonth}`;
+  else if (daWkFrom === daWkTo) title = `Tuần ${daWkFrom}`;
+  else title = `Tuần ${daWkFrom} → ${daWkTo}`;
+
   let html = `${filterHtml}
   <div class="table-block" style="max-width:1200px;overflow-x:auto">
-    <div class="table-title" style="color:#10b981">📈 Tỷ lệ đáp ứng — ${daFilter==='all'?'Tổng hợp T4/2026':daFilter==='summary'?'So sánh theo tuần':''+daFilter.replace('W','Tuần ')}</div>
+    <div class="table-title" style="color:#10b981">📈 Tỷ lệ đáp ứng — ${title}</div>
     <table style="table-layout:auto;font-size:11.5px">
     <thead>
       <tr>
-        <th rowspan="2" style="width:75px;position:sticky;left:0;background:#141938;z-index:2">Ngày</th>
+        <th rowspan="2" style="width:70px;position:sticky;left:0;background:#141938;z-index:2">Ngày</th>
         <th rowspan="2" style="width:45px">Thứ</th>
+        <th rowspan="2" style="width:30px;color:#f59e0b">Tháng</th>
         <th colspan="5" style="text-align:center;color:#22d3ee;border-bottom:2px solid #22d3ee">📦 ITEM</th>
         <th colspan="5" style="text-align:center;color:#a78bfa;border-bottom:2px solid #a78bfa">⚖️ Trọng lượng (kg)</th>
       </tr>
