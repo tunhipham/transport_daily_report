@@ -1436,6 +1436,7 @@ let daIdx = DA.length - 1;
 
 let daWkFrom = 14, daWkTo = 18, daMonth = 0; // 0=all, 3=T3, 4=T4
 let daSummary = false;
+let daMSummary = false; // monthly summary
 
 function getMonth(d) {
   if (d.includes('Mar')) return 3;
@@ -1467,11 +1468,23 @@ function renderDapUng() {
       const wn = parseInt(r.wk.replace('W',''));
       if (wn < daWkFrom || wn > daWkTo) return false;
       if (daMonth > 0) {
-        // Check if this week has any day in the selected month
         const hasDay = DA.some(x => !x.wkTotal && x.wk === r.wk && getMonth(x.d) === daMonth);
         if (!hasDay) return false;
       }
       return true;
+    });
+  } else if (daMSummary) {
+    // Only show monthly totals
+    const allDays = DA.filter(r => !r.wkTotal);
+    const months = [...new Set(allDays.map(r => getMonth(r.d)).filter(m => m > 0))];
+    filtered = [];
+    months.forEach(mo => {
+      const mDays = allDays.filter(x => getMonth(x.d) === mo);
+      const tot = {mTotal:true, d:`Tháng ${mo}`, fc:0, bkTon:0, tx:0, diff:0, tlFc:0, tlBkTon:0, tlTx:0, tlDiff:0};
+      mDays.forEach(x => { tot.fc+=x.fc; tot.bkTon+=x.bkTon; tot.tx+=x.tx; tot.diff+=x.diff; tot.tlFc+=x.tlFc; tot.tlBkTon+=x.tlBkTon; tot.tlTx+=x.tlTx; tot.tlDiff+=x.tlDiff; });
+      tot.du = tot.bkTon > 0 ? Math.round(tot.tx/tot.bkTon*10000)/100 : 0;
+      tot.duTl = tot.tlBkTon > 0 ? Math.round(tot.tlTx/tot.tlBkTon*10000)/100 : 0;
+      filtered.push(tot);
     });
   } else {
     filtered = DA.filter(r => {
@@ -1479,7 +1492,6 @@ function renderDapUng() {
       if (wn < daWkFrom || wn > daWkTo) return false;
       if (daMonth > 0) {
         if (r.wkTotal) {
-          // Only show weekly total if week has days in this month
           const hasDay = DA.some(x => !x.wkTotal && x.wk === r.wk && getMonth(x.d) === daMonth);
           return hasDay;
         }
@@ -1491,13 +1503,12 @@ function renderDapUng() {
   }
 
   // Compute monthly totals and insert after each month group
-  if (!daSummary) {
+  if (!daSummary && !daMSummary) {
     const months = [...new Set(filtered.filter(r => !r.wkTotal && !r.mTotal).map(r => getMonth(r.d)).filter(m => m > 0))];
     let withTotals = [];
     let lastMonth = 0;
     filtered.forEach(r => {
       const m = r.wkTotal ? 0 : getMonth(r.d);
-      // If month changed and we had a previous month, insert monthly total
       if (m > 0 && lastMonth > 0 && m !== lastMonth && months.includes(lastMonth)) {
         const mDays = filtered.filter(x => !x.wkTotal && !x.mTotal && getMonth(x.d) === lastMonth);
         if (mDays.length > 0) {
@@ -1511,7 +1522,6 @@ function renderDapUng() {
       if (m > 0) lastMonth = m;
       withTotals.push(r);
     });
-    // Add total for the last month
     if (lastMonth > 0 && months.includes(lastMonth)) {
       const mDays = filtered.filter(x => !x.wkTotal && !x.mTotal && getMonth(x.d) === lastMonth);
       if (mDays.length > 0) {
@@ -1548,7 +1558,8 @@ function renderDapUng() {
       <select style="${selStyle}" onchange="daWkTo=+this.value;daSummary=false;renderDapUng()">${wkOpts(daWkTo)}</select>
     </div>
     <div style="width:1px;height:24px;background:#1e293b"></div>
-    <button style="${btnAct(daSummary)}" onclick="daSummary=!daSummary;renderDapUng()">📊 Tổng tuần</button>
+    <button style="${btnAct(daSummary)}" onclick="daSummary=!daSummary;daMSummary=false;renderDapUng()">📊 Tổng tuần</button>
+    <button style="${btnAct(daMSummary)}" onclick="daMSummary=!daMSummary;daSummary=false;renderDapUng()">🔶 Tổng tháng</button>
   </div>`;
 
   // Table rows
@@ -1587,6 +1598,7 @@ function renderDapUng() {
   // Title
   let title = 'Tổng hợp';
   if (daSummary) title = 'So sánh theo tuần';
+  else if (daMSummary) title = 'So sánh theo tháng';
   else if (daMonth > 0) title = `Tháng ${daMonth}`;
   else if (daWkFrom === daWkTo) title = `Tuần ${daWkFrom}`;
   else title = `Tuần ${daWkFrom} → ${daWkTo}`;
