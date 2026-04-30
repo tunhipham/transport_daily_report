@@ -1421,7 +1421,8 @@ const DA = [
 {d:'24-Apr',w:'T6',wk:'W4',fc:96655,bkTon:111592,tx:111568,diff:24,du:99.98,tlFc:29415,tlBkTon:28055,tlTx:28048,tlDiff:7,duTl:99.97},
 {d:'25-Apr',w:'T7',wk:'W4',fc:108748,bkTon:110983,tx:110960,diff:23,du:99.98,tlFc:31085,tlBkTon:29625,tlTx:29619,tlDiff:6,duTl:99.98},
 {d:'26-Apr',w:'CN',wk:'W4',fc:118048,bkTon:120084,tx:120045,diff:39,du:99.97,tlFc:33628,tlBkTon:31453,tlTx:31430,tlDiff:23,duTl:99.93},
-{d:'W4',w:'T2',wk:'W4',wkTotal:true,fc:616406,bkTon:694777,tx:692274,diff:2503,du:99.64,tlFc:180080,tlBkTon:185961,tlTx:183615,tlDiff:2346,duTl:98.74}
+{d:'W4',w:'T2',wk:'W4',wkTotal:true,fc:616406,bkTon:694777,tx:692274,diff:2503,du:99.64,tlFc:180080,tlBkTon:185961,tlTx:183615,tlDiff:2346,duTl:98.74},
+{d:'28-Apr',w:'T3',wk:'W5',fc:98648,bkTon:109245,tx:109158,diff:87,du:99.92,tlFc:26291,tlBkTon:24869,tlTx:24850,tlDiff:18,duTl:99.93}
 ];
 
 let daIdx = DA.length - 1;
@@ -1430,6 +1431,11 @@ function renderDapUng() {
   const r = DA[daIdx];
   const isWk = r.wkTotal;
   const title = isWk ? `📊 Tổng tuần ${r.d}` : `📅 ${r.d} (${r.w})`;
+  // Sync day-nav header
+  const navDate = isWk ? `Tuần ${r.d}` : r.d;
+  document.querySelector('.day-info .date').textContent = navDate;
+  document.querySelector('.day-info .dow').textContent = isWk ? 'Tổng tuần' : r.w;
+  document.querySelector('.day-info .week').textContent = r.wk;
   const badge = isWk ? `<span style="background:#10b981;color:#fff;padding:2px 10px;border-radius:8px;font-size:.75rem;margin-left:8px">TUẦN</span>` : '';
   const duColor = r.du >= 99.5 ? '#10b981' : r.du >= 99 ? '#f59e0b' : '#ef4444';
   const duTlColor = r.duTl >= 99.5 ? '#10b981' : r.duTl >= 99 ? '#f59e0b' : '#ef4444';
