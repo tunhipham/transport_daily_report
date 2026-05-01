@@ -1061,22 +1061,39 @@ def generate_weekly_tables(metrics, dates):
             sla_pct.append(f"{pct}%" if pct != "" else "")
         return sla_on, sla_pct
     
-    def format_pct_cell(val, cls):
-        """Apply color gradient to percentage cells."""
+    
+    # Color threshold configs per metric
+    PCT_COLORS = {
+        '% On Time (SLA)': [
+            (99, 'rgba(34,197,94,0.35)', '#4ADE80'),
+            (95, 'rgba(250,204,21,0.28)', '#EAB308'),
+            (0,  'rgba(220,38,38,0.4)',   '#FCA5A5'),
+        ],
+        '% Đúng Kế Hoạch': [
+            (90, 'rgba(34,197,94,0.35)', '#4ADE80'),
+            (85, 'rgba(250,204,21,0.28)', '#EAB308'),
+            (0,  'rgba(220,38,38,0.4)',   '#FCA5A5'),
+        ],
+    }
+    DEFAULT_PCT_COLORS = [
+        (99, 'rgba(34,197,94,0.35)', '#4ADE80'),
+        (95, 'rgba(74,222,128,0.18)', '#86EFAC'),
+        (90, 'rgba(250,204,21,0.28)', '#EAB308'),
+        (85, 'rgba(251,146,60,0.3)', '#F97316'),
+        (80, 'rgba(239,68,68,0.3)', '#EF4444'),
+        (0,  'rgba(220,38,38,0.4)', '#FCA5A5'),
+    ]
+
+    def format_pct_cell(val, cls, metric_name=''):
+        """Apply color gradient to percentage cells based on metric thresholds."""
         if val and val != "":
             pct_val = float(str(val).replace('%', ''))
-            if pct_val >= 99:
-                bg = 'rgba(34,197,94,0.35)'; fc = '#4ADE80'
-            elif pct_val >= 95:
-                bg = 'rgba(74,222,128,0.18)'; fc = '#86EFAC'
-            elif pct_val >= 90:
-                bg = 'rgba(250,204,21,0.28)'; fc = '#EAB308'
-            elif pct_val >= 85:
-                bg = 'rgba(251,146,60,0.3)'; fc = '#F97316'
-            elif pct_val >= 80:
-                bg = 'rgba(239,68,68,0.3)'; fc = '#EF4444'
-            else:
-                bg = 'rgba(220,38,38,0.4)'; fc = '#FCA5A5'
+            thresholds = PCT_COLORS.get(metric_name, DEFAULT_PCT_COLORS)
+            bg, fc = thresholds[-1][1], thresholds[-1][2]  # default to worst
+            for threshold, t_bg, t_fc in thresholds:
+                if pct_val >= threshold:
+                    bg, fc = t_bg, t_fc
+                    break
             return f'<td class="{cls}" style="background:{bg};color:{fc};font-weight:600">{val}</td>'
         return f'<td class="{cls}">{val}</td>'
     
@@ -1092,7 +1109,7 @@ def generate_weekly_tables(metrics, dates):
                 is_total = col_keys[j][1] is None
                 cls = "wt-total-cell" if is_total else "wt-day-cell"
                 if is_pct:
-                    rows_html += format_pct_cell(val, cls)
+                    rows_html += format_pct_cell(val, cls, metric_name)
                 else:
                     rows_html += f'<td class="{cls}">{val}</td>'
             rows_html += '</tr>'
@@ -1120,7 +1137,7 @@ def generate_weekly_tables(metrics, dates):
     
     # Table configs: (kho, title, use_sla_for_main, add_sla_extra_row)
     table_configs = [
-        ("THỊT CÁ", "THỊT CÁ", True, False),       # SLA-based ontime
+        ("THỊT CÁ", "THỊT CÁ", True, True),        # SLA-based ontime + SLA % row
         ("ĐÔNG MÁT", "ĐÔNG MÁT", False, True),      # Plan-based + extra SLA row
         ("ĐÔNG", "HÀNG ĐÔNG", False, True),           # Plan-based + extra SLA row
         ("MÁT", "HÀNG MÁT", False, True),            # Plan-based + extra SLA row
