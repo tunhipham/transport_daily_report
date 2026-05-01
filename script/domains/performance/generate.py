@@ -995,7 +995,6 @@ def generate_weekly_tables(metrics, dates):
         data = {
             "Tổng Điểm Giao": [],
             "Đúng & Sớm KH": [],
-            "% On Time Per Dest": [],
             "Tổng Số Chuyến": [],
         }
         
@@ -1034,10 +1033,8 @@ def generate_weekly_tables(metrics, dates):
                     on_time_pts = plan.get("on_time", 0)
                     ontime_total = plan.get("on_time", 0) + plan.get("late", 0)
             
-            pct = round(on_time_pts / ontime_total * 100, 1) if ontime_total > 0 else ""
             data["Tổng Điểm Giao"].append(total_pts if total_pts > 0 else "")
             data["Đúng & Sớm KH"].append(on_time_pts if ontime_total > 0 else "")
-            data["% On Time Per Dest"].append(f"{pct}%" if pct != "" else "")
             data["Tổng Số Chuyến"].append(total_trips if total_trips > 0 else "")
         
         return data
@@ -1134,12 +1131,12 @@ def generate_weekly_tables(metrics, dates):
         data = compute_values(kho, col_keys, use_sla_ontime=use_sla)
         
         if add_sla_row:
-            # Insert SLA row after "% On Time" (plan-based)
+            # Insert SLA row after "Đúng & Sớm KH"
             sla_on_vals, sla_pct_vals = compute_sla_row(kho, col_keys)
             ordered_data = {}
             for k, v in data.items():
                 ordered_data[k] = v
-                if k == "% On Time Per Dest":
+                if k == "Đúng & Sớm KH":
                     ordered_data["% On Time (SLA)"] = sla_pct_vals
             # Add % Đúng Kế Hoạch row BEFORE Tổng Số Chuyến
             pc_pct_vals = compute_plan_compliance_row(kho, col_keys)
