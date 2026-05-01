@@ -3206,6 +3206,8 @@
         else if (delta >= 0 && delta <= 3 && s.status_type !== 'reschedule') { s.status_type = 'opening'; s.status_text = 'Đang khai trương'; }
         return true;
       });
+      // Sort by opening date: nearest first → farthest
+      stores.sort((a, b) => a.iso_date.localeCompare(b.iso_date));
       // Filter calendar events the same way
       const allCalEvents = data.calendar_events || [];
       const calEvents = allCalEvents.filter(ev => {
