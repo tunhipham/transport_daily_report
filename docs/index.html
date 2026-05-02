@@ -1441,6 +1441,9 @@
       <div class="tab" data-tab="claim_aba" id="tab-claim_aba">
         <span class="tab-icon">📋</span><span class="tab-label">Claim ABA</span>
       </div>
+      <div class="tab" data-tab="dashboard_ro" id="tab-dashboard_ro">
+        <span class="tab-icon">🧺</span><span class="tab-label">Dashboard Rổ</span>
+      </div>
     </div>
     <div class="sidebar-footer">KFM Command Center v2</div>
   </nav>
@@ -1523,6 +1526,18 @@
                 loading="lazy"
                 title="Dashboard Claim ABA"
                 onerror="claimFallback()"></iframe>
+      </div>
+    </div>
+
+    <!-- ═══ DASHBOARD RỔ TAB (IFRAME — EXTERNAL) ═══ -->
+    <div class="tab-content" id="content-dashboard_ro">
+      <div class="nx-iframe-wrap" id="ro-wrap">
+        <iframe id="ro-iframe" class="nx-iframe"
+                src="https://longdoanthanh-bot.github.io/dashboard-ro/"
+                sandbox="allow-scripts allow-same-origin"
+                loading="lazy"
+                title="Dashboard Rổ — KingFoodmart"
+                onerror="roFallback()"></iframe>
       </div>
     </div>
   </div>
@@ -1633,13 +1648,16 @@
         document.getElementById('content-' + target).classList.add('active');
         // Close sidebar after tab selection
         closeSidebar();
-        // nhap_xuat & claim_aba use iframe — no JSON to load
+        // nhap_xuat, claim_aba, dashboard_ro use iframe — no JSON to load
         if (target === 'nhap_xuat') {
           loaded[target] = true;
           nxInit();
         } else if (target === 'claim_aba') {
           loaded[target] = true;
           claimInit();
+        } else if (target === 'dashboard_ro') {
+          loaded[target] = true;
+          roInit();
         } else if (!loaded[target]) {
           loadTab(target);
         }
@@ -1686,6 +1704,26 @@
           <div class="nx-icon">📋</div>
           <div class="nx-msg">Chưa có dữ liệu Claim ABA</div>
           <div class="nx-sub">File chưa được deploy. Liên hệ người phụ trách để cập nhật.</div>
+        </div>`;
+    }
+
+    // ═══════════════════════════════════════════════
+    // DASHBOARD RỔ — iframe helpers
+    // ═══════════════════════════════════════════════
+    function roInit() {
+      const iframe = document.getElementById('ro-iframe');
+      if (!iframe) return;
+      iframe.addEventListener('load', () => {});
+      iframe.addEventListener('error', roFallback);
+    }
+
+    function roFallback() {
+      const wrap = document.getElementById('ro-wrap');
+      if (wrap) wrap.innerHTML = `
+        <div class="nx-fallback">
+          <div class="nx-icon">🧺</div>
+          <div class="nx-msg">Chưa tải được Dashboard Rổ</div>
+          <div class="nx-sub">Kiểm tra kết nối hoặc liên hệ người phụ trách.</div>
         </div>`;
     }
 
