@@ -2623,6 +2623,7 @@ def main():
         date_str = datetime.now().strftime("%d/%m/%Y")
 
     send_telegram = "--send" in sys.argv
+    force_send = "--force" in sys.argv
 
     parts = date_str.split("/")
     date_for_file = f"{parts[0]}.{parts[1]}.{parts[2]}"
@@ -2676,10 +2677,13 @@ def main():
             print(f"\n  🚫 THIẾU DATA (kho): {', '.join(missing_khos)}")
         if has_source_warnings:
             print(f"\n  🚫 THIẾU DATA (source): {len(all_warnings)} warning(s)")
-        if send_telegram:
+        if send_telegram and not force_send:
             send_telegram = False  # Block sending
             print("  ❌ Telegram bị CHẶN do thiếu data.")
             print(f"     → Review/update data rồi chạy lại: python script/domains/daily/generate.py --date {date_str} --send")
+            print(f"     → Hoặc dùng --force để bỏ qua validation: python script/domains/daily/generate.py --date {date_str} --send --force")
+        elif send_telegram and force_send:
+            print("  ⚠️  --force: Bỏ qua validation, gửi Telegram anyway")
 
     # Step 5: Update history
     history = update_history(result)
