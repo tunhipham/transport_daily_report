@@ -23,6 +23,7 @@ config/                             @tunhipham
 .agents/                            @tunhipham
 agents/                             @tunhipham
 
-# ── External content — vẫn cần review nhưng ưu tiên thấp hơn ──
-# External có thể tạo PR sửa file trong đây, owner review trước khi merge
-docs/external/                      @tunhipham
+# ── External content — managed by auto-approve workflow ──
+# Whitelisted files (nhap_xuat_dm.html, claim_aba.html) auto-approve qua CI.
+# File MỚI trong docs/external/ sẽ bị workflow BLOCK → cần owner duyệt thủ công.
+# KHÔNG liệt kê docs/external/ ở đây để github-actions[bot] approve là đủ.
