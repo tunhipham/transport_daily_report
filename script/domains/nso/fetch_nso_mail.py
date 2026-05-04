@@ -576,9 +576,9 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
         if not mail_name:
             continue
 
-        # Split into keywords (>2 chars, skip noise)
+        # Split into keywords (≥3 chars, skip noise) — short tokens like "9", "91" cause false matches
         noise = {"chung", "cư", "siêu", "thị", "mới", "bổ", "sung", "kfm", "hcm"}
-        keywords = [w for w in re.split(r'[\s\-/,\.]+', mail_name) if len(w) > 1 and w not in noise]
+        keywords = [w for w in re.split(r'[\s\-/,\.]+', mail_name) if len(w) >= 3 and w not in noise]
 
         best_match = None
         best_score = 0
@@ -589,7 +589,8 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
                 continue
             # Count how many keywords match
             score = sum(1 for kw in keywords if kw in dsst_name)
-            if score > best_score and score >= 2:
+            # Require score ≥ 2 AND at least 40% of keywords matched
+            if score > best_score and score >= 2 and (len(keywords) == 0 or score / len(keywords) >= 0.4):
                 best_score = score
                 best_match = (dsst_code, dsst_info)
 

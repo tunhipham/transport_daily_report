@@ -1,14 +1,17 @@
 """
 Batch NSO — Auto-create Telegram groups from Google Sheet.
 
-Chỉ đọc cột A→E:
-  A: no.
-  B: store_code
-  C: group_name   → tên group cần tạo
-  D: member        → danh sách members (multiline)
-  E: tag_user      → (optional, dùng cho DC notice)
+Reads columns:
+  A (0): no.
+  B (1): store_code
+  C (2): group_name   → tên group cần tạo
+  D (3): member       → danh sách members (multiline)
+  E (4): tag_user     → (optional, dùng cho DC notice)
 
-Cột I,J dùng làm bảng lookup: user_info → @username
+Lookup table (rows with data in cols J-L):
+  J (9):  user_info   → tên đầy đủ
+  K (10): @username
+  L (11): SĐT (phone fallback)
 
 Usage:
   python batch_nso.py                    # Dry run
@@ -22,6 +25,7 @@ import csv
 import io
 import json
 import os
+import re
 import sys
 
 import requests as req
@@ -40,6 +44,7 @@ SHEET_ID = "1EiqjBPu2zDBRRZhFxMNvVuBMPHqf902CR28naVyJxdU"
 SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
 # Members không có username — dùng Telegram user ID
+# (Xem config/credentials.md để cập nhật)
 FIXED_IDS = {
     "KFM - SCM - Thọ Nguyễn - SC006747": 5593486255,
 }
@@ -69,21 +74,42 @@ def fetch_sheet():
     return header, data
 
 
+def normalize_phone(phone_str):
+    """Normalize phone number to +84 format."""
+    if not phone_str:
+        return None
+    digits = re.sub(r"[^0-9]", "", phone_str)
+    if digits.startswith("84") and len(digits) >= 11:
+        return f"+{digits}"
+    if digits.startswith("0") and len(digits) >= 10:
+        return f"+84{digits[1:]}"
+    if len(digits) >= 9:
+        return f"+84{digits}"
+    return None
+
+
 def parse_sheet(data):
     """
     Parse sheet:
-    - Cột I (9), J (10): bảng lookup user_info → @username
+    - Cột J (9), K (10), L (11): bảng lookup user_info → @username / SĐT
     - Cột C (2): group_name → mỗi row có group_name = 1 group cần tạo
     - Cột D (3): members (multiline)
+    - Cột E (4): tag_user (DC notice)
     """
-    # --- Build username lookup from columns I, J ---
-    lookup = {}
+    # --- Build username lookup from columns J, K, L ---
+    lookup = {}  # user_info → @username or phone
     for row in data:
         if len(row) > 10:
             user_info = row[9].strip()
-            username = row[10].strip()
-            if user_info and username:
-                lookup[user_info] = username
+            username = row[10].strip() if len(row) > 10 else ""
+            phone = row[11].strip() if len(row) > 11 else ""
+            if user_info:
+                if username:
+                    lookup[user_info] = username
+                elif phone:
+                    normalized = normalize_phone(phone)
+                    if normalized:
+                        lookup[user_info] = normalized
 
     # Add fixed IDs
     for name, uid in FIXED_IDS.items():
@@ -103,6 +129,7 @@ def parse_sheet(data):
 
         group_name = row[2].strip()  # Col C
         members_raw = row[3].strip()  # Col D
+        tag_user = row[4].strip() if len(row) > 4 else ""  # Col E
 
         if not group_name:
             continue
@@ -121,10 +148,14 @@ def parse_sheet(data):
             else:
                 unresolved.append(m)
 
+        # Parse tag_user for DC notice
+        tag_users = [t.strip() for t in tag_user.split("\n") if t.strip()] if tag_user else []
+
         groups.append({
             "name": group_name,
             "resolved": resolved,
             "unresolved": unresolved,
+            "tag_users": tag_users,
         })
 
     return lookup, groups
@@ -143,9 +174,39 @@ def print_plan(groups):
             print(f"       ✅ {name} → {handle}")
         for name in g['unresolved']:
             print(f"       ❌ {name} → ???")
+        if g['tag_users']:
+            print(f"     📢 DC tag: {', '.join(g['tag_users'])}")
 
     print(f"\n  + 🤖 Bot will be added to all groups")
     print()
+
+
+async def search_and_resolve(client, name):
+    """Try to find a user by name search on Telegram. Returns entity or None."""
+    from telethon.tl.types import User
+    from telethon.tl.functions.contacts import SearchRequest
+
+    # Extract person's actual name: always second-to-last segment
+    # "KFM - SCM - Thọ Nguyễn - SC006747" → "Thọ Nguyễn"
+    # "HCM10 - A114 - TC - Phong Trần - SC002310" → "Phong Trần"
+    parts = [p.strip() for p in name.split(" - ")]
+    search_name = parts[-2] if len(parts) >= 3 else name
+
+    print(f"    🔍 Searching: \"{search_name}\" (from: {name})...")
+
+    try:
+        result = await client(SearchRequest(q=search_name, limit=10))
+        if result.users:
+            for u in result.users:
+                if isinstance(u, User) and not u.bot:
+                    uname = f"@{u.username}" if u.username else f"ID:{u.id}"
+                    print(f"    ✅ Found: {u.first_name} {u.last_name or ''} ({uname})")
+                    return u
+        print(f"    ⚠️ No results for \"{search_name}\"")
+    except Exception as e:
+        print(f"    ⚠️ Search failed: {e}")
+
+    return None
 
 
 async def execute(groups, send_notice=False):
@@ -173,6 +234,7 @@ async def execute(groups, send_notice=False):
 
     # Bot entity
     bot_entity = None
+    bot_token = None
     try:
         with open(BOT_CONFIG_FILE, 'r', encoding='utf-8') as f:
             bot_cfg = json.load(f)
@@ -212,8 +274,14 @@ async def execute(groups, send_notice=False):
                 print(f"  ❌ {name} ({handle}): {e}")
             await asyncio.sleep(DELAY_ADD)
 
+        # Try to resolve unresolved members by searching
         for name in g['unresolved']:
-            print(f"  ⚠️ Unresolved: {name}")
+            entity = await search_and_resolve(client, name)
+            if entity:
+                user_entities.append(entity)
+            else:
+                print(f"  ⚠️ Unresolved (skipped): {name}")
+            await asyncio.sleep(DELAY_ADD)
 
         if not user_entities:
             print(f"  ❌ No members — skipping")
@@ -254,25 +322,29 @@ async def execute(groups, send_notice=False):
                 except Exception as e:
                     print(f"  ⚠️ Bot add failed: {e}")
 
-            # DC notice (optional)
-            if send_notice and chat_id and g['name'].upper().startswith('DC'):
+            # DC notice (for DC groups when --notice flag is set)
+            if send_notice and g['name'].upper().startswith('DC'):
                 await asyncio.sleep(2)
-                try:
-                    bt = bot_cfg.get('daily', {}).get('bot_token', '') if 'bot_cfg' in dir() else ''
-                    if not bt:
-                        with open(BOT_CONFIG_FILE, 'r', encoding='utf-8') as f:
-                            bt = json.load(f).get('daily', {}).get('bot_token', '')
-                    if bt:
+                # Find the actual chat_id from dialogs (more reliable)
+                actual_chat_id = chat_id
+                if not actual_chat_id:
+                    async for d in client.iter_dialogs():
+                        if d.title == g['name']:
+                            actual_chat_id = d.entity.id
+                            break
+
+                if actual_chat_id and bot_token:
+                    try:
                         r = req.post(
-                            f"https://api.telegram.org/bot{bt}/sendMessage",
-                            json={"chat_id": -chat_id, "text": DC_NOTICE_MSG, "parse_mode": "Markdown"}
+                            f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                            json={"chat_id": -actual_chat_id, "text": DC_NOTICE_MSG, "parse_mode": "Markdown"}
                         )
                         if r.json().get("ok"):
                             print(f"  📢 DC notice sent!")
                         else:
                             print(f"  ⚠️ DC notice failed: {r.json().get('description')}")
-                except Exception as e:
-                    print(f"  ⚠️ DC notice error: {e}")
+                    except Exception as e:
+                        print(f"  ⚠️ DC notice error: {e}")
 
         except errors.FloodWaitError as e:
             print(f"  ⏳ Rate limited! Waiting {e.seconds}s...")
