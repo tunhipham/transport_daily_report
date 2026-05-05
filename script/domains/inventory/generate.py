@@ -643,6 +643,51 @@ def generate_html(daily_stats, target_date_str=None, all_days=None):
     avg_acc = sum(weekly_acc_values) / len(weekly_acc_values) if weekly_acc_values else 0
     avg_acc = math.floor(avg_acc * 100) / 100
 
+    # ---- Build weekly aggregate for stats table + pie filter ----
+    weekly_agg_table = []
+    for c in cats:
+        agg = {'sku': 0, 'item_KFM': 0, 'item_ABA': 0, 'kg_KFM': 0.0, 'kg_ABA': 0.0}
+        day_count = 0
+        for wd in week_days:
+            key = wd.strftime('%Y-%m-%d')
+            ds = stats_by_date.get(key)
+            if ds:
+                day_count += 1
+                agg['sku'] = max(agg['sku'], ds['categories'][c]['sku'])
+                agg['item_KFM'] += ds['categories'][c]['item_KFM']
+                agg['item_ABA'] += ds['categories'][c]['item_ABA']
+                agg['kg_KFM'] += ds['categories'][c]['kg_KFM']
+                agg['kg_ABA'] += ds['categories'][c]['kg_ABA']
+        weekly_agg_table.append({
+            'cat': cat_labels[c], 'color': cat_colors[c],
+            'sku': agg['sku'], 'item_KFM': agg['item_KFM'],
+            'item_ABA': agg['item_ABA'],
+            'kg_KFM': round(agg['kg_KFM'], 2),
+            'kg_ABA': round(agg['kg_ABA'], 2),
+        })
+    weekly_pie_item_values = [r['item_KFM'] for r in weekly_agg_table]
+    weekly_pie_kg_values = [r['kg_KFM'] for r in weekly_agg_table]
+
+    # JSON data for JS filter toggle
+    filter_data_json = json.dumps({
+        'day': {
+            'label': target_label,
+            'rows': [{'cat': r['cat'], 'color': r['color'], 'sku': r['sku'],
+                       'item_KFM': r['item_KFM'], 'item_ABA': r['item_ABA'],
+                       'kg_KFM': r['kg_KFM'], 'kg_ABA': r['kg_ABA']} for r in table_rows],
+            'pie_item': pie_item_values,
+            'pie_kg': pie_kg_values,
+        },
+        'week': {
+            'label': f"W{iso_week}-{iso_year}",
+            'rows': [{'cat': r['cat'], 'color': r['color'], 'sku': r['sku'],
+                       'item_KFM': r['item_KFM'], 'item_ABA': r['item_ABA'],
+                       'kg_KFM': r['kg_KFM'], 'kg_ABA': r['kg_ABA']} for r in weekly_agg_table],
+            'pie_item': weekly_pie_item_values,
+            'pie_kg': weekly_pie_kg_values,
+        },
+    })
+
     # ---- Compute comparison data (vs hôm qua & vs LFL) ----
     def _fmt_change_acc(current, previous):
         """Format chênh lệch tỷ lệ chính xác (hiện chênh lệch trực tiếp dạng +0.01%)"""
@@ -1223,6 +1268,48 @@ def generate_html(daily_stats, target_date_str=None, all_days=None):
             margin-left: 0.5rem;
         }}
 
+        /* Filter Toggle */
+        .filter-toggle {{
+            display: inline-flex;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 100px;
+            padding: 3px;
+            gap: 2px;
+        }}
+        .filter-btn {{
+            padding: 0.35rem 1.1rem;
+            border-radius: 100px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }}
+        .filter-btn.active {{
+            background: linear-gradient(135deg, rgba(96, 165, 250, 0.25), rgba(167, 139, 250, 0.25));
+            color: var(--accent-blue);
+            box-shadow: 0 2px 8px rgba(96, 165, 250, 0.15);
+        }}
+        .filter-btn:hover:not(.active) {{
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.04);
+        }}
+        .stats-header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }}
+        .stats-header .card-title {{
+            margin-bottom: 0;
+        }}
+
         /* Footer */
         .footer {{
             text-align: center;
@@ -1469,11 +1556,17 @@ def generate_html(daily_stats, target_date_str=None, all_days=None):
         </div>
         </div>
 
-        <!-- Stats Table (part of section-thongke) -->
+        <!-- Stats Table + Pie Charts (filterable) -->
         <div class="card" id="section-stats">
-            <div class="card-title">
-                <div class="icon" style="background: rgba(96, 165, 250, 0.15); color: var(--accent-blue);">📊</div>
-                Thống Kê Sản Lượng Theo Phân Nhóm — {target_label}
+            <div class="stats-header">
+                <div class="card-title">
+                    <div class="icon" style="background: rgba(96, 165, 250, 0.15); color: var(--accent-blue);">📊</div>
+                    <span>Thống Kê Sản Lượng Theo Phân Nhóm — <span id="statsFilterLabel">{target_label}</span></span>
+                </div>
+                <div class="filter-toggle">
+                    <button class="filter-btn active" id="filterDay" onclick="switchFilter('day')">📅 Ngày</button>
+                    <button class="filter-btn" id="filterWeek" onclick="switchFilter('week')">📆 Tuần</button>
+                </div>
             </div>
             <div class="table-wrapper">
                 <table>
@@ -1491,8 +1584,9 @@ def generate_html(daily_stats, target_date_str=None, all_days=None):
                             <th class="sub-header">ABA</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="statsTableBody">
 """
+
     for r in table_rows:
         html += f"""                        <tr>
                             <td><span class="cat-dot" style="background: {r['color']}"></span>{r['cat']}</td>
@@ -1516,8 +1610,38 @@ def generate_html(daily_stats, target_date_str=None, all_days=None):
                 </table>
             </div>
         </div>
+
+        <!-- Section 5: Pie Chart - Items (filterable) -->
+        <div class="card" id="section-pie-item">
+            <div class="card-title">
+                <div class="icon" style="background: rgba(167, 139, 250, 0.15); color: var(--accent-purple);">🥧</div>
+                <span id="pieItemTitle">Tỉ Trọng Theo Số Lượng (Item) — KFM — {target_label}</span>
+            </div>
+            <div class="pie-section">
+                <div class="pie-chart-container">
+                    <img class="chart-fallback" id="fallback-chartPieItem" src="data:image/png;base64,{fallback_pie_item}" alt="Pie Item Chart">
+                    <canvas id="chartPieItem" style="display:none;"></canvas>
+                </div>
+                <div class="pie-legend" id="pieLegendItem"></div>
+            </div>
+            {insight_pie_item}
         </div>
 
+        <!-- Section 6: Pie Chart - KG (filterable) -->
+        <div class="card" id="section-pie-kg">
+            <div class="card-title">
+                <div class="icon" style="background: rgba(251, 191, 36, 0.15); color: var(--accent-yellow);">🥧</div>
+                <span id="pieKgTitle">Tỉ Trọng Theo Trọng Lượng (KG) — KFM — {target_label}</span>
+            </div>
+            <div class="pie-section">
+                <div class="pie-chart-container">
+                    <img class="chart-fallback" id="fallback-chartPieKg" src="data:image/png;base64,{fallback_pie_kg}" alt="Pie KG Chart">
+                    <canvas id="chartPieKg" style="display:none;"></canvas>
+                </div>
+                <div class="pie-legend" id="pieLegendKg"></div>
+            </div>
+            {insight_pie_kg}
+        </div>
 
         <!-- Section 2: Trend Item -->
         <div class="card" id="section-trend-item">
@@ -1556,38 +1680,6 @@ def generate_html(daily_stats, target_date_str=None, all_days=None):
                 <canvas id="chartKg" style="display:none;"></canvas>
             </div>
             {insight_trend_kg}
-        </div>
-
-        <!-- Section 5: Pie Chart - Items -->
-        <div class="card" id="section-pie-item">
-            <div class="card-title">
-                <div class="icon" style="background: rgba(167, 139, 250, 0.15); color: var(--accent-purple);">🥧</div>
-                Tỉ Trọng Theo Số Lượng (Item) — KFM — {target_label}
-            </div>
-            <div class="pie-section">
-                <div class="pie-chart-container">
-                    <img class="chart-fallback" id="fallback-chartPieItem" src="data:image/png;base64,{fallback_pie_item}" alt="Pie Item Chart">
-                    <canvas id="chartPieItem" style="display:none;"></canvas>
-                </div>
-                <div class="pie-legend" id="pieLegendItem"></div>
-            </div>
-            {insight_pie_item}
-        </div>
-
-        <!-- Section 6: Pie Chart - KG -->
-        <div class="card" id="section-pie-kg">
-            <div class="card-title">
-                <div class="icon" style="background: rgba(251, 191, 36, 0.15); color: var(--accent-yellow);">🥧</div>
-                Tỉ Trọng Theo Trọng Lượng (KG) — KFM — {target_label}
-            </div>
-            <div class="pie-section">
-                <div class="pie-chart-container">
-                    <img class="chart-fallback" id="fallback-chartPieKg" src="data:image/png;base64,{fallback_pie_kg}" alt="Pie KG Chart">
-                    <canvas id="chartPieKg" style="display:none;"></canvas>
-                </div>
-                <div class="pie-legend" id="pieLegendKg"></div>
-            </div>
-            {insight_pie_kg}
         </div>
 """
 
@@ -1840,11 +1932,22 @@ def generate_html(daily_stats, target_date_str=None, all_days=None):
         // Reusable pie chart creator
         const pieLabels = {json.dumps(pie_labels)};
         const pieColors = {json.dumps(pie_colors)};
+        let chartPieItemInstance = null;
+        let chartPieKgInstance = null;
 
         function createPieChart(canvasId, legendId, values, unit) {{
+            // Destroy existing chart if any
+            const canvas = document.getElementById(canvasId);
+            const existingChart = Chart.getChart(canvas);
+            if (existingChart) existingChart.destroy();
+
+            // Clear legend
+            const legendContainer = document.getElementById(legendId);
+            legendContainer.innerHTML = '';
+
             const total = values.reduce((a, b) => a + b, 0);
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            new Chart(ctx, {{
+            const ctx = canvas.getContext('2d');
+            const chart = new Chart(ctx, {{
                 type: 'doughnut',
                 data: {{
                     labels: pieLabels,
@@ -1890,7 +1993,6 @@ def generate_html(daily_stats, target_date_str=None, all_days=None):
                 }}
             }});
             // Custom legend
-            const legendContainer = document.getElementById(legendId);
             pieLabels.forEach((label, i) => {{
                 const pct = ((values[i] / total) * 100).toFixed(1);
                 const item = document.createElement('div');
@@ -1903,14 +2005,66 @@ def generate_html(daily_stats, target_date_str=None, all_days=None):
                 legendContainer.appendChild(item);
             }});
             // Show interactive canvas, hide static fallback
-            document.getElementById(canvasId).style.display = 'block';
+            canvas.style.display = 'block';
             var fb = document.getElementById('fallback-' + canvasId);
             if (fb) fb.style.display = 'none';
+            return chart;
         }}
 
-        // Create both pie charts
-        createPieChart('chartPieItem', 'pieLegendItem', {json.dumps(pie_item_values)}, 'Item');
-        createPieChart('chartPieKg', 'pieLegendKg', {json.dumps(pie_kg_values)}, 'KG');
+        // Create both pie charts (initial = day)
+        chartPieItemInstance = createPieChart('chartPieItem', 'pieLegendItem', {json.dumps(pie_item_values)}, 'Item');
+        chartPieKgInstance = createPieChart('chartPieKg', 'pieLegendKg', {json.dumps(pie_kg_values)}, 'KG');
+
+        // ── Filter toggle logic ──
+        const filterData = {filter_data_json};
+
+        function switchFilter(mode) {{
+            const data = filterData[mode];
+            if (!data) return;
+
+            // Update toggle buttons
+            document.getElementById('filterDay').classList.toggle('active', mode === 'day');
+            document.getElementById('filterWeek').classList.toggle('active', mode === 'week');
+
+            // Update stats table label
+            document.getElementById('statsFilterLabel').textContent = data.label;
+
+            // Update pie chart titles
+            document.getElementById('pieItemTitle').innerHTML =
+                'Tỉ Trọng Theo Số Lượng (Item) — KFM — ' + data.label;
+            document.getElementById('pieKgTitle').innerHTML =
+                'Tỉ Trọng Theo Trọng Lượng (KG) — KFM — ' + data.label;
+
+            // Rebuild stats table body
+            const tbody = document.getElementById('statsTableBody');
+            let html = '';
+            let totSku = 0, totItemK = 0, totItemA = 0, totKgK = 0, totKgA = 0;
+            data.rows.forEach(r => {{
+                totSku += r.sku; totItemK += r.item_KFM; totItemA += r.item_ABA;
+                totKgK += r.kg_KFM; totKgA += r.kg_ABA;
+                html += '<tr>' +
+                    '<td><span class="cat-dot" style="background:' + r.color + '"></span>' + r.cat + '</td>' +
+                    '<td>' + r.sku.toLocaleString() + '</td>' +
+                    '<td>' + r.item_KFM.toLocaleString() + '</td>' +
+                    '<td>' + r.item_ABA.toLocaleString() + '</td>' +
+                    '<td>' + r.kg_KFM.toLocaleString(undefined, {{minimumFractionDigits:2, maximumFractionDigits:2}}) + '</td>' +
+                    '<td>' + r.kg_ABA.toLocaleString(undefined, {{minimumFractionDigits:2, maximumFractionDigits:2}}) + '</td>' +
+                    '</tr>';
+            }});
+            html += '<tr class="row-total">' +
+                '<td>Tổng cộng</td>' +
+                '<td>' + totSku.toLocaleString() + '</td>' +
+                '<td>' + totItemK.toLocaleString() + '</td>' +
+                '<td>' + totItemA.toLocaleString() + '</td>' +
+                '<td>' + totKgK.toLocaleString(undefined, {{minimumFractionDigits:2, maximumFractionDigits:2}}) + '</td>' +
+                '<td>' + totKgA.toLocaleString(undefined, {{minimumFractionDigits:2, maximumFractionDigits:2}}) + '</td>' +
+                '</tr>';
+            tbody.innerHTML = html;
+
+            // Rebuild pie charts
+            chartPieItemInstance = createPieChart('chartPieItem', 'pieLegendItem', data.pie_item, 'Item');
+            chartPieKgInstance = createPieChart('chartPieKg', 'pieLegendKg', data.pie_kg, 'KG');
+        }}
     </script>
 </body>
 </html>"""
@@ -2113,13 +2267,6 @@ def send_to_telegram(image_files, html_path, date_tag, date_str):
         if mid:
             sent_msg_ids.append(mid)
             print(f"   ✅ Sent: {os.path.basename(fpath)}")
-
-    if os.path.exists(html_path):
-        mid = send_telegram_document(html_path,
-                                     f"📋 Báo cáo HTML {date_str} — mở bằng trình duyệt để xem chi tiết")
-        if mid:
-            sent_msg_ids.append(mid)
-            print(f"   ✅ Sent: {os.path.basename(html_path)}")
 
     if sent_msg_ids:
         sent_data = _load_sent(SENT_MESSAGES_FILE)
