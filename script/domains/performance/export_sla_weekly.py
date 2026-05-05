@@ -22,7 +22,7 @@ OUTPUT = os.path.join(BASE, "output")
 PERF_DIR = os.path.join(OUTPUT, "artifacts", "performance")
 os.makedirs(PERF_DIR, exist_ok=True)
 
-WEEKS = [14, 15, 16, 17]
+WEEKS = [14, 15, 16, 17, 18]
 DAY_NAMES = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN']
 
 # ── Build week date ranges ──
@@ -241,11 +241,11 @@ def export_sla_excel(metrics, kho_list, filename, title, metric_labels=None):
 
 def main():
     print("=" * 60)
-    print("  📊 SLA ON-TIME WEEKLY EXPORT — W14, W15, W16")
+    print("  📊 SLA ON-TIME WEEKLY EXPORT — W14, W15, W16, W17, W18")
     print("=" * 60)
 
     # Load data for months 3+4 (W14 spans both)
-    months = [3, 4]
+    months = [3, 4, 5]
     print("\n📥 Loading data...")
     all_rows = []
     for m in months:
@@ -260,20 +260,20 @@ def main():
 
     # File 1: All kho
     all_kho = ["KRC", "THỊT CÁ", "ĐÔNG MÁT", "ĐÔNG", "MÁT", "KSL-Sáng", "KSL-Tối"]
-    print("\n📄 File 1: SLA_ONTIME_W14_W15_W16_W17.xlsx (all kho)")
+    print("\n📄 File 1: SLA_ONTIME_W14_W15_W16_W17_W18.xlsx (all kho)")
     export_sla_excel(
         metrics, all_kho,
-        "SLA_ONTIME_W14_W15_W16_W17.xlsx",
-        "SLA ON-TIME — W14, W15, W16, W17 (30/03 - 26/04/2026)"
+        "SLA_ONTIME_W14_W15_W16_W17_W18.xlsx",
+        "SLA ON-TIME — W14, W15, W16, W17, W18 (30/03 - 03/05/2026)"
     )
 
     # File 2: ĐÔNG MÁT + THỊT CÁ only
     dm_tc_kho = ["ĐÔNG MÁT", "ĐÔNG", "MÁT", "THỊT CÁ"]
-    print("\n📄 File 2: SLA_ONTIME_DM_TC_W14_W15_W16_W17.xlsx (ĐÔNG MÁT + THỊT CÁ)")
+    print("\n📄 File 2: SLA_ONTIME_DM_TC_W14_W15_W16_W17_W18.xlsx (ĐÔNG MÁT + THỊT CÁ)")
     export_sla_excel(
         metrics, dm_tc_kho,
-        "SLA_ONTIME_DM_TC_W14_W15_W16_W17.xlsx",
-        "SLA ON-TIME ĐÔNG MÁT & THỊT CÁ — W14, W15, W16, W17 (30/03 - 26/04/2026)",
+        "SLA_ONTIME_DM_TC_W14_W15_W16_W17_W18.xlsx",
+        "SLA ON-TIME ĐÔNG MÁT & THỊT CÁ — W14, W15, W16, W17, W18 (30/03 - 03/05/2026)",
         metric_labels=["Tổng Điểm Giao", "Đúng Giờ (SLA)", "% On Time (SLA)", "Tổng Số Chuyến"]
     )
 
