@@ -19,20 +19,42 @@ Copy-Item "script\domains\performance\generate.py" "backups\generate_performance
 
 ## Run
 
-1. Fetch latest monthly plan:
+1. Fetch latest monthly plan (chạy cho **mỗi tháng** cần data):
 ```powershell
 python -u script/domains/performance/fetch_monthly.py --month 4 --year 2026
 ```
-
-2. Generate report:
 ```powershell
-python -u script/domains/performance/generate.py --months 3,4 --year 2026
+python -u script/domains/performance/fetch_monthly.py --month 5 --year 2026
+```
+
+2. Generate report + SLA Excel:
+```powershell
+python -u script/domains/performance/generate.py --months 3,4,5 --year 2026 --sla-weeks 14,15,16,17,18
 ```
 
 3. Deploy:
 ```powershell
 python -u script/dashboard/deploy.py --domain performance
 ```
+
+## SLA Export Options
+
+`--sla-weeks` tích hợp trong `generate.py` — **dùng lại metrics đã tính, không load data lần 2**.
+
+```bash
+# Chỉ định weeks cụ thể (recommended)
+python -u script/domains/performance/generate.py --months 3,4,5 --sla-weeks 14,15,16,17,18
+
+# Auto-detect weeks từ months (sẽ ra nhiều tuần)
+python -u script/domains/performance/generate.py --months 3,4,5 --sla-weeks auto
+
+# Standalone (chạy riêng nếu cần — sẽ load data lại)
+python -u script/domains/performance/export_sla_weekly.py --months 3,4,5 --weeks 14,15,16,17,18
+```
+
+Output (2 files in `output/artifacts/performance/`):
+- `SLA_ONTIME_W{...}.xlsx` — all kho
+- `SLA_ONTIME_DM_TC_W{...}.xlsx` — ĐÔNG MÁT + THỊT CÁ
 
 ## Validation
 

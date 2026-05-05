@@ -1661,6 +1661,8 @@ def main():
     parser.add_argument("--year", type=int, default=2026)
     parser.add_argument("--end-date", type=str, default=None,
                         help="Cutoff date DD/MM/YYYY — only include data up to this date (inclusive)")
+    parser.add_argument("--sla-weeks", type=str, default=None,
+                        help="Export SLA weekly Excel. 'auto' = detect from months, or comma-separated e.g. '14,15,16,17,18'")
     args = parser.parse_args()
     
     year = args.year
@@ -1882,6 +1884,42 @@ def main():
             print(f"  {issue}")
     else:
         print("  ✅ All checks passed")
+    
+    # 7. SLA Weekly Excel Export (reuses metrics — no reload)
+    if args.sla_weeks:
+        print("\n📊 Exporting SLA weekly Excel...")
+        # Import from same package (BASE already on sys.path via load_trip_data)
+        sys.path.insert(0, BASE)
+        from script.domains.performance.export_sla_weekly import (
+            compute_weeks_from_months, build_week_info, make_label,
+            make_title_range, export_sla_excel as sla_export,
+        )
+        if args.sla_weeks.lower() == 'auto':
+            sla_week_list = compute_weeks_from_months(months, year)
+        else:
+            sla_week_list = [int(w.strip()) for w in args.sla_weeks.split(",")]
+        
+        sla_wk_info = build_week_info(sla_week_list, year)
+        sla_label = make_label(sla_week_list)
+        sla_range = make_title_range(sla_wk_info, sla_week_list)
+        wk_display = ', '.join(f'W{w}' for w in sla_week_list)
+        
+        # File 1: All kho
+        all_kho = ["KRC", "THỊT CÁ", "ĐÔNG MÁT", "ĐÔNG", "MÁT", "KSL-Sáng", "KSL-Tối"]
+        fname1 = f"SLA_ONTIME_{sla_label}.xlsx"
+        print(f"  📄 {fname1} (all kho)")
+        sla_export(metrics, all_kho, fname1,
+                   f"SLA ON-TIME — {wk_display} ({sla_range})",
+                   sla_week_list, sla_wk_info)
+        
+        # File 2: ĐÔNG MÁT + THỊT CÁ
+        dm_tc_kho = ["ĐÔNG MÁT", "ĐÔNG", "MÁT", "THỊT CÁ"]
+        fname2 = f"SLA_ONTIME_DM_TC_{sla_label}.xlsx"
+        print(f"  📄 {fname2} (ĐÔNG MÁT + THỊT CÁ)")
+        sla_export(metrics, dm_tc_kho, fname2,
+                   f"SLA ON-TIME ĐÔNG MÁT & THỊT CÁ — {wk_display} ({sla_range})",
+                   sla_week_list, sla_wk_info,
+                   metric_labels=["Tổng Điểm Giao", "Đúng Giờ (SLA)", "% On Time (SLA)", "Tổng Số Chuyến"])
     
     print("=" * 60)
 
