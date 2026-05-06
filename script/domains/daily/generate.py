@@ -34,15 +34,15 @@ KH_DRIVE_FOLDERS = [
 ]
 # KH from local Google Drive sync (Drive API folder scraping unreliable)
 KH_LOCAL_FOLDERS = [
-    ("KH HÀNG ĐÔNG", "ĐÔNG MÁT", 9, KH_DONG_LOCAL),
-    ("KH HÀNG MÁT", "ĐÔNG MÁT", 9, KH_MAT_LOCAL),
+    ("KH HÀNG ĐÔNG", "ĐÔNG", 9, KH_DONG_LOCAL),
+    ("KH HÀNG MÁT", "MÁT", 9, KH_MAT_LOCAL),
     ("KH MEAT", "THỊT CÁ", 11, KH_MEAT_LOCAL),
 ]
 
 # ── Kho mapping (PT raw kho → report kho) ──
+# Note: "KHO ABA QUÁ CẢNH" is NOT here — it's split into ĐÔNG/MÁT via barcode classification
 KHO_MAP = {
     "KHO ABA MIỀN ĐÔNG": "THỊT CÁ",
-    "KHO ABA QUÁ CẢNH": "ĐÔNG MÁT",
     "KHO RAU CỦ": "KRC",
     "Sáng": "KSL-SÁNG", "Tối": "KSL-TỐI",
     "Khách đặt": "KSL-TỐI", "khách đặt": "KSL-TỐI",
@@ -51,9 +51,12 @@ KHO_MAP = {
     "đi sáng": "KSL-SÁNG", "đi tối": "KSL-TỐI",
 }
 
-REPORT_KHOS = ["KRC", "THỊT CÁ", "ĐÔNG MÁT", "KSL-SÁNG", "KSL-TỐI"]
-KHO_COLORS = {"KRC": "#4caf50", "THỊT CÁ": "#e53935", "ĐÔNG MÁT": "#1e88e5",
-              "KSL-SÁNG": "#ff9800", "KSL-TỐI": "#9c27b0"}
+REPORT_KHOS = ["KRC", "THỊT CÁ", "ĐÔNG", "MÁT", "KSL-SÁNG", "KSL-TỐI"]
+KHO_COLORS = {"KRC": "#4caf50", "THỊT CÁ": "#e53935", "ĐÔNG": "#1565c0",
+              "MÁT": "#42a5f5", "KSL-SÁNG": "#ff9800", "KSL-TỐI": "#9c27b0"}
+
+# ── ABA Master Data for ĐÔNG/MÁT barcode classification ──
+ABA_MASTER_PATH = r'G:\My Drive\DOCS\DAILY\ton_aba\data\master_data\Master Data.xlsx'
 
 
 # ──────────────────────────────────────────
@@ -285,6 +288,30 @@ def load_master_data():
     return master_tl
 
 
+def load_barcode_classification():
+    """Load barcode → ĐÔNG/MÁT classification from ABA Master Data.
+    Col B (1) = Mã hàng (barcode), Col E (4) = Phân Loại (ĐÔNG / MÁT).
+    Returns dict: barcode → 'ĐÔNG' or 'MÁT'.
+    """
+    barcode_type = {}
+    print(f"  → ABA barcode classification...")
+    try:
+        wb = load_workbook(ABA_MASTER_PATH, read_only=True, data_only=True)
+        ws = wb.worksheets[0]
+        for row in ws.iter_rows(min_row=2, values_only=False):
+            bc = str(row[1].value or "").strip()
+            pl = str(row[4].value or "").strip().upper()
+            if bc and pl in ('MÁT', 'ĐÔNG'):
+                barcode_type[bc] = pl
+        wb.close()
+        mat_c = sum(1 for v in barcode_type.values() if v == 'MÁT')
+        dong_c = sum(1 for v in barcode_type.values() if v == 'ĐÔNG')
+        print(f"    {len(barcode_type)} barcodes (ĐÔNG: {dong_c}, MÁT: {mat_c})")
+    except Exception as e:
+        print(f"    ⚠ Error loading ABA Master Data: {e}")
+    return barcode_type
+
+
 # ──────────────────────────────────────────
 #  Read STHI + XE data
 # ──────────────────────────────────────────
@@ -431,7 +458,7 @@ def read_sthi_data(date_str, date_for_file, date_tag=None):
 #  Read PT data (ONLINE from Google Drive)
 # ──────────────────────────────────────────
 
-def read_pt_data(date_str, master_tl):
+def read_pt_data(date_str, master_tl, barcode_type=None):
     """Read transfer + yeu_cau from Google Drive folders (online)."""
     rows = []
     warnings = []
@@ -515,7 +542,28 @@ def read_pt_data(date_str, master_tl):
                 ngay = str(row[0].value or "").strip()
                 if ngay == date_str:
                     raw_kho = str(row[2].value or "").strip()
-                    report_kho = KHO_MAP.get(raw_kho)
+                    # Split KHO ABA QUÁ CẢNH into ĐÔNG/MÁT by barcode classification
+                    if raw_kho == "KHO ABA QUÁ CẢNH" and barcode_type:
+                        classification = barcode_type.get(code)
+                        if classification in ('ĐÔNG', 'MÁT'):
+                            report_kho = classification
+                        else:
+                            # Unclassified barcode — track for warning
+                            if not hasattr(read_pt_data, '_unclassified'):
+                                read_pt_data._unclassified = {}
+                            if code not in read_pt_data._unclassified:
+                                product_name = str(row[8].value or "").strip()
+                                read_pt_data._unclassified[code] = {"name": product_name, "sl": 0}
+                            try:
+                                _sl = float(row[10].value or 0)
+                            except (ValueError, TypeError):
+                                _sl = 0
+                            read_pt_data._unclassified[code]["sl"] += _sl
+                            continue
+                    elif raw_kho == "KHO ABA QUÁ CẢNH":
+                        continue  # No classification available, skip
+                    else:
+                        report_kho = KHO_MAP.get(raw_kho)
                     if not report_kho:
                         continue
                     sl_raw = row[10].value
@@ -605,7 +653,26 @@ def read_pt_data(date_str, master_tl):
                     continue
                 product_name = safe_val(row, i_name)
                 raw_kho = safe_val(row, i_plo)
-                report_kho = KHO_MAP.get(raw_kho)
+                # Split KHO ABA QUÁ CẢNH into ĐÔNG/MÁT by barcode classification
+                if raw_kho == "KHO ABA QUÁ CẢNH" and barcode_type:
+                    classification = barcode_type.get(code)
+                    if classification in ('ĐÔNG', 'MÁT'):
+                        report_kho = classification
+                    else:
+                        if not hasattr(read_pt_data, '_unclassified'):
+                            read_pt_data._unclassified = {}
+                        if code not in read_pt_data._unclassified:
+                            read_pt_data._unclassified[code] = {"name": product_name, "sl": 0}
+                        try:
+                            _sl = float(row[i_sl].value if i_sl < len(row) else 0)
+                        except (ValueError, TypeError):
+                            _sl = 0
+                        read_pt_data._unclassified[code]["sl"] += _sl
+                        continue
+                elif raw_kho == "KHO ABA QUÁ CẢNH":
+                    continue
+                else:
+                    report_kho = KHO_MAP.get(raw_kho)
                 if not report_kho:
                     continue
                 sl_raw = row[i_sl].value if i_sl < len(row) else None
@@ -2533,11 +2600,16 @@ def validate_data_completeness(result, date_str):
     expected_khos.append("THỊT CÁ")
     # KRC: always (7/7)
     expected_khos.append("KRC")
-    # ĐÔNG MÁT: skip Monday
+    # ĐÔNG: skip Monday
     if weekday == 0:
-        skip_reasons["ĐÔNG MÁT"] = "Không giao Thứ 2"
+        skip_reasons["ĐÔNG"] = "Không giao Thứ 2"
     else:
-        expected_khos.append("ĐÔNG MÁT")
+        expected_khos.append("ĐÔNG")
+    # MÁT: skip Monday
+    if weekday == 0:
+        skip_reasons["MÁT"] = "Không giao Thứ 2"
+    else:
+        expected_khos.append("MÁT")
     # KSL (Sáng + Tối): skip Sunday
     if weekday == 6:
         skip_reasons["KSL-SÁNG"] = "Không giao CN"
@@ -2643,11 +2715,26 @@ def main():
     print("\n📋 Loading master data (online)...")
     master_tl = load_master_data()
 
+    # Step 2b: Load barcode classification for ĐÔNG/MÁT split
+    barcode_type = load_barcode_classification()
+
     # Step 3: Read PT (online)
     print("\n📦 Reading PT data (online)...")
-    pt_rows, pt_warnings = read_pt_data(date_str, master_tl)
+    # Reset unclassified tracker
+    if hasattr(read_pt_data, '_unclassified'):
+        del read_pt_data._unclassified
+    pt_rows, pt_warnings = read_pt_data(date_str, master_tl, barcode_type=barcode_type)
     for w in pt_warnings:
         print(f"  {w}")
+
+    # Report unclassified barcodes (ĐÔNG/MÁT split)
+    unclassified = getattr(read_pt_data, '_unclassified', {})
+    if unclassified:
+        total_unc = sum(v['sl'] for v in unclassified.values())
+        print(f"\n  ⚠️  {len(unclassified)} barcode(s) chưa phân loại ĐÔNG/MÁT ({total_unc:,.0f} items bị bỏ qua):")
+        for bc, info in sorted(unclassified.items(), key=lambda x: -x[1]['sl']):
+            print(f"      {bc}: {info['sl']:,.0f} — {info['name'][:50]}")
+        print(f"      → Cần bổ sung phân loại trong ABA Master Data (col E)")
 
     # Step 4: Calculate and print summary
     result = calculate_summary(sthi_rows, pt_rows, date_str)
