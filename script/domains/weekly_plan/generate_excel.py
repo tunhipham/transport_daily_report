@@ -45,6 +45,21 @@ sys.path.insert(0, os.path.join(BASE, "script", "dashboard"))
 from export_weekly_plan import NSO_SCHEDULE
 
 # ═══════════════════════════════════════════════
+# DSST CACHE — canonical system names
+# ═══════════════════════════════════════════════
+DSST_CACHE_PATH = os.path.join(BASE, "data", "dsst_cache.json")
+
+def _load_dsst_names():
+    """Load DSST cache → dict code → branch_name (canonical system name)."""
+    if os.path.exists(DSST_CACHE_PATH):
+        with open(DSST_CACHE_PATH, "r", encoding="utf-8") as f:
+            dsst = json.load(f)
+        return {code: entry.get("branch_name", "") for code, entry in dsst.items() if entry.get("branch_name")}
+    return {}
+
+DSST_NAMES = _load_dsst_names()
+
+# ═══════════════════════════════════════════════
 # WEEK CONFIG
 # ═══════════════════════════════════════════════
 ANCHOR_WEEK = 14
@@ -182,8 +197,10 @@ def build_stores(week_dates, inventory):
                 if wd == inv_dt or wd == inv_dt - timedelta(days=1):
                     days[i] = "Kiểm kê"
 
+        # Use DSST canonical name if available, fallback to master_schedule
+        store_name = DSST_NAMES.get(code) or s["name"]
         stores.append({
-            "name": s["name"],
+            "name": store_name,
             "code": code,
             "schedule_chia": schedule_chia,
             "schedule_ve": schedule_ve_display,
@@ -255,9 +272,14 @@ def apply_nso(stores, week_dates):
 
         is_injected = False
         if not matched:
-            name_sys = nso.get("name_system", "")
-            name_full = nso.get("name_full", "")
-            store_name = f"{name_sys} - {name_full}" if name_sys else name_full or f"NSO {code}"
+            # Prefer DSST canonical name → fallback NSO name
+            dsst_name = DSST_NAMES.get(code)
+            if dsst_name:
+                store_name = dsst_name
+            else:
+                name_sys = nso.get("name_system", "")
+                name_full = nso.get("name_full", "")
+                store_name = f"{name_sys} - {name_full}" if name_sys else name_full or f"NSO {code}"
             schedule_chia = sched.get("schedule_chia", "")
 
             matched = {

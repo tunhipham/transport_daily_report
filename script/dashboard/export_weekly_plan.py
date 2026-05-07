@@ -376,7 +376,7 @@ def cross_check_inventory(week_data, inventory):
         store["inventory_date"] = inv_dt.strftime("%d/%m/%Y")
 
 
-def apply_nso_cham_hang(week_data, cham_hang):
+def apply_nso_cham_hang(week_data, cham_hang, dsst_names=None):
     """Apply NSO châm hàng logic to the weekly schedule.
     
     For each NSO store opening in this week:
@@ -407,13 +407,17 @@ def apply_nso_cham_hang(week_data, cham_hang):
         is_injected = False
         if not matched_store:
             # Store not in Excel → inject new row
-            # Build full store name from NSO data
-            name_sys = nso.get("name_system", "")
-            name_full = nso.get("name_full", "")
-            if name_sys:
-                store_name = f"{name_sys} - {name_full}"
+            # Prefer DSST canonical name → fallback NSO data
+            dsst_name = dsst_names.get(nso_code) if dsst_names else None
+            if dsst_name:
+                store_name = dsst_name
             else:
-                store_name = name_full or f"NSO {nso_code}"
+                name_sys = nso.get("name_system", "")
+                name_full = nso.get("name_full", "")
+                if name_sys:
+                    store_name = f"{name_sys} - {name_full}"
+                else:
+                    store_name = name_full or f"NSO {nso_code}"
             
             new_store = {
                 "name": store_name,
@@ -531,7 +535,7 @@ def export():
         if valid_dates:
             cham_hang = get_nso_cham_hang(valid_dates)
             if cham_hang:
-                apply_nso_cham_hang(week_data, cham_hang)
+                apply_nso_cham_hang(week_data, cham_hang, dsst_names)
                 injected = len(week_data["stores"]) - original_count
                 print(f"    🏪 NSO châm hàng: {len(cham_hang)} stores" +
                       (f" ({injected} injected)" if injected else ""))
