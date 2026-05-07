@@ -1,13 +1,15 @@
 @echo off
-chcp 65001 >nul
 title KFM Dashboard Server (port 8080)
 
+REM Add Python to PATH
+set "PATH=%PATH%;%LOCALAPPDATA%\Programs\Python\Python312;%LOCALAPPDATA%\Programs\Python\Python311;%LOCALAPPDATA%\Programs\Python\Python310"
+
 echo.
-echo  ╔══════════════════════════════════════════╗
-echo  ║   KFM Logistics Dashboard                ║
-echo  ║   http://localhost:8080                   ║
-echo  ║   Ctrl+C to stop                          ║
-echo  ╚══════════════════════════════════════════╝
+echo  ===========================================
+echo    KFM Logistics Dashboard
+echo    http://localhost:8080
+echo    Press Ctrl+C to stop
+echo  ===========================================
 echo.
 
 cd /d "G:\My Drive\DOCS\transport_daily_report"
@@ -15,10 +17,13 @@ cd /d "G:\My Drive\DOCS\transport_daily_report"
 REM Check Python
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo  ❌ Python not found! Please install Python first.
+    echo  [ERROR] Python not found!
+    echo  Python path: %LOCALAPPDATA%\Programs\Python
     pause
     exit /b 1
 )
+
+echo  Starting server...
 
 REM Auto-open browser after 2 seconds
 start "" /min cmd /c "timeout /t 2 >nul & start http://localhost:8080/dashboard/dashboard.html"
