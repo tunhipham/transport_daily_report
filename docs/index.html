@@ -2271,6 +2271,44 @@
       const el = document.getElementById('perf-content');
       el.style.display = 'block';
 
+      // -- Detect multi-month vs legacy format --
+      let monthsMap, availMonths, currentMonth;
+      if (data.months) {
+        monthsMap = data.months;
+        availMonths = data.available_months || Object.keys(monthsMap).sort();
+        currentMonth = data.current_month || availMonths[availMonths.length - 1];
+      } else {
+        const key = data.year + '-' + String(data.month).padStart(2,'0');
+        monthsMap = {}; monthsMap[key] = data;
+        availMonths = [key];
+        currentMonth = key;
+      }
+      window._perfMonthsMap = monthsMap;
+      window._perfAvailMonths = availMonths;
+
+      // -- Build month selector --
+      const mN = ['','Th\u00e1ng 1','Th\u00e1ng 2','Th\u00e1ng 3','Th\u00e1ng 4','Th\u00e1ng 5','Th\u00e1ng 6','Th\u00e1ng 7','Th\u00e1ng 8','Th\u00e1ng 9','Th\u00e1ng 10','Th\u00e1ng 11','Th\u00e1ng 12'];
+      let mO = '';
+      availMonths.forEach(function(mk) {
+        var md = monthsMap[mk], lbl = md ? (mN[md.month]||mk)+'/'+md.year : mk, ic = mk===currentMonth;
+        mO += '<option value="'+mk+'"'+(ic?' selected':'')+'>' + lbl + (ic?' (M\u1edbi nh\u1ea5t)':'') + '</option>';
+      });
+      el.innerHTML = '<div class="filter-bar" style="margin-bottom:.6rem"><label>\ud83d\udcc5 Th\u00e1ng:</label><select id="perfMonthPicker" onchange="perfSwitchMonth(this.value)" style="min-width:160px;font-weight:600">'+mO+'</select><span class="filter-info" id="perfMonthInfo">'+availMonths.length+' th\u00e1ng c\u00f3 d\u1eef li\u1ec7u</span></div><div id="perfMonthContent"></div>';
+      perfRenderMonth(monthsMap[currentMonth]);
+    }
+
+    // -- Switch month (no refetch) --
+    window.perfSwitchMonth = function(mk) {
+      var md = window._perfMonthsMap[mk]; if (!md) return;
+      if (window._perfChartInstances) { Object.values(window._perfChartInstances).forEach(function(c){try{c.destroy();}catch(e){}}); window._perfChartInstances = {}; }
+      perfRenderMonth(md);
+    };
+
+    // -- Render single month data --
+    function perfRenderMonth(data) {
+      var el = document.getElementById('perfMonthContent');
+      if (!el || !data) return;
+
       const labels = data.labels;
       const charts = data.charts;
       const cards = data.cards;

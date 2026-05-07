@@ -84,8 +84,12 @@ def export_daily():
 # ══════════════════════════════════════════════════════════════
 # PERFORMANCE
 # ══════════════════════════════════════════════════════════════
-def export_performance():
-    """Export performance data by running metrics calculation from cached trip data."""
+def export_performance(target_month=None, target_year=None):
+    """Export performance data — accumulates monthly data.
+    
+    Old months are locked in performance.json and never recomputed.
+    Only the current month is recalculated each run and merged in.
+    """
     print("🚛 Exporting Performance data...")
 
     # Import the performance generate module
@@ -102,34 +106,68 @@ def export_performance():
         print(f"  ⚠ Cannot import performance generate: {e}")
         return False
 
-    # Determine current month
+    # ── Load existing accumulated data ──
+    out_path = os.path.join(DOCS_DATA, "performance.json")
+    existing = {}
+    if os.path.exists(out_path):
+        try:
+            with open(out_path, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+        except Exception as e:
+            print(f"  ⚠ Error reading existing performance.json: {e}")
+            existing = {}
+
+    # Migrate old single-month format → multi-month format
+    if "months" not in existing:
+        if existing.get("month") and existing.get("labels"):
+            old_key = f"{existing['year']}-{existing['month']:02d}"
+            print(f"  🔄 Migrating old single-month data → months[{old_key}]")
+            old_data = {k: v for k, v in existing.items()
+                        if k not in ("_updated", "available_months", "months", "current_month")}
+            existing = {
+                "_updated": existing.get("_updated", ""),
+                "months": {old_key: old_data},
+                "available_months": [old_key],
+            }
+        else:
+            existing = {"months": {}, "available_months": []}
+
+    months_store = existing.get("months", {})
+
+    # Determine target month (CLI override or current)
     now = datetime.now()
-    month = now.month
-    year = now.year
+    month = target_month or now.month
+    year = target_year or now.year
+    current_key = f"{year}-{month:02d}"
 
-    # Check if we're early in month (might need previous month data too)
-    months = [month]
+    # Which months to load raw data for (for plan lookups spanning month boundary)
+    load_months = [month]
     if now.day <= 5 and month > 1:
-        months = [month - 1, month]
+        load_months = [month - 1, month]
 
-    print(f"  → Processing months: {months}")
+    print(f"  → Current month: {current_key}, loading raw for: {load_months}")
+    print(f"  🔒 Locked months: {[k for k in months_store if k != current_key]}")
 
-    # Load data
+    # ── Load & compute current month only ──
     all_rows = []
-    for m in months:
+    for m in load_months:
         rows = load_trip_data(m, year)
         all_rows.extend(rows)
 
     # Load THỊT CÁ data
-    tc_rows = load_thitca_data(months)
+    tc_rows = load_thitca_data(load_months)
     all_rows.extend(tc_rows)
 
     if not all_rows:
         print("  ⚠ No trip data found")
+        # Still write existing locked data if any
+        if months_store:
+            _write_performance(out_path, existing, months_store, current_key)
+            return True
         return False
 
     # Load plan
-    plan_lookup, route_order = load_plan_data(months)
+    plan_lookup, route_order = load_plan_data(load_months)
 
     # Filter to current month
     from datetime import date as ddate
@@ -141,6 +179,9 @@ def export_performance():
     dates = sorted(month_dates)
     if not dates:
         print("  ⚠ No dates found for current month")
+        if months_store:
+            _write_performance(out_path, existing, months_store, current_key)
+            return True
         return False
 
     # Calculate metrics
@@ -164,8 +205,8 @@ def export_performance():
     _, raw_data_json = export_raw_excel(month_rows, plan_lookup, route_order, month_str, year)
     print(f"  📊 Raw data: {len(raw_data_json)} rows for Excel export")
 
-    data = {
-        "_updated": NOW_STR,
+    # ── Store current month data ──
+    month_data = {
         "month": month,
         "year": year,
         "labels": labels,
@@ -177,12 +218,31 @@ def export_performance():
         "weekly_tables_html": weekly_html,
         "raw_data": raw_data_json,
     }
+    months_store[current_key] = month_data
 
-    out_path = os.path.join(DOCS_DATA, "performance.json")
+    _write_performance(out_path, existing, months_store, current_key)
+    return True
+
+
+def _write_performance(out_path, existing, months_store, current_key):
+    """Write accumulated performance.json with all months."""
+    available = sorted(months_store.keys())
+    data = {
+        "_updated": NOW_STR,
+        "months": months_store,
+        "available_months": available,
+        "current_month": current_key,
+    }
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False)
-    print(f"  ✅ {out_path} ({len(dates)} dates, {os.path.getsize(out_path):,} bytes)")
-    return True
+    total_dates = sum(len(m.get("iso_dates", [])) for m in months_store.values())
+    size = os.path.getsize(out_path)
+    print(f"  ✅ {out_path} ({len(available)} months, {total_dates} total dates, {size:,} bytes)")
+    for mk in available:
+        md = months_store[mk]
+        nd = len(md.get("iso_dates", []))
+        tag = "🔄 current" if mk == current_key else "🔒 locked"
+        print(f"     {tag} {mk}: {nd} dates")
 
 
 # ══════════════════════════════════════════════════════════════
@@ -503,6 +563,10 @@ def main():
     parser.add_argument("--domain", default="all",
                         choices=["all", "daily", "performance", "inventory", "nso"],
                         help="Which domain to export (default: all)")
+    parser.add_argument("--month", type=int, default=None,
+                        help="Target month for performance backfill (e.g. 3 for March)")
+    parser.add_argument("--year", type=int, default=None,
+                        help="Target year for performance backfill (e.g. 2026)")
     args = parser.parse_args()
 
     print(f"{'='*60}")
@@ -512,7 +576,7 @@ def main():
 
     exporters = {
         "daily": export_daily,
-        "performance": export_performance,
+        "performance": lambda: export_performance(args.month, args.year),
         "inventory": export_inventory,
         "nso": export_nso,
     }
@@ -535,7 +599,7 @@ def main():
     else:
         fn = exporters[args.domain]
         try:
-            fn()
+            fn() if args.domain != 'performance' else export_performance(args.month, args.year)
         except Exception as e:
             print(f"  ❌ {args.domain}: {e}")
             import traceback
