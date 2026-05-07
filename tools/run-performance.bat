@@ -46,13 +46,12 @@ if errorlevel 1 (
 )
 
 echo.
-echo  [OK] Done!
-echo.
+echo  Rebuilding dashboard...
+python script\orchestrator\pipeline.py >nul 2>&1
 
-set "OUTPUT_DIR=output\artifacts\performance"
-if exist "%OUTPUT_DIR%" (
-    echo  Opening report folder...
-    start "" "%OUTPUT_DIR%"
-)
+echo.
+echo  [OK] Done!
+echo  Dashboard updated - refresh localhost:8080 to see.
+echo.
 
 pause

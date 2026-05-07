@@ -38,10 +38,4 @@ echo.
 echo  [OK] Done!
 echo.
 
-set "OUTPUT_DIR=output\artifacts\weekly transport plan"
-if exist "%OUTPUT_DIR%" (
-    echo  Opening plan folder...
-    start "" "%OUTPUT_DIR%"
-)
-
 pause
