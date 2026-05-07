@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-analyze_store_metrics.py — Phân tích SKU/Items/Kg/Rổ-Tote-Kiện cho 5 siêu thị × 4 kho
+analyze_store_metrics.py — Phân tích SKU/Items/Kg/Rổ-Tote-Kiện cho ALL siêu thị × 4 kho
 
 Usage:
   python script/domains/performance/analyze_store_metrics.py
@@ -22,16 +22,32 @@ DATA_DIR = os.path.join(BASE, "data", "raw", "daily")
 SHARED_DIR = os.path.join(BASE, "data", "shared")
 TRIP_DIR = r"G:\My Drive\DOCS\DAILY\DS chi tiet chuyen xe\T04.26"
 OUTPUT_DIR = os.path.join(BASE, "output")
+DSST_FILE = os.path.join(BASE, "output", "danh_sach_sieu_thi_hoat_dong.xlsx")
 
-# ── Target stores ──
-TARGETS_TRANSFER = {
-    "KFM_HCM_Q07 - R13 Hưng Vượng 2": "HV2",
-    "KFM_HCM_Q07 - 571 Huỳnh Tấn Phát": "HTP",
-    "KFM_HCM_Q07 - B0.02 Scenic Valley 2": "SCV",
-    "KFM_HCM_TDU - S07.02 Vinhomes Grand Park": "VH4",
-    "KFM_HCM_TDU - 222 Lê Văn Thịnh": "LVH",
-}
-TARGET_CODES = list(TARGETS_TRANSFER.values())  # ['HV2','HTP','SCV','VH4','LVH']
+# ── Target stores ── (populated from DSST mapping)
+TARGETS_TRANSFER = {}   # full_name → viết_tắt code (e.g. 'KFM_HCM_Q07 - R13 Hưng Vượng 2' → 'HV2')
+TARGET_CODES = []       # list of viết_tắt codes (e.g. ['HV2','HTP','SCV',...])
+CODE_TO_NAME = {}       # viết_tắt → full_name (reverse lookup for display)
+
+def load_dsst_mapping():
+    """Load store mapping from DSST sheet (danh_sach_sieu_thi_hoat_dong.xlsx).
+    Maps full store name → viết tắt code. This ensures transfer data and
+    trip data use the same store identifier.
+    """
+    global TARGETS_TRANSFER, TARGET_CODES, CODE_TO_NAME
+    df = pd.read_excel(DSST_FILE, usecols=["Tên siêu thị", "Viết tắt", "Loại ST"])
+    # Only include real stores (MART/MINI) with KFM_ prefix
+    mask = df["Loại ST"].isin(["MART", "MINI"]) & df["Tên siêu thị"].str.startswith("KFM_", na=False)
+    st = df[mask]
+    for _, r in st.iterrows():
+        full_name = str(r["Tên siêu thị"]).strip()
+        code = str(r["Viết tắt"]).strip()
+        if full_name and code:
+            TARGETS_TRANSFER[full_name] = code
+            CODE_TO_NAME[code] = full_name
+    TARGET_CODES = list(TARGETS_TRANSFER.values())
+    print(f"  🏪 Loaded {len(TARGETS_TRANSFER)} stores from DSST mapping")
+    return TARGETS_TRANSFER
 
 # Warehouse mapping from transfer
 WH_MAP_TRANSFER = {
@@ -74,6 +90,8 @@ def parse_date_str(s):
 def load_transfer_data():
     """Load all April transfer files, return daily metrics per (store, kho)."""
     files = sorted(glob.glob(os.path.join(DATA_DIR, "transfer_*042026.xlsx")))
+    if not TARGETS_TRANSFER:
+        load_dsst_mapping()
     print(f"📥 Loading {len(files)} transfer files...")
 
     # daily_metrics[(date, store_code, kho)] = {sku_set, items, kg}
@@ -203,6 +221,10 @@ def load_trip_data():
     files = sorted([f for f in os.listdir(TRIP_DIR) if f.endswith('.xlsx') and not f.startswith('~')])
     print(f"\n📥 Loading {len(files)} trip files...")
 
+    # Build reverse lookup: trip store code → our short code
+    # Trip data uses column J (index 9) as store code — could be internal codes.
+    # We'll collect ALL trip rows since we can't pre-filter without knowing the mapping.
+
     # daily_containers[(date, store, kho)] = {"Rổ": x, "Tote": y, "Kiện": z}
     daily = defaultdict(lambda: {"Rổ": 0, "Tote": 0, "Kiện": 0, "Pallet": 0})
 
@@ -218,7 +240,7 @@ def load_trip_data():
         count = 0
         for row in ws.iter_rows(min_row=2, values_only=True):
             store_code = str(row[9] or "").strip()
-            if store_code not in TARGET_CODES:
+            if not store_code:
                 continue
 
             noi_chuyen = str(row[8] or "").strip()
@@ -284,9 +306,16 @@ def aggregate_metrics(transfer_data, ksl_data, trip_data):
     for (date, store, kho), vals in trip_data.items():
         trip_groups[(store, kho)].append(vals)
 
+    # Collect ALL stores that appear in either item or trip data
+    all_stores_seen = set()
+    for (store, kho) in item_groups:
+        all_stores_seen.add(store)
+    for (store, kho) in trip_groups:
+        all_stores_seen.add(store)
+
     # Calculate min/max/avg
     results = []
-    for store in TARGET_CODES:
+    for store in sorted(all_stores_seen):
         for kho in ["ĐÔNG MÁT", "THỊT CÁ", "KRC", "KSL"]:
             row = {"store": store, "kho": kho}
 
@@ -312,7 +341,9 @@ def aggregate_metrics(transfer_data, ksl_data, trip_data):
             else:
                 row["days_trip"] = 0
 
-            results.append(row)
+            # Only add if there's actual data
+            if row["days_item"] > 0 or row["days_trip"] > 0:
+                results.append(row)
 
     return results
 
@@ -430,8 +461,12 @@ def write_excel(results, output_path):
 # ════════════════════════════════════════════
 def main():
     print("=" * 60)
-    print("  PHÂN TÍCH 5 SIÊU THỊ × 4 KHO — THÁNG 4/2026")
+    print("  PHÂN TÍCH ALL SIÊU THỊ × 4 KHO — THÁNG 4/2026")
     print("=" * 60)
+
+    # 0. Load DSST mapping (viết tắt ↔ full name)
+    print("\n🔍 Loading DSST store mapping...")
+    load_dsst_mapping()
 
     # 1. Load master weight data
     print("\n📦 Loading master data for weight lookup...")
@@ -456,23 +491,22 @@ def main():
 
     # 6. Print summary
     print("\n" + "=" * 60)
-    print("  SUMMARY")
+    print(f"  SUMMARY — {len(results)} rows")
     print("=" * 60)
     for r in results:
-        if r.get("days_item", 0) > 0 or r.get("days_trip", 0) > 0:
-            print(f"  {r['store']} | {r['kho']:10s} | "
-                  f"SKU: {r.get('sku_min','')}-{r.get('sku_max','')} (avg {r.get('sku_avg',0):.0f}) | "
-                  f"Items: {r.get('items_min','')}-{r.get('items_max','')} (avg {r.get('items_avg',0):.0f}) | "
-                  f"Kg: {r.get('kg_avg',0):.1f} | "
-                  f"Rổ: {r.get('Rổ_avg',0):.0f} Tote: {r.get('Tote_avg',0):.0f} Kiện: {r.get('Kiện_avg',0):.0f}")
+        print(f"  {r['store'][:30]:30s} | {r['kho']:10s} | "
+              f"SKU: {r.get('sku_min','')}-{r.get('sku_max','')} (avg {r.get('sku_avg',0):.0f}) | "
+              f"Items: {r.get('items_min','')}-{r.get('items_max','')} (avg {r.get('items_avg',0):.0f}) | "
+              f"Kg: {r.get('kg_avg',0):.1f} | "
+              f"Rổ: {r.get('Rổ_avg',0):.0f} Tote: {r.get('Tote_avg',0):.0f} Kiện: {r.get('Kiện_avg',0):.0f}")
 
     # 7. Write Excel
-    output_path = os.path.join(OUTPUT_DIR, "PHAN_TICH_5ST_4KHO_T04_2026.xlsx")
+    output_path = os.path.join(OUTPUT_DIR, "PHAN_TICH_ALLST_4KHO_T04_2026.xlsx")
     print("\n📝 Writing Excel...")
     write_excel(results, output_path)
 
     print(f"\n{'=' * 60}")
-    print(f"  ✅ DONE!")
+    print(f"  ✅ DONE — {len(results)} rows written!")
     print(f"{'=' * 60}")
 
 
