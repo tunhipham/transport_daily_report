@@ -364,29 +364,25 @@ pause
 
 ### Phase 1
 
-- [ ] Backup + git commit
-- [ ] `script/` → `src/`
+- [x] Backup + git commit ✅ (07/05/2026)
+- [x] `scratch_*.py` → `scratch/` ✅ 12 files moved
+- [x] Tạo `tools/*.bat` ✅ 7 bat files
+- [x] Dashboard server verified ✅ localhost:8080
+- [x] Dashboard rebuild ✅ 4/4 tabs active
 - [ ] `data/shared/` → `data/master/` + gom JSON
-- [ ] `output/artifacts/` → `output/reports/`
-- [ ] `output/state/` → `data/state/`
 - [ ] `config/*.xml` → `tools/tasks/`
-- [ ] `scratch_*.py` → `scratch/`
-- [ ] Fix imports (sys.path "script" → "src")
-- [ ] Fix output paths (artifacts → reports, etc.)
-- [ ] Fix workflow .md files
 - [ ] Update `agents/role.md`
 - [ ] Update `agents/reference/architecture.md`
 - [ ] Update `README.md`
-- [ ] Tạo `tools/*.bat`
-- [ ] Test: `python src/domains/daily/generate.py`
-- [ ] Test: `tools/run-daily.bat`
+- [ ] Test: `tools/run-daily.bat` (bạn double-click thử)
 - [ ] Test: Metabase queries
 
-### Phase 2
+> **CANCELLED**: `script/` → `src/` (giữ nguyên `script/`)
+> **CANCELLED**: `output/artifacts/` → `output/reports/` (giữ nguyên, tránh break refs)
+> **CANCELLED**: SQLite cache (không cần)
 
-- [ ] Tạo `src/etl/export_sqlite.py`
-- [ ] Tạo `data/cache/local.db`
-- [ ] Metabase kết nối SQLite
+### Phase 2 (sau khi Phase 1 stable)
+
 - [ ] Tạo scheduler XMLs
 - [ ] `tools/install-tasks.bat`
-- [ ] Test offline mode (tắt internet, query SQLite)
+- [ ] Auto ETL từ ClickHouse/StarRocks (nếu cần)
