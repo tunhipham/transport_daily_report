@@ -50,16 +50,16 @@ if errorlevel 1 (
 
 echo.
 echo ==========================================
-echo  Rebuilding Dashboard...
+echo  Exporting Dashboard Data...
 echo ==========================================
-python script\orchestrator\pipeline.py
-if errorlevel 1 (
-    echo  [WARN] Dashboard build failed, continuing...
-)
+python script\dashboard\export_data.py --domain all
 
 echo.
 echo  [OK] All done!
-echo  Output: output\artifacts\
+echo.
+echo  Reports:    output\artifacts\
+echo  Dashboard:  docs\data\*.json
+echo  Refresh localhost:8080 to see
 echo.
 
 pause

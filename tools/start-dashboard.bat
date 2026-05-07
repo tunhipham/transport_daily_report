@@ -23,10 +23,14 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo  Refreshing dashboard data...
+python script\dashboard\export_data.py --domain all
+echo.
+
 echo  Starting server...
 
 REM Auto-open browser after 2 seconds
-start "" /min cmd /c "timeout /t 2 >nul & start http://localhost:8080/dashboard/dashboard.html"
+start "" /min cmd /c "timeout /t 2 >nul & start http://localhost:8080"
 
-REM Serve entire output/ so iframes can reach ../artifacts/
-python -m http.server 8080 --directory "output"
+REM Serve docs/ folder (full SPA dashboard with charts + filters)
+python -m http.server 8080 --directory "docs"

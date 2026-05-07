@@ -35,12 +35,14 @@ if errorlevel 1 (
 )
 
 echo.
-echo  Rebuilding dashboard...
-python script\orchestrator\pipeline.py >nul 2>&1
+echo  Exporting dashboard data...
+python script\dashboard\export_data.py --domain inventory >nul 2>&1
 
 echo.
 echo  [OK] Done!
-echo  Dashboard updated - refresh localhost:8080 to see.
+echo  - HTML report: output\artifacts\inventory\
+echo  - Dashboard data: docs\data\inventory.json
+echo  - Refresh localhost:8080 to see updated dashboard
 echo.
 
 pause
