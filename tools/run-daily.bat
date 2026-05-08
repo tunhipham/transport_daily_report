@@ -7,7 +7,7 @@ set "PATH=%PATH%;%LOCALAPPDATA%\Programs\Python\Python312;%LOCALAPPDATA%\Program
 echo.
 echo  ===========================================
 echo    Daily Transport Report
-echo    Mode: Generate only (no Telegram)
+echo    Mode: Generate + Send Telegram
 echo  ===========================================
 echo.
 
@@ -33,7 +33,7 @@ echo  Date: %date%
 echo  Running report...
 echo.
 
-python script\domains\daily\generate.py
+python script\domains\daily\generate.py --send
 
 if errorlevel 1 (
     echo.
