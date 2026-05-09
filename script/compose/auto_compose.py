@@ -539,6 +539,9 @@ def maybe_inject_final(kho, session, kho_state, delivery_str, week, dry_run=Fals
 
     Business rule: only inject the FINAL compose (at cutoff or catch-up) to avoid
     updating Haraworks drafts with intermediate data that will change.
+    
+    Safety: re-reads state from disk before injecting to catch cases where
+    another process already injected (defense-in-depth against race conditions).
     """
     if kho_state.get("status") != "final":
         return kho_state
@@ -546,6 +549,21 @@ def maybe_inject_final(kho, session, kho_state, delivery_str, week, dry_run=Fals
         return kho_state  # Already injected
     if dry_run or no_inject:
         return kho_state
+
+    # ── Defense-in-depth: re-read state from disk ──
+    # Another process may have injected while we were composing
+    key = state_key(kho, session)
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    try:
+        disk_state = load_state()
+        disk_kho = disk_state.get(today_str, {}).get(key, {})
+        if disk_kho.get("injected"):
+            log.info(f"  ⏭ {kho}: already injected by another process (disk check) — skipping")
+            kho_state["injected"] = True
+            kho_state["inject_time"] = disk_kho.get("inject_time", "?")
+            return kho_state
+    except Exception:
+        pass  # Disk read failed — proceed with inject
 
     label = f"{kho}" + (f" {session.title()}" if session else "")
     inject_ok, _ = inject_to_haraworks(kho, session, delivery_str, week)
@@ -1059,9 +1077,14 @@ def _is_pid_alive(pid):
 
 
 def acquire_lock():
-    """Try to acquire the lock file. Returns True if acquired, False if another instance is running."""
+    """Try to acquire the lock file. Returns True if acquired, False if another instance is running.
+    
+    Uses OS-level exclusive file locking (msvcrt on Windows) to prevent
+    race conditions where two processes check the lock simultaneously.
+    """
     os.makedirs(os.path.dirname(LOCK_PATH), exist_ok=True)
     
+    # Check existing lock first (quick path)
     if os.path.exists(LOCK_PATH):
         try:
             with open(LOCK_PATH, "r") as f:
@@ -1073,10 +1096,34 @@ def acquire_lock():
         except (ValueError, OSError):
             pass  # Corrupted lock file, overwrite
 
-    # Write our PID
-    with open(LOCK_PATH, "w") as f:
-        f.write(str(os.getpid()))
-    return True
+    # Atomic lock acquisition: open with exclusive access
+    try:
+        # Use OS-level file locking to prevent race condition
+        fd = os.open(LOCK_PATH, os.O_CREAT | os.O_WRONLY | os.O_TRUNC)
+        if sys.platform == 'win32':
+            import msvcrt
+            try:
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            except (IOError, OSError):
+                os.close(fd)
+                return False  # Another process holds the lock
+        os.write(fd, str(os.getpid()).encode())
+        os.close(fd)
+        
+        # Double-check: re-read and verify it's our PID (guards against race)
+        time.sleep(0.1)
+        try:
+            with open(LOCK_PATH, "r") as f:
+                written_pid = int(f.read().strip())
+            if written_pid != os.getpid():
+                return False  # Another process won the race
+        except (ValueError, OSError):
+            return False
+        
+        return True
+    except Exception as e:
+        log.warning(f"  ⚠ Lock acquisition error: {e}")
+        return False
 
 
 def release_lock():
