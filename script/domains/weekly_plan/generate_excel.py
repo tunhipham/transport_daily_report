@@ -259,29 +259,33 @@ def apply_nso(stores, week_dates):
         if not cham_days_in_week and not post_cham_in_week:
             continue
 
-        code = nso["code"]
-        sched = NSO_SCHEDULE.get(code, {})
+        code = nso.get("code")
+        sched = NSO_SCHEDULE.get(code, {}) if code else {}
         schedule_ve = sched.get("schedule_ve", "")
         shift = sched.get("shift", "Đêm")
         delivery_weekdays = parse_schedule_days(schedule_ve)
 
         # Find or inject store
         matched = None
-        for s in stores:
-            if s["code"] == code:
-                matched = s
-                break
+        if code:  # Only match by code if code exists — None must not match None
+            for s in stores:
+                if s["code"] == code:
+                    matched = s
+                    break
 
         is_injected = False
         if not matched:
-            # Prefer DSST canonical name → fallback NSO name
-            dsst_name = DSST_NAMES.get(code)
+            # Prefer DSST canonical name → fallback NSO name_full → name_mail
+            if code:
+                dsst_name = DSST_NAMES.get(code)
+            else:
+                dsst_name = None
             if dsst_name:
                 store_name = dsst_name
             else:
-                name_sys = nso.get("name_system", "")
                 name_full = nso.get("name_full", "")
-                store_name = f"{name_sys} - {name_full}" if name_sys else name_full or f"NSO {code}"
+                name_mail = nso.get("name_mail", "")
+                store_name = name_full or name_mail or f"NSO {code or '?'}"
             schedule_chia = sched.get("schedule_chia", "")
 
             matched = {

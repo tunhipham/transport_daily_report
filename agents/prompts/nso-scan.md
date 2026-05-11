@@ -18,9 +18,11 @@ Prioritize store data correctness.
 → Bỏ qua browser hoàn toàn, pipeline vẫn chạy đầy đủ
 
 ## ⛔ Data Rules
+- `nso_stores.json` + `nso_master.xlsx` = **single source-of-truth, KHÔNG xóa/rebuild**
+- Data cũ (stores có code) = **LOCKED** — không re-match, không sửa, không ghi đè
+- Chỉ: append stores mới | update ngày dời lịch | fill missing fields cho stores có code
 - `master_schedule` (.json+.xlsx) = **KHÔNG TỰ Ý SỬA** — chỉ khi user yêu cầu
-- `nso_schedule.json` = user cung cấp schedule_ve/shift → agent update
-- Khi user cho info NSO mới → update 3 file: `nso_schedule.json` + `master_schedule.json` + `master_schedule.xlsx` + deploy
+- `--send` Telegram = **CHỈ khi data verified** — debug thì bỏ flag
 
 ## Schedule
 T2 10h + T2 15h + T3 9h: scan+deploy+Tele group (nếu mail mới/có thay đổi)+remind · T3 9h30: finalize+châm hàng Excel (local)
@@ -34,8 +36,12 @@ T2 10h + T2 15h + T3 9h: scan+deploy+Tele group (nếu mail mới/có thay đổ
 - Clean: strip URLs, "- Mới bổ sung", "- dời..."
 
 ## Merge
-- Code exact match → name fuzzy (≥2 words) → DSST enrich (code+version)
-- History: `Thêm mới` | `Dời lịch` | `DSST match` | `Update {field}`
+- Stores có code → giữ nguyên, chỉ fill missing (name_system, version)
+- Stores chưa có code → DSST match: LCS(`name_full`) ≥10 chars VÀ ≥70% shorter name
+- Tên <10 chars → full containment. Match `name_full` DSST (KHÔNG `branch_name`)
+- Code=None → KHÔNG match None==None trong weekly plan
+- Dedup tự động: `name_mail + opening_date`
+- History: `Thêm mới` | `Dời lịch` | `DSST match`
 
 ## Status Rules
 - `original_date ≠ opening_date` → "Dời lịch"
