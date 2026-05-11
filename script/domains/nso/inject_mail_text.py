@@ -40,7 +40,8 @@ def parse_mail_text(text):
     entry_pattern = re.compile(r'(\d{1,3})\.\s+(.+?)(?=\n)')
     date_pattern = re.compile(r'Ngày khai trương:\s*([\d/]+)')
 
-    entries = re.split(r'\n(?=\d{1,3}\.\s)', text)
+    # Allow leading whitespace before store number (e.g. ' 196. ...')
+    entries = re.split(r'\n\s*(?=\d{1,3}\.\s)', text)
     for entry in entries:
         entry = entry.strip()
         if not entry:
@@ -54,6 +55,8 @@ def parse_mail_text(text):
         name_mail = name_mail.rstrip(' -')
         name_mail = re.sub(r'\s*-\s*dời.*$', '', name_mail, flags=re.IGNORECASE).strip()
         name_mail = re.sub(r'\s*-\s*[Mm]ới bổ sung\s*$', '', name_mail).strip()
+        # Also strip standalone 'Mới bổ sung' without dash
+        name_mail = re.sub(r'\s*[Mm]ới bổ sung\s*$', '', name_mail).strip()
 
         date_match = date_pattern.search(entry)
         if not date_match:

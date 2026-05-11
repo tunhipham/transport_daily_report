@@ -415,8 +415,8 @@ def parse_nso_table(driver):
     entry_pattern = re.compile(r'(\d{1,3})\.\s+(.+?)(?=\n)')
     date_pattern = re.compile(r'Ngày khai trương:\s*([\d/]+)')
 
-    # Split into blocks per store entry
-    entries = re.split(r'\n(?=\d{1,3}\.\s)', ck_text)
+    # Split into blocks per store entry (allow leading whitespace before number)
+    entries = re.split(r'\n\s*(?=\d{1,3}\.\s)', ck_text)
 
     for entry in entries:
         entry = entry.strip()
@@ -436,6 +436,8 @@ def parse_nso_table(driver):
         # Remove trailing notes like "- dời ngày khai trương trễ"
         name_mail = re.sub(r'\s*-\s*dời.*$', '', name_mail, flags=re.IGNORECASE).strip()
         name_mail = re.sub(r'\s*-\s*mới bổ sung\s*$', '', name_mail, flags=re.IGNORECASE).strip()
+        # Also strip standalone 'Mới bổ sung' without dash
+        name_mail = re.sub(r'\s*[Mm]ới bổ sung\s*$', '', name_mail).strip()
 
         date_match = date_pattern.search(entry)
         if not date_match:
@@ -493,29 +495,58 @@ def _normalize(s):
     """Normalize store name for fuzzy matching."""
     s = s.lower().strip()
     # Remove common noise
-    for noise in ['- mới bổ sung', '- tbi', '- bth', '- q1', 'shophoue', 'shophouse']:
+    for noise in ['- mới bổ sung', 'mới bổ sung', '- tbi', '- bth', '- q1',
+                  'shophoue', 'shophouse']:
         s = s.replace(noise, '')
     return ' '.join(s.split())
+
+
+def _lcs_length(s1, s2):
+    """Longest common substring length between s1 and s2."""
+    if not s1 or not s2:
+        return 0
+    m, n = len(s1), len(s2)
+    prev = [0] * (n + 1)
+    best = 0
+    for i in range(1, m + 1):
+        curr = [0] * (n + 1)
+        for j in range(1, n + 1):
+            if s1[i - 1] == s2[j - 1]:
+                curr[j] = prev[j - 1] + 1
+                if curr[j] > best:
+                    best = curr[j]
+        prev = curr
+    return best
+
+
+def _is_name_match(a, b):
+    """Check if two normalized names match.
+
+    Rules:
+    - If both ≥10 chars: longest common substring ≥10 → match
+    - If shorter name <10 chars: shorter must be fully contained in longer
+    """
+    if not a or not b:
+        return False
+    shorter = min(len(a), len(b))
+    if shorter < 10:
+        # Short name → require full containment
+        if len(a) <= len(b):
+            return a in b
+        else:
+            return b in a
+    # Both ≥10 chars → LCS ≥10
+    return _lcs_length(a, b) >= 10
 
 
 def _name_match(name_mail, store):
     """Check if a mail store name matches an existing store entry."""
     nm = _normalize(name_mail)
-    # Check against name_mail, name_full, name_system
     for key in ['name_mail', 'name_full']:
         sv = store.get(key)
         if sv:
             sv_n = _normalize(sv)
-            # Substring match — only when BOTH are ≥10 chars to avoid
-            # short strings ("q7", "tbi") matching everything
-            if len(nm) >= 10 and len(sv_n) >= 10:
-                if nm in sv_n or sv_n in nm:
-                    return True
-            # Keyword overlap (≥4 chars each to skip noise)
-            nm_words = [w for w in nm.split() if len(w) >= 4]
-            sv_words = [w for w in sv_n.split() if len(w) >= 4]
-            common = set(nm_words) & set(sv_words)
-            if len(common) >= 2:
+            if _is_name_match(nm, sv_n):
                 return True
     return False
 
@@ -560,7 +591,7 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
             current_stores.append(new_store)
             added.append(ms["name_mail"][:25])
 
-    # Enrich with DSST data — fuzzy match name → code + version
+    # Enrich with DSST data — match against name_full (NOT branch_name prefix)
     for store in current_stores:
         code = store.get("code")
 
@@ -573,35 +604,37 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
                 store["version"] = dsst["version"]
             continue
 
-        # No code — fuzzy match mail name against DSST branch_name
-        mail_name = (store.get("name_mail") or store.get("name_full") or "").lower()
+        # No code — match mail name against DSST name_full (not branch_name)
+        mail_name = _normalize(store.get("name_mail") or store.get("name_full") or "")
         if not mail_name:
             continue
 
-        # Split into keywords (≥4 chars, skip noise) — short tokens cause false matches
-        noise = {"chung", "cư", "siêu", "thị", "mới", "bổ", "sung", "kfm", "hcm", "quận", "phường"}
-        keywords = [w for w in re.split(r'[\s\-/,\.]+', mail_name) if len(w) >= 4 and w not in noise]
-
         best_match = None
-        best_score = 0
+        best_lcs = 0
 
         for dsst_code, dsst_info in dsst_lookup.items():
-            dsst_name = (dsst_info.get("branch_name") or dsst_info.get("name_full") or "").lower()
+            # Use name_full only — branch_name has system prefix (KFM_xxx)
+            dsst_name = _normalize(dsst_info.get("name_full") or "")
             if not dsst_name:
                 continue
-            # Count how many keywords match
-            score = sum(1 for kw in keywords if kw in dsst_name)
-            # Require score ≥ 2 AND at least 50% of keywords matched
-            if score > best_score and score >= 2 and (len(keywords) == 0 or score / len(keywords) >= 0.5):
-                best_score = score
+            lcs = _lcs_length(mail_name, dsst_name)
+            shorter = min(len(mail_name), len(dsst_name))
+            # Match rule: ≥10 chars LCS, or full match if shorter <10
+            if shorter < 10:
+                if not _is_name_match(mail_name, dsst_name):
+                    continue
+                lcs = shorter  # treat as max score
+            elif lcs < 10:
+                continue
+            if lcs > best_lcs:
+                best_lcs = lcs
                 best_match = (dsst_code, dsst_info)
 
         if best_match:
             dsst_code, dsst_info = best_match
             store["code"] = dsst_code
             store["name_system"] = dsst_info.get("name_system")
-            if not store.get("name_full"):
-                store["name_full"] = dsst_info.get("name_full")
+            store["name_full"] = dsst_info.get("name_full")
             store["version"] = dsst_info.get("version")
 
     return current_stores, added, updated

@@ -326,8 +326,8 @@ class NsoMaster:
                 self._log("", ms["name_mail"], "Thêm mới", "", ms["opening_date"], source)
                 added.append(ms["name_mail"][:25])
 
-        # Enrich with DSST
-        noise = {"chung", "cư", "siêu", "thị", "mới", "bổ", "sung", "kfm", "hcm", "quận", "phường"}
+        # Enrich with DSST — match against name_full (NOT branch_name prefix)
+        from fetch_nso_mail import _normalize, _lcs_length, _is_name_match
         for store in self.stores:
             code = store.get("code")
             if code:
@@ -339,33 +339,53 @@ class NsoMaster:
                     store["version"] = dsst["version"]
                 continue
 
-            # Fuzzy match — keywords ≥4 chars to avoid false positives
-            mail_name = (store.get("name_mail") or store.get("name_full") or "").lower()
+            # Fuzzy match — LCS ≥10 chars against name_full
+            mail_name = _normalize(store.get("name_mail") or store.get("name_full") or "")
             if not mail_name:
                 continue
-            keywords = [w for w in re.split(r'[\s\-/,\.]+', mail_name) if len(w) >= 4 and w not in noise]
-            best_match, best_score = None, 0
+            best_match, best_lcs = None, 0
             for dsst_code, dsst_info in dsst_lookup.items():
-                dsst_name = (dsst_info.get("branch_name") or dsst_info.get("name_full") or "").lower()
+                dsst_name = _normalize(dsst_info.get("name_full") or "")
                 if not dsst_name:
                     continue
-                score = sum(1 for kw in keywords if kw in dsst_name)
-                # Require score ≥ 2 AND ≥50% keywords matched
-                if score > best_score and score >= 2 and (len(keywords) == 0 or score / len(keywords) >= 0.5):
-                    best_score = score
+                lcs = _lcs_length(mail_name, dsst_name)
+                shorter = min(len(mail_name), len(dsst_name))
+                if shorter < 10:
+                    if not _is_name_match(mail_name, dsst_name):
+                        continue
+                    lcs = shorter
+                elif lcs < 10:
+                    continue
+                if lcs > best_lcs:
+                    best_lcs = lcs
                     best_match = (dsst_code, dsst_info)
             if best_match:
                 dsst_code, dsst_info = best_match
                 old_code = store.get("code")
                 store["code"] = dsst_code
                 store["name_system"] = dsst_info.get("name_system")
-                if not store.get("name_full"):
-                    store["name_full"] = dsst_info.get("name_full")
+                store["name_full"] = dsst_info.get("name_full")
                 store["version"] = dsst_info.get("version")
                 if old_code != dsst_code:
                     self._log(dsst_code, store.get("name_mail", ""), "DSST match",
                               old_code or "—", dsst_code, "DSST")
                     enriched.append(dsst_code)
+
+        # ── Dedup: remove duplicate stores (same name_mail + opening_date) ──
+        seen = set()
+        deduped = []
+        for store in self.stores:
+            key = (
+                _normalize(store.get("name_mail") or store.get("name_full") or ""),
+                store.get("opening_date", ""),
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(store)
+        removed = len(self.stores) - len(deduped)
+        if removed:
+            self.stores = deduped
 
         # Build summary
         lines = []
@@ -374,6 +394,8 @@ class NsoMaster:
         lines.append(f"New: {len(added)}")
         lines.append(f"Date updates: {len(updated_dates)}")
         lines.append(f"DSST enriched: {len(enriched)}")
+        if removed:
+            lines.append(f"Duplicates removed: {removed}")
         if added:
             lines.append(f"\nNew stores:")
             for a in added:
