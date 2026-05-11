@@ -1,10 +1,10 @@
 {
-  "_updated": "11/05/2026 10:15",
+  "_updated": "11/05/2026 10:40",
   "stats": {
-    "total": 32,
+    "total": 33,
     "upcoming": 23,
     "opening": 3,
-    "reschedule": 6
+    "reschedule": 7
   },
   "stores": [
     {
@@ -26,6 +26,14 @@
     {
       "name": "KFM_HCM_TDU - B6-D.TMDV.02 Masteri Center Point",
       "code": "A181",
+      "opening_date": "23/05/2026",
+      "iso_date": "2026-05-23",
+      "status_type": "reschedule",
+      "status_text": "Dời lịch: 30/04/2026 → 23/05/2026"
+    },
+    {
+      "name": "KFM_BDU_DAN - 9 Đường M, Khu Phố Nhị Đồng 2",
+      "code": "A189",
       "opening_date": "15/05/2026",
       "iso_date": "2026-05-15",
       "status_type": "reschedule",
@@ -278,9 +286,15 @@
       "type": "reschedule"
     },
     {
-      "date": "2026-05-15",
+      "date": "2026-05-23",
       "label": "A181 - Masterise Center Point",
       "code": "A181",
+      "type": "reschedule"
+    },
+    {
+      "date": "2026-05-15",
+      "label": "A189 - Đường M-KP Nhị Đồng -Dĩ An",
+      "code": "A189",
       "type": "reschedule"
     },
     {
@@ -517,35 +531,35 @@
       "total_dm": 400
     },
     {
-      "label": "KFM_HCM_TDU - B6-D.TMDV.02 Masteri Center Point (A181)",
-      "version": 1000,
+      "label": "KFM_BDU_DAN - 9 Đường M, Khu Phố Nhị Đồng 2 (A189)",
+      "version": 1500,
       "days": [
         {
           "date": "15/05/2026",
           "day_name": "Thứ 6",
           "label": "D",
-          "ksl": 2500,
+          "ksl": 2800,
           "dm": 0
         },
         {
           "date": "16/05/2026",
           "day_name": "Thứ 7",
           "label": "D+1",
-          "ksl": 4000,
+          "ksl": 4200,
           "dm": 400
         },
         {
           "date": "17/05/2026",
           "day_name": "CN",
           "label": "D+2",
-          "ksl": 2500,
+          "ksl": 2800,
           "dm": 0
         },
         {
           "date": "18/05/2026",
           "day_name": "Thứ 2",
           "label": "D+3",
-          "ksl": 2100,
+          "ksl": 2300,
           "dm": 0
         },
         {
@@ -570,7 +584,7 @@
           "dm": 0
         }
       ],
-      "total_ksl": 11100,
+      "total_ksl": 12100,
       "total_dm": 400
     },
     {
