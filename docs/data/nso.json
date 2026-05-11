@@ -1,5 +1,5 @@
 {
-  "_updated": "11/05/2026 10:13",
+  "_updated": "11/05/2026 10:15",
   "stats": {
     "total": 32,
     "upcoming": 23,
@@ -96,8 +96,8 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_Q08 - Block C Diamond Riverside",
-      "code": "DMR",
+      "name": "Homyland Riverside - TDU",
+      "code": "",
       "opening_date": "23/05/2026",
       "iso_date": "2026-05-23",
       "status_type": "upcoming",
@@ -176,8 +176,8 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_Q07 - X1.013 Sunrise City North",
-      "code": "A141",
+      "name": "Sunrise Citiview - Q7",
+      "code": "",
       "opening_date": "19/06/2026",
       "iso_date": "2026-06-19",
       "status_type": "upcoming",
@@ -248,8 +248,8 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_Q07 - A01-16 Hoàng Anh Thanh Bình",
-      "code": "A144",
+      "name": "Phú Hoàng Anh - NBE",
+      "code": "",
       "opening_date": "25/07/2026",
       "iso_date": "2026-07-25",
       "status_type": "upcoming",
@@ -333,8 +333,8 @@
     },
     {
       "date": "2026-05-23",
-      "label": "DMR - Homyland Riverside - TDU",
-      "code": "DMR",
+      "label": "None - Homyland Riverside - TDU",
+      "code": "",
       "type": "upcoming"
     },
     {
@@ -393,8 +393,8 @@
     },
     {
       "date": "2026-06-19",
-      "label": "A141 - Sunrise Citiview - Q7",
-      "code": "A141",
+      "label": "None - Sunrise Citiview - Q7",
+      "code": "",
       "type": "upcoming"
     },
     {
@@ -447,8 +447,8 @@
     },
     {
       "date": "2026-07-25",
-      "label": "A144 - Phú Hoàng Anh - NBE",
-      "code": "A144",
+      "label": "None - Phú Hoàng Anh - NBE",
+      "code": "",
       "type": "upcoming"
     },
     {

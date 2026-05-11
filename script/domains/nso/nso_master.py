@@ -339,7 +339,7 @@ class NsoMaster:
                     store["version"] = dsst["version"]
                 continue
 
-            # Fuzzy match — LCS ≥10 chars against name_full
+            # Fuzzy match — use _is_name_match (LCS ≥10 + ≥70% ratio)
             mail_name = _normalize(store.get("name_mail") or store.get("name_full") or "")
             if not mail_name:
                 continue
@@ -348,14 +348,9 @@ class NsoMaster:
                 dsst_name = _normalize(dsst_info.get("name_full") or "")
                 if not dsst_name:
                     continue
-                lcs = _lcs_length(mail_name, dsst_name)
-                shorter = min(len(mail_name), len(dsst_name))
-                if shorter < 10:
-                    if not _is_name_match(mail_name, dsst_name):
-                        continue
-                    lcs = shorter
-                elif lcs < 10:
+                if not _is_name_match(mail_name, dsst_name):
                     continue
+                lcs = _lcs_length(mail_name, dsst_name)
                 if lcs > best_lcs:
                     best_lcs = lcs
                     best_match = (dsst_code, dsst_info)
