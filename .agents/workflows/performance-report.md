@@ -29,7 +29,7 @@ python -u script/domains/performance/fetch_monthly.py --month 5 --year 2026
 
 2. Generate report + SLA Excel:
 ```powershell
-python -u script/domains/performance/generate.py --months 3,4,5 --year 2026 --sla-weeks 14,15,16,17,18
+python -u script/domains/performance/generate.py --months 3,4,5 --year 2026 --sla-weeks auto
 ```
 
 3. Deploy:

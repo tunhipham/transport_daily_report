@@ -250,9 +250,11 @@ def apply_nso(stores, week_dates):
             if week_dates[0] <= d <= week_dates[6]:
                 cham_days_in_week.append(d)
 
-        # Also check if post-châm days fall in this week (store opened last week)
+        # Post-châm: only within 2-week NSO window (14 days from opening).
+        # After that, master_schedule.json is the sole source of truth.
         d3 = opening + timedelta(days=3)
-        post_cham_in_week = any(wd > d3 for wd in week_dates)
+        nso_cutoff = opening + timedelta(days=13)  # 2 weeks
+        post_cham_in_week = any(d3 < wd <= nso_cutoff for wd in week_dates)
 
         if not cham_days_in_week and not post_cham_in_week:
             continue
@@ -311,12 +313,13 @@ def apply_nso(stores, week_dates):
 
             if 0 <= delta <= 3:
                 matched["days"][i] = "Châm hàng"
-            elif delta > 3:
+            elif 3 < delta <= 13:  # Only within 2-week NSO window
                 if skip_date and wd == skip_date:
                     # SKIP D+4 (giảm tải ngay sau châm hàng)
                     matched["days"][i] = ""
                 elif wd.weekday() in delivery_weekdays:
                     matched["days"][i] = shift
+                # delta > 13: master_schedule data preserved (from build_stores)
 
         nso_applied += 1
 

@@ -453,12 +453,13 @@ def apply_nso_cham_hang(week_data, cham_hang, dsst_names=None):
             if 0 <= delta <= 3:
                 # D to D+3: mark as Châm hàng
                 matched_store["days"][i] = "Châm hàng"
-            elif delta > 3:
+            elif 3 < delta <= 13:  # Only within 2-week NSO window
                 if wd == skip_date:
                     # SKIP first delivery day after châm hàng
                     matched_store["days"][i] = ""
                 elif wd.weekday() in delivery_weekdays:
                     matched_store["days"][i] = shift
+                # delta > 13: master_schedule data preserved (Excel source)
     
     # Cleanup: remove false "Châm hàng" from stores that are NOT valid NSO matches
     # (e.g., Sunrise Riverside A179 in W16 Excel — wrong code match)

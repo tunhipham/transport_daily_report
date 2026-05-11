@@ -32,6 +32,23 @@ os.makedirs(PERF_DIR, exist_ok=True)
 
 DAY_NAMES = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN']
 
+# Display names for kho in Excel output
+KHO_DISPLAY = {
+    "KRC": "Tuyến Fresh RCQ LINKER",
+    "THỊT CÁ": "Tuyến THỊT CÁ",
+    "ĐÔNG MÁT": "Tuyến ĐÔNG MÁT",
+    "ĐÔNG": "Tuyến FROZEN",
+    "MÁT": "Tuyến CHILL",
+    "KSL-Sáng": "Tuyến DRY Sáng",
+    "KSL-Tối": "Tuyến DRY Tối",
+}
+
+# Override SLA window labels for display (when calculation window != display window)
+# THỊT CÁ: rule is 03H00-06H00 but report shows 03H00-05H30
+SLA_LABEL_OVERRIDE = {
+    "THỊT CÁ": "03H00-05H30",
+}
+
 
 def compute_weeks_from_months(months, year):
     """Auto-detect ISO weeks that overlap with the given months.
@@ -43,6 +60,46 @@ def compute_weeks_from_months(months, year):
 
     weeks = sorted(set(d.isocalendar()[1] for d in all_dates))
     return weeks
+
+
+import re, glob
+
+def scan_existing_weeks(prefix="SLA_ONTIME", perf_dir=None):
+    """Scan existing SLA files to find which weeks are already exported.
+    Returns sorted list of week numbers found in the latest matching file.
+    
+    Args:
+        prefix: "SLA_ONTIME" for all-kho, "SLA_ONTIME_DM_TC" for DM+TC
+        perf_dir: directory to scan (defaults to PERF_DIR)
+    """
+    if perf_dir is None:
+        perf_dir = PERF_DIR
+    
+    # Pattern: SLA_ONTIME_W16_W17_W18.xlsx (not DM_TC)
+    # or SLA_ONTIME_DM_TC_W16_W17.xlsx
+    pattern = os.path.join(perf_dir, f"{prefix}_W*.xlsx")
+    files = glob.glob(pattern)
+    
+    if prefix == "SLA_ONTIME":
+        # Exclude DM_TC files
+        files = [f for f in files if "DM_TC" not in os.path.basename(f)]
+    
+    if not files:
+        return [], None
+    
+    # Parse weeks from each file, find the one with most weeks
+    best_weeks = []
+    best_file = None
+    for fpath in files:
+        fname = os.path.basename(fpath)
+        # Extract all W{num} patterns
+        found = re.findall(r'W(\d+)', fname)
+        wks = sorted([int(w) for w in found])
+        if len(wks) > len(best_weeks):
+            best_weeks = wks
+            best_file = fpath
+    
+    return best_weeks, best_file
 
 
 def build_week_info(weeks, year):
@@ -155,50 +212,84 @@ def export_sla_excel(metrics, kho_list, filename, title, weeks, week_info, metri
     ws.cell(2, 2).alignment = center
     ws.cell(2, 2).border = thin_bd
 
+    # ── Helper: compute day-level SLA breakdown for a kho ──
+    def _day_sla(kho, dates_in_week):
+        """Return list of dicts with granular SLA per day."""
+        result = []
+        for d in dates_in_week:
+            sla = metrics["sla"].get(kho, {}).get(d, {})
+            trong = sla.get("trong", 0)
+            som   = sla.get("som", 0)
+            tre   = sla.get("tre", 0)
+            total = trong + som + tre
+            result.append({
+                "total": total, "trong": trong, "som": som, "tre": tre,
+                "pct_trong": round(trong / total * 100, 1) if total > 0 else "",
+                "pct_tre":   round(tre / total * 100, 1) if total > 0 else "",
+                "pct_som":   round(som / total * 100, 1) if total > 0 else "",
+                "pct_dat":   round((trong + som) / total * 100, 1) if total > 0 else "",
+            })
+        return result
+
+    # ── Detect if a metric label is a percentage row ──
+    def _is_pct(label):
+        return label.startswith("%") or label.startswith("Tỉ lệ")
+
+    # highlight fill for "Tỉ lệ điểm đạt" row
+    fill_dat = PatternFill("solid", fgColor="FFFF00")  # bright yellow highlight
+
     # ── Data rows ──
     data_row = 4
     if metric_labels is None:
-        metric_labels = ["Tổng Điểm Giao", "Đúng Giờ (SLA)", "Trễ (SLA)", "% On Time (SLA)"]
+        metric_labels = ["Tổng Số Chuyến", "Tổng Số Điểm",
+                         "TRONG SLA", "TRỄ HƠN SLA", "SỚM HƠN SLA",
+                         "% TRONG SLA", "% TRỄ HƠN SLA", "% SỚM HƠN SLA",
+                         "Tỉ lệ điểm đạt SLA"]
 
     for kho in kho_list:
         start_data_row = data_row
-        for mi, metric_name in enumerate(metric_labels):
+
+        # Determine SLA window label for this kho
+        if kho in SLA_LABEL_OVERRIDE:
+            sla_lbl = SLA_LABEL_OVERRIDE[kho]
+        else:
+            sla_w = SLA_WINDOWS.get(kho)
+            if sla_w:
+                sla_lbl = f"{sla_w[0].strftime('%HH%M')}-{sla_w[1].strftime('%HH%M')}"
+            else:
+                sla_lbl = ""
+
+        for mi, metric_tmpl in enumerate(metric_labels):
+            # Append SLA window to labels that mention "SLA" (except Tổng Số)
+            if sla_lbl and "SLA" in metric_tmpl and "Tổng" not in metric_tmpl:
+                metric_name = f"{metric_tmpl} {sla_lbl}"
+            else:
+                metric_name = metric_tmpl
+
             col = 1
-            if mi == 0:
-                pass  # will merge after
-            ws.cell(data_row, 2, metric_name).border = thin_bd
-            ws.cell(data_row, 2).alignment = center
-            ws.cell(data_row, 2).font = Font(bold=(metric_name.startswith("%")))
+            label_cell = ws.cell(data_row, 2, metric_name)
+            label_cell.border = thin_bd
+            label_cell.alignment = center
+            label_cell.font = Font(bold=(_is_pct(metric_tmpl)))
             col = 3
 
             for w in weeks:
                 info = week_info[w]
                 dates_in_week = info["dates"]
 
-                # Weekly total
-                wk_total = sum(
-                    metrics["sla"].get(kho, {}).get(d, {}).get("on_time", 0) +
-                    metrics["sla"].get(kho, {}).get(d, {}).get("late", 0)
-                    for d in dates_in_week
-                )
-                wk_ontime = sum(
-                    metrics["sla"].get(kho, {}).get(d, {}).get("on_time", 0)
-                    for d in dates_in_week
-                )
-                wk_late = wk_total - wk_ontime
-                wk_pct = round(wk_ontime / wk_total * 100, 1) if wk_total > 0 else ""
+                # ── Compute weekly aggregates ──
+                day_sla = _day_sla(kho, dates_in_week)
+                wk_trong = sum(dv["trong"] for dv in day_sla)
+                wk_som   = sum(dv["som"] for dv in day_sla)
+                wk_tre   = sum(dv["tre"] for dv in day_sla)
+                wk_total = wk_trong + wk_som + wk_tre
 
-                # Day-level
-                day_vals = []
-                for d in dates_in_week:
-                    sla = metrics["sla"].get(kho, {}).get(d, {})
-                    ot = sla.get("on_time", 0)
-                    lt = sla.get("late", 0)
-                    total = ot + lt
-                    pct = round(ot / total * 100, 1) if total > 0 else ""
-                    day_vals.append({"total": total, "ontime": ot, "late": lt, "pct": pct})
+                wk_pct_trong = round(wk_trong / wk_total * 100, 1) if wk_total > 0 else ""
+                wk_pct_tre   = round(wk_tre / wk_total * 100, 1) if wk_total > 0 else ""
+                wk_pct_som   = round(wk_som / wk_total * 100, 1) if wk_total > 0 else ""
+                wk_pct_dat   = round((wk_trong + wk_som) / wk_total * 100, 1) if wk_total > 0 else ""
 
-                # Trips (tuyến) per week/day
+                # Trips
                 wk_trips = sum(
                     len(metrics["trips_per_day"].get(kho, {}).get(d, set()))
                     for d in dates_in_week
@@ -208,29 +299,61 @@ def export_sla_excel(metrics, kho_list, filename, title, weeks, week_info, metri
                     for d in dates_in_week
                 ]
 
-                # Write values
-                if metric_name == "Tổng Điểm Giao":
-                    vals = [wk_total] + [dv["total"] for dv in day_vals]
-                elif metric_name == "Đúng Giờ (SLA)":
-                    vals = [wk_ontime] + [dv["ontime"] for dv in day_vals]
-                elif metric_name == "Trễ (SLA)":
-                    vals = [wk_late] + [dv["late"] for dv in day_vals]
-                elif metric_name == "% On Time (SLA)":
-                    vals = [wk_pct] + [dv["pct"] for dv in day_vals]
-                elif metric_name == "Tổng Số Chuyến":
+                # ── Pick values based on metric template ──
+                if metric_tmpl == "Tổng Số Chuyến":
                     vals = [wk_trips] + day_trips
+                elif metric_tmpl == "Tổng Số Điểm":
+                    vals = [wk_total] + [dv["total"] for dv in day_sla]
+                elif metric_tmpl == "TRONG SLA":
+                    vals = [wk_trong] + [dv["trong"] for dv in day_sla]
+                elif metric_tmpl == "TRỄ HƠN SLA":
+                    vals = [wk_tre] + [dv["tre"] for dv in day_sla]
+                elif metric_tmpl == "SỚM HƠN SLA":
+                    vals = [wk_som] + [dv["som"] for dv in day_sla]
+                elif metric_tmpl == "% TRONG SLA":
+                    vals = [wk_pct_trong] + [dv["pct_trong"] for dv in day_sla]
+                elif metric_tmpl == "% TRỄ HƠN SLA":
+                    vals = [wk_pct_tre] + [dv["pct_tre"] for dv in day_sla]
+                elif metric_tmpl == "% SỚM HƠN SLA":
+                    vals = [wk_pct_som] + [dv["pct_som"] for dv in day_sla]
+                elif metric_tmpl == "Tỉ lệ điểm đạt SLA":
+                    vals = [wk_pct_dat] + [dv["pct_dat"] for dv in day_sla]
+                # Legacy metric names (file 1 - all kho)
+                elif metric_tmpl == "Tổng Điểm Giao":
+                    vals = [wk_total] + [dv["total"] for dv in day_sla]
+                elif metric_tmpl == "Đúng Giờ (SLA)":
+                    wk_ontime = wk_trong + wk_som
+                    vals = [wk_ontime] + [dv["trong"] + dv["som"] for dv in day_sla]
+                elif metric_tmpl == "Trễ (SLA)":
+                    vals = [wk_tre] + [dv["tre"] for dv in day_sla]
+                elif metric_tmpl == "% On Time (SLA)":
+                    wk_ontime = wk_trong + wk_som
+                    wk_pct = round(wk_ontime / wk_total * 100, 1) if wk_total > 0 else ""
+                    day_pcts = [round((dv["trong"] + dv["som"]) / dv["total"] * 100, 1)
+                                if dv["total"] > 0 else "" for dv in day_sla]
+                    vals = [wk_pct] + day_pcts
+                else:
+                    vals = [0] * 8
 
+                # ── Write values ──
                 for i, v in enumerate(vals):
                     cell = ws.cell(data_row, col + i)
                     if v == "" or v == 0:
-                        if metric_name.startswith("%"):
+                        if _is_pct(metric_tmpl):
                             cell.value = ""
                         else:
                             cell.value = 0 if v == 0 else ""
-                    elif metric_name.startswith("%"):
+                    elif _is_pct(metric_tmpl):
                         cell.value = v / 100
                         cell.number_format = '0.0%'
-                        cell.fill = pct_fill(v)
+                        if metric_tmpl == "Tỉ lệ điểm đạt SLA":
+                            cell.fill = pct_fill(v)
+                        elif metric_tmpl == "% TRỄ HƠN SLA":
+                            # Highlight red if > 5%
+                            if v > 5:
+                                cell.fill = fill_red
+                        elif metric_tmpl == "% TRONG SLA":
+                            cell.fill = pct_fill(v)
                     else:
                         cell.value = v
                     cell.border = thin_bd
@@ -238,15 +361,30 @@ def export_sla_excel(metrics, kho_list, filename, title, weeks, week_info, metri
 
                 col += 8
 
+            # Bold + yellow highlight for "Tỉ lệ điểm đạt SLA" label
+            if metric_tmpl == "Tỉ lệ điểm đạt SLA":
+                label_cell.font = Font(bold=True, color="0000FF")
+                label_cell.fill = fill_dat
+
             data_row += 1
 
         # Merge KHO cell
         ws.merge_cells(start_row=start_data_row, start_column=1,
                        end_row=data_row - 1, end_column=1)
-        kho_cell = ws.cell(start_data_row, 1, kho)
+        display_name = KHO_DISPLAY.get(kho, kho)
+        kho_cell = ws.cell(start_data_row, 1, display_name)
         kho_cell.font = Font(bold=True, size=11)
         kho_cell.alignment = Alignment(horizontal="center", vertical="center")
         kho_cell.border = thin_bd
+
+        # Kho color fill
+        kho_color = {
+            "KRC": "6CA6FF", "THỊT CÁ": "FF9F5A", "ĐÔNG MÁT": "7DD87D",
+            "ĐÔNG": "4CAF50", "MÁT": "81D4FA", "KSL-Sáng": "FFD966", "KSL-Tối": "C49BFF",
+        }
+        if kho in kho_color:
+            kho_cell.fill = PatternFill("solid", fgColor=kho_color[kho])
+            kho_cell.font = Font(bold=True, size=11, color="FFFFFF")
 
         # Add separator border
         for c in range(1, col):
@@ -256,8 +394,8 @@ def export_sla_excel(metrics, kho_list, filename, title, weeks, week_info, metri
             )
 
     # ── Column widths ──
-    ws.column_dimensions['A'].width = 14
-    ws.column_dimensions['B'].width = 18
+    ws.column_dimensions['A'].width = 16
+    ws.column_dimensions['B'].width = 32
     for c in range(3, 3 + len(weeks) * 8):
         ws.column_dimensions[get_column_letter(c)].width = 11
 

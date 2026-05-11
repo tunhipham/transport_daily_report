@@ -594,11 +594,25 @@ def calc_metrics(all_rows, plan_lookup, route_order):
         # ── SLA ──
         sla_result, _ = check_sla(kho, arrival)
         if sla_result is not None:
+            # Determine detailed SLA category: trong / som / tre
+            sla_start, sla_end = SLA_WINDOWS[kho]
+            if kho == "KSL-Tối":
+                # Overnight window — keep simple on_time/late
+                sla_cat = "trong" if sla_result else "tre"
+            else:
+                if arrival < sla_start:
+                    sla_cat = "som"
+                elif arrival <= sla_end:
+                    sla_cat = "trong"
+                else:
+                    sla_cat = "tre"
             for k in kho_keys:
                 if sla_result:
                     metrics["sla"][k][date]["on_time"] += 1
                 else:
                     metrics["sla"][k][date]["late"] += 1
+                # Granular breakdown
+                metrics["sla"][k][date][sla_cat] = metrics["sla"][k][date].get(sla_cat, 0) + 1
         
         # ── Trips per day ──
         if kho == "THỊT CÁ":
@@ -1893,18 +1907,44 @@ def main():
         from script.domains.performance.export_sla_weekly import (
             compute_weeks_from_months, build_week_info, make_label,
             make_title_range, export_sla_excel as sla_export,
+            scan_existing_weeks,
         )
+        
         if args.sla_weeks.lower() == 'auto':
-            sla_week_list = compute_weeks_from_months(months, year)
+            # ── Auto-append mode ──
+            # 1. Get current ISO week
+            from datetime import date as _ddate
+            current_week = _ddate.today().isocalendar()[1]
+            
+            # 2. Scan existing files for their weeks
+            existing_wks, old_file1 = scan_existing_weeks("SLA_ONTIME")
+            existing_wks_dm, old_file2 = scan_existing_weeks("SLA_ONTIME_DM_TC")
+            
+            # 3. Merge: existing weeks + current week
+            merged = sorted(set(existing_wks) | {current_week})
+            if not existing_wks:
+                # No existing file → use current week only
+                print(f"  📌 No existing SLA file found, starting with W{current_week}")
+            else:
+                new_wks = sorted(set(merged) - set(existing_wks))
+                if new_wks:
+                    print(f"  📌 Existing: {', '.join(f'W{w}' for w in existing_wks)}")
+                    print(f"  ➕ Adding: {', '.join(f'W{w}' for w in new_wks)}")
+                else:
+                    print(f"  📌 W{current_week} already in existing file — regenerating")
+            
+            sla_week_list = merged
         else:
             sla_week_list = [int(w.strip()) for w in args.sla_weeks.split(",")]
+            old_file1 = None
+            old_file2 = None
         
         sla_wk_info = build_week_info(sla_week_list, year)
         sla_label = make_label(sla_week_list)
         sla_range = make_title_range(sla_wk_info, sla_week_list)
         wk_display = ', '.join(f'W{w}' for w in sla_week_list)
         
-        # File 1: All kho
+        # File 1: All kho (detailed SLA breakdown)
         all_kho = ["KRC", "THỊT CÁ", "ĐÔNG MÁT", "ĐÔNG", "MÁT", "KSL-Sáng", "KSL-Tối"]
         fname1 = f"SLA_ONTIME_{sla_label}.xlsx"
         print(f"  📄 {fname1} (all kho)")
@@ -1912,7 +1952,7 @@ def main():
                    f"SLA ON-TIME — {wk_display} ({sla_range})",
                    sla_week_list, sla_wk_info)
         
-        # File 2: ĐÔNG MÁT + THỊT CÁ
+        # File 2: ĐÔNG MÁT + THỊT CÁ (simple format)
         dm_tc_kho = ["ĐÔNG MÁT", "ĐÔNG", "MÁT", "THỊT CÁ"]
         fname2 = f"SLA_ONTIME_DM_TC_{sla_label}.xlsx"
         print(f"  📄 {fname2} (ĐÔNG MÁT + THỊT CÁ)")
@@ -1920,6 +1960,15 @@ def main():
                    f"SLA ON-TIME ĐÔNG MÁT & THỊT CÁ — {wk_display} ({sla_range})",
                    sla_week_list, sla_wk_info,
                    metric_labels=["Tổng Điểm Giao", "Đúng Giờ (SLA)", "% On Time (SLA)", "Tổng Số Chuyến"])
+        
+        # Clean up old files (different name = different weeks)
+        perf_dir = os.path.join(OUTPUT, "artifacts", "performance")
+        if old_file1 and os.path.basename(old_file1) != fname1 and os.path.exists(old_file1):
+            os.remove(old_file1)
+            print(f"  🗑 Removed old: {os.path.basename(old_file1)}")
+        if old_file2 and os.path.basename(old_file2) != fname2 and os.path.exists(old_file2):
+            os.remove(old_file2)
+            print(f"  🗑 Removed old: {os.path.basename(old_file2)}")
     
     print("=" * 60)
 
