@@ -6,89 +6,71 @@ description: Scan NSO emails, merge to master, deploy dashboard
 
 ## ⚠ Read `agents/prompts/nso-scan.md` first.
 
-## Schedule (Task Scheduler: NsoScan)
+## Flow (manual — user chạy `/nso-scan`)
 
-| Time | Mode | Action |
-|------|------|--------|
-| T2 10h | `scan` | Scan → merge → calendar PNG → deploy → Tele group (photo+text) + remind |
-| T2 15h | `scan` | Re-scan → deploy+Tele group CHỈ KHI mail mới/thay đổi + remind |
-| T3 9h | `scan` | Scan cuối → deploy → Tele group (nếu mail mới) + remind |
-| T3 9h30 | `finalize` | Deploy + châm hàng Excel (tuần này + draft tuần sau) |
-
-> ⚠ Nếu 3 lần scan liên tiếp không có mail mới → warning Telegram cá nhân
+1. User paste nội dung mail NSO vào chat
+2. Agent lưu → `data/nso/mail_wXX.txt`
+3. Parse + merge → `nso_stores.json` + `nso_master.xlsx`
+4. Deploy dashboard + generate Excel
+5. Gửi Telegram **cá nhân** (nso_remind) → chờ user OK → gửi **group** (nso)
 
 ## Run
 
-### Auto (browser scan):
+### Parse mail text (user paste):
 ```powershell
-python -u script/domains/nso/fetch_nso_mail.py          # scan+deploy
-python -u script/domains/nso/fetch_nso_mail.py --force   # skip dedup
+python -u script/domains/nso/inject_mail_text.py --file data/nso/mail_wXX.txt
 ```
 
-### Manual (text paste — khi browser lỗi):
+### Deploy + Export:
 ```powershell
-python -u script/domains/nso/inject_mail_text.py --file data/nso/mail_w19.txt --send
+python -u script/dashboard/export_data.py --domain nso
+python -u script/domains/nso/export_excel.py
+python -u script/domains/weekly_plan/generate_excel.py --week <N>
+python -u script/domains/weekly_plan/generate_excel.py --week <N+1>
+python -u script/dashboard/deploy.py
 ```
-→ Parse mail text → merge → calendar PNG → deploy → Telegram (photo+text) → châm hàng Excel
 
-### Other:
+### Remind daily (giữ nguyên — Task Scheduler):
 ```powershell
-python -u script/domains/nso/nso_remind.py --dry-run     # remind preview
-script/domains/nso/auto_nso_watch.bat scan|finalize       # Task Scheduler entry point
+python -u script/domains/nso/nso_remind.py
 ```
 
 ## Prereq
 - `data/dsst_cache.json` (refresh: `_save_dsst.py`)
-- Edge profile logged into Haraworks (browser mode only)
 
-## Telegram Output
-1. 📷 Calendar PNG (Playwright render, self-contained)
-2. 📝 Text: stores KT tuần này + tuần sau (code, version, ngày, thứ)
-3. Gửi vào group `nso` + remind cá nhân `nso_remind`
+## Telegram
+
+### Lịch KT (tuần này + tuần sau):
+1. 📷 Calendar PNG (Playwright render)
+2. 📝 Text summary (code, version, ngày, thứ)
+3. **Gửi `nso_remind` (cá nhân) TRƯỚC** → user xác nhận → gửi `nso` (group)
+
+### Remind daily (giữ nguyên):
+- `nso_remind` → cross-check `master_schedule` + `NSO_SCHEDULE`
+- Flag: missing code/schedule_ve/shift/version
+- ⚡KT Thứ 5 → nhắc đặc biệt
 
 ## Validate
-- `output/state/nso/scan_summary.txt` · `data/nso/nso_master.xlsx`
-- `output/state/nso/nso_calendar.png` — preview calendar image
+- `data/nso/nso_master.xlsx` · `data/nso/nso_stores.json`
+- `output/artifacts/nso/Lich_Khai_Truong_NSO.xlsx`
 - Dashboard → Tab NSO (Ctrl+Shift+R)
 
 ## ⛔ Data Integrity Rules (CRITICAL)
 
 > [!CAUTION]
-> Các rule dưới đây là **bắt buộc**, vi phạm sẽ gây hỏng data production.
+> Vi phạm sẽ gây hỏng data production.
 
-### 1. Single Source-of-Truth
-- `data/nso/nso_stores.json` + `data/nso/nso_master.xlsx` là **master duy nhất**
-- **KHÔNG BAO GIỜ** xóa master để rebuild từ đầu — data cũ có mappings thủ công không thể tái tạo
-- Chỉ append data mới, không sửa/ghi đè data cũ
-
-### 2. Lock After Validation
-- Sau khi user xác nhận NSO data OK → coi như **locked**
-- Các lần inject tiếp theo chỉ **thêm stores mới** hoặc **update ngày khai trương** (dời lịch)
-- **KHÔNG** re-match code, re-map tên, hoặc xóa code của stores đã có
-
-### 3. DSST Matching Rules
-- Chỉ match stores **CHƯA CÓ code** (stores mới từ mail)
-- Match dựa trên `name_full` từ DSST (KHÔNG dùng `branch_name` — có prefix hệ thống)
-- Threshold: **LCS ≥ 10 ký tự VÀ ≥ 70%** tên ngắn hơn
-- Nếu tên < 10 ký tự → phải match hoàn toàn (full containment)
-- Stores đã có code → **giữ nguyên**, chỉ fill fields missing (name_system, version)
-- Khi match được → lấy `code` + `name_full` + `name_system` + `version` từ DSST
-
-### 4. Telegram
-- **KHÔNG gửi `--send`** khi đang debug/test — chỉ dùng khi data đã verified
-- Nếu cần test → bỏ flag `--send` hoặc dùng `--dry-run`
-
-### 5. Weekly Plan
-- NSO stores không có code → dùng `name_full` hoặc `name_mail` để hiển thị
-- Code = `None` → **KHÔNG** match với bất kỳ store nào khác cũng `None`
+1. **Source-of-Truth**: `nso_stores.json` + `nso_master.xlsx` — KHÔNG xóa/rebuild
+2. **Lock**: stores có code = locked — không re-match, không ghi đè
+3. **Match**: chỉ stores chưa có code — LCS ≥10 + ≥70% trên `name_full` DSST
+4. **Telegram**: gửi cá nhân trước, group sau khi user OK
+5. **Weekly Plan**: Code=None → KHÔNG match None==None
 
 ## Troubleshoot
 | Issue | Fix |
 |-------|-----|
-| 0 stores parsed | Check email selector + date regex |
-| Browser timeout | Dùng `inject_mail_text.py` thay thế |
+| 0 stores parsed | Check regex + mail format |
 | DSST empty | `_save_dsst.py` with sheet open |
 | Tele fail | `config/telegram.json` → `nso`/`nso_remind` |
-| Task fail | `schtasks /query /tn "NsoScan" /v /fo list` |
-| False match | Nâng LCS threshold hoặc review `_debug_lcs.py` |
-| Duplicate stores | Dedup tự động theo `name_mail + opening_date` |
+| False match | Nâng LCS threshold |
+| Duplicate stores | Dedup tự động `name_mail + opening_date` |
