@@ -1,10 +1,10 @@
 {
-  "_updated": "11/05/2026 10:01",
+  "_updated": "11/05/2026 10:02",
   "stats": {
-    "total": 24,
-    "upcoming": 14,
+    "total": 32,
+    "upcoming": 20,
     "opening": 3,
-    "reschedule": 7
+    "reschedule": 9
   },
   "stores": [
     {
@@ -18,10 +18,10 @@
     {
       "name": "KFM_HCM_TDU - BS15 Vinhomes Grand Park",
       "code": "A185",
-      "opening_date": "19/06/2026",
-      "iso_date": "2026-06-19",
+      "opening_date": "05/06/2026",
+      "iso_date": "2026-06-05",
       "status_type": "reschedule",
-      "status_text": "Dời lịch: 23/04/2026 → 19/06/2026"
+      "status_text": "Dời lịch: 23/04/2026 → 05/06/2026"
     },
     {
       "name": "KFM_HCM_NBE - A.1.05 Sunrise Riverside",
@@ -82,10 +82,10 @@
     {
       "name": "KFM_HCM_Q04 - TM.B.06 Millennium Bến Vân Đồn",
       "code": "A194",
-      "opening_date": "22/05/2026",
-      "iso_date": "2026-05-22",
+      "opening_date": "28/05/2026",
+      "iso_date": "2026-05-28",
       "status_type": "reschedule",
-      "status_text": "Dời lịch: 08/05/2026 → 22/05/2026"
+      "status_text": "Dời lịch: 08/05/2026 → 28/05/2026"
     },
     {
       "name": "6/1 Đường 13 (Thạnh Xuân 13)",
@@ -194,8 +194,72 @@
     {
       "name": "DS1 An Hội Đông - GVA",
       "code": "",
-      "opening_date": "03/07/2026",
-      "iso_date": "2026-07-03",
+      "opening_date": "10/07/2026",
+      "iso_date": "2026-07-10",
+      "status_type": "reschedule",
+      "status_text": "Dời lịch: 03/07/2026 → 10/07/2026"
+    },
+    {
+      "name": "KFM_HCM_Q07 - X1.013 Sunrise City North",
+      "code": "A141",
+      "opening_date": "19/06/2026",
+      "iso_date": "2026-06-19",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "DS59 Gò Vấp",
+      "code": "",
+      "opening_date": "19/06/2026",
+      "iso_date": "2026-06-19",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "Lê Trọng Tấn - Dĩ An",
+      "code": "",
+      "opening_date": "25/06/2026",
+      "iso_date": "2026-06-25",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "Palm Resisdence - TDU",
+      "code": "",
+      "opening_date": "27/06/2026",
+      "iso_date": "2026-06-27",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "VHGP BS08 - TDU",
+      "code": "",
+      "opening_date": "27/06/2026",
+      "iso_date": "2026-06-27",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "KFM_HCM_TDU - 305 Nguyễn Duy Trinh",
+      "code": "NDT",
+      "opening_date": "28/08/2026",
+      "iso_date": "2026-08-28",
+      "status_type": "reschedule",
+      "status_text": "Dời lịch: 27/06/2026 → 28/08/2026"
+    },
+    {
+      "name": "VHGP S20.01 - TDU",
+      "code": "",
+      "opening_date": "24/07/2026",
+      "iso_date": "2026-07-24",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "KFM_HCM_Q07 - A01-16 Hoàng Anh Thanh Bình",
+      "code": "A144",
+      "opening_date": "25/07/2026",
+      "iso_date": "2026-07-25",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
     }
@@ -208,7 +272,7 @@
       "type": "reschedule"
     },
     {
-      "date": "2026-06-19",
+      "date": "2026-06-05",
       "label": "A185 - VHGP Q9 - BS1501",
       "code": "A185",
       "type": "reschedule"
@@ -256,7 +320,7 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-05-22",
+      "date": "2026-05-28",
       "label": "A194 - Millennium - Q4 - mới bổ sung",
       "code": "A194",
       "type": "reschedule"
@@ -340,9 +404,57 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-07-03",
+      "date": "2026-07-10",
       "label": "None - DS1 An Hội Đông - GVA",
       "code": "",
+      "type": "reschedule"
+    },
+    {
+      "date": "2026-06-19",
+      "label": "A141 - Sunrise Citiview - Q7",
+      "code": "A141",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-19",
+      "label": "None - DS59 Gò Vấp",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-25",
+      "label": "None - Lê Trọng Tấn - Dĩ An",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-27",
+      "label": "None - Palm Resisdence - TDU",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-27",
+      "label": "None - VHGP BS08 - TDU",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-08-28",
+      "label": "NDT - 1132 Nguyễn Duy Trinh (67 NDT) - TDU",
+      "code": "NDT",
+      "type": "reschedule"
+    },
+    {
+      "date": "2026-07-24",
+      "label": "None - VHGP S20.01 - TDU",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-07-25",
+      "label": "A144 - Phú Hoàng Anh - NBE",
+      "code": "A144",
       "type": "upcoming"
     }
   ],
