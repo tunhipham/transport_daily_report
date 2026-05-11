@@ -1,20 +1,12 @@
 {
-  "_updated": "11/05/2026 10:11",
+  "_updated": "11/05/2026 10:13",
   "stats": {
-    "total": 33,
+    "total": 32,
     "upcoming": 23,
     "opening": 3,
-    "reschedule": 7
+    "reschedule": 6
   },
   "stores": [
-    {
-      "name": "KFM_HCM_NBE - A2.SH28-30 The Park Residence",
-      "code": "A161",
-      "opening_date": "16/05/2026",
-      "iso_date": "2026-05-16",
-      "status_type": "reschedule",
-      "status_text": "Dời lịch: 17/04/2026 → 16/05/2026"
-    },
     {
       "name": "KFM_HCM_TDU - BS15 Vinhomes Grand Park",
       "code": "A185",
@@ -24,12 +16,12 @@
       "status_text": "Dời lịch: 23/04/2026 → 05/06/2026"
     },
     {
-      "name": "KFM_HCM_NBE - A.1.05 Sunrise Riverside",
-      "code": "A176",
-      "opening_date": "23/05/2026",
-      "iso_date": "2026-05-23",
+      "name": "KFM_HCM_TPH - H.38 Melody Residences Âu Cơ",
+      "code": "A186",
+      "opening_date": "16/05/2026",
+      "iso_date": "2026-05-16",
       "status_type": "reschedule",
-      "status_text": "Dời lịch: 24/04/2026 → 23/05/2026"
+      "status_text": "Dời lịch: 30/04/2026 → 16/05/2026"
     },
     {
       "name": "KFM_HCM_TDU - B6-D.TMDV.02 Masteri Center Point",
@@ -274,21 +266,15 @@
   ],
   "calendar_events": [
     {
-      "date": "2026-05-16",
-      "label": "A161 - The Park Residence",
-      "code": "A161",
-      "type": "reschedule"
-    },
-    {
       "date": "2026-06-05",
       "label": "A185 - VHGP Q9 - BS1501",
       "code": "A185",
       "type": "reschedule"
     },
     {
-      "date": "2026-05-23",
-      "label": "A176 - Sunrise Riverside",
-      "code": "A176",
+      "date": "2026-05-16",
+      "label": "A186 - Melody Residence",
+      "code": "A186",
       "type": "reschedule"
     },
     {
@@ -474,35 +460,35 @@
   ],
   "schedules": [
     {
-      "label": "KFM_HCM_NBE - A2.SH28-30 The Park Residence (A161)",
-      "version": 1500,
+      "label": "KFM_HCM_TPH - H.38 Melody Residences Âu Cơ (A186)",
+      "version": 1000,
       "days": [
         {
           "date": "16/05/2026",
           "day_name": "Thứ 7",
           "label": "D",
-          "ksl": 2800,
+          "ksl": 2500,
           "dm": 0
         },
         {
           "date": "17/05/2026",
           "day_name": "CN",
           "label": "D+1",
-          "ksl": 4200,
+          "ksl": 4000,
           "dm": 400
         },
         {
           "date": "18/05/2026",
           "day_name": "Thứ 2",
           "label": "D+2",
-          "ksl": 2800,
+          "ksl": 2500,
           "dm": 0
         },
         {
           "date": "19/05/2026",
           "day_name": "Thứ 3",
           "label": "D+3",
-          "ksl": 2300,
+          "ksl": 2100,
           "dm": 0
         },
         {
@@ -527,7 +513,7 @@
           "dm": 0
         }
       ],
-      "total_ksl": 12100,
+      "total_ksl": 11100,
       "total_dm": 400
     },
     {

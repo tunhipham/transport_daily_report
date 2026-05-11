@@ -537,9 +537,9 @@ def _is_name_match(a, b):
             return a in b
         else:
             return b in a
-    # Both ≥10 chars → LCS ≥10 AND ≥55% of shorter name
+    # Both ≥10 chars → LCS ≥10 AND ≥70% of shorter name
     lcs = _lcs_length(a, b)
-    return lcs >= 10 and lcs / shorter >= 0.55
+    return lcs >= 10 and lcs / shorter >= 0.70
 
 
 def _name_match(name_mail, store):
