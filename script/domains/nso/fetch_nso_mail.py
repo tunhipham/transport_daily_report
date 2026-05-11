@@ -506,12 +506,14 @@ def _name_match(name_mail, store):
         sv = store.get(key)
         if sv:
             sv_n = _normalize(sv)
-            # Substring match (either direction)
-            if nm in sv_n or sv_n in nm:
-                return True
-            # First significant word match
-            nm_words = [w for w in nm.split() if len(w) > 2]
-            sv_words = [w for w in sv_n.split() if len(w) > 2]
+            # Substring match — only when BOTH are ≥10 chars to avoid
+            # short strings ("q7", "tbi") matching everything
+            if len(nm) >= 10 and len(sv_n) >= 10:
+                if nm in sv_n or sv_n in nm:
+                    return True
+            # Keyword overlap (≥4 chars each to skip noise)
+            nm_words = [w for w in nm.split() if len(w) >= 4]
+            sv_words = [w for w in sv_n.split() if len(w) >= 4]
             common = set(nm_words) & set(sv_words)
             if len(common) >= 2:
                 return True
@@ -576,9 +578,9 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
         if not mail_name:
             continue
 
-        # Split into keywords (≥3 chars, skip noise) — short tokens like "9", "91" cause false matches
-        noise = {"chung", "cư", "siêu", "thị", "mới", "bổ", "sung", "kfm", "hcm"}
-        keywords = [w for w in re.split(r'[\s\-/,\.]+', mail_name) if len(w) >= 3 and w not in noise]
+        # Split into keywords (≥4 chars, skip noise) — short tokens cause false matches
+        noise = {"chung", "cư", "siêu", "thị", "mới", "bổ", "sung", "kfm", "hcm", "quận", "phường"}
+        keywords = [w for w in re.split(r'[\s\-/,\.]+', mail_name) if len(w) >= 4 and w not in noise]
 
         best_match = None
         best_score = 0
@@ -589,8 +591,8 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
                 continue
             # Count how many keywords match
             score = sum(1 for kw in keywords if kw in dsst_name)
-            # Require score ≥ 2 AND at least 40% of keywords matched
-            if score > best_score and score >= 2 and (len(keywords) == 0 or score / len(keywords) >= 0.4):
+            # Require score ≥ 2 AND at least 50% of keywords matched
+            if score > best_score and score >= 2 and (len(keywords) == 0 or score / len(keywords) >= 0.5):
                 best_score = score
                 best_match = (dsst_code, dsst_info)
 

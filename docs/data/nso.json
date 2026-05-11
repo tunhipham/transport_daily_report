@@ -1,19 +1,19 @@
 {
-  "_updated": "05/05/2026 09:30",
+  "_updated": "11/05/2026 09:52",
   "stats": {
-    "total": 24,
-    "upcoming": 16,
-    "opening": 0,
-    "reschedule": 8
+    "total": 33,
+    "upcoming": 21,
+    "opening": 3,
+    "reschedule": 9
   },
   "stores": [
     {
       "name": "KFM_HCM_TDU - BS15 Vinhomes Grand Park",
       "code": "A185",
-      "opening_date": "19/06/2026",
-      "iso_date": "2026-06-19",
+      "opening_date": "05/06/2026",
+      "iso_date": "2026-06-05",
       "status_type": "reschedule",
-      "status_text": "Dời lịch: 23/04/2026 → 19/06/2026"
+      "status_text": "Dời lịch: 23/04/2026 → 05/06/2026"
     },
     {
       "name": "KFM_HCM_TPH - H.38 Melody Residences Âu Cơ",
@@ -40,36 +40,28 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_BDU_DAN - 9 Đường M, Khu Phố Nhị Đồng 2",
-      "code": "A189",
-      "opening_date": "07/05/2026",
-      "iso_date": "2026-05-07",
-      "status_type": "reschedule",
-      "status_text": "Đôn lịch: 15/05/2026 → 07/05/2026"
-    },
-    {
       "name": "KFM_HCM_Q08 - 819 Phạm Thế Hiển",
       "code": "A171",
       "opening_date": "08/05/2026",
       "iso_date": "2026-05-08",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "status_type": "opening",
+      "status_text": "Đang khai trương"
     },
     {
       "name": "KFM_HCM_PNH - BPB-01.08 Botanica Premier",
       "code": "A190",
       "opening_date": "09/05/2026",
       "iso_date": "2026-05-09",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "status_type": "opening",
+      "status_text": "Đang khai trương"
     },
     {
       "name": "KFM_HCM_Q11 - CH0.08 Chung Cư Thuận Việt",
       "code": "A188",
       "opening_date": "09/05/2026",
       "iso_date": "2026-05-09",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "status_type": "opening",
+      "status_text": "Đang khai trương"
     },
     {
       "name": "KFM_HCM_BCH - L1.08 Saigon Mia",
@@ -82,10 +74,10 @@
     {
       "name": "Millennium - Q4 - mới bổ sung",
       "code": "",
-      "opening_date": "22/05/2026",
-      "iso_date": "2026-05-22",
+      "opening_date": "28/05/2026",
+      "iso_date": "2026-05-28",
       "status_type": "reschedule",
-      "status_text": "Dời lịch: 08/05/2026 → 22/05/2026"
+      "status_text": "Dời lịch: 08/05/2026 → 28/05/2026"
     },
     {
       "name": "6/1 Đường 13 (Thạnh Xuân 13)",
@@ -146,10 +138,10 @@
     {
       "name": "KFM_HCM_GVA - 308 Lê Văn Thọ",
       "code": "LVT",
-      "opening_date": "05/09/2026",
-      "iso_date": "2026-09-05",
+      "opening_date": "03/07/2026",
+      "iso_date": "2026-07-03",
       "status_type": "reschedule",
-      "status_text": "Dời lịch: 03/07/2026 → 05/09/2026"
+      "status_text": "Đôn lịch: 03/07/2026 → 03/07/2026"
     },
     {
       "name": "KFM_HCM_Q07 - 571 Huỳnh Tấn Phát",
@@ -194,15 +186,95 @@
     {
       "name": "KFM_HCM_GVA - 410 Phan Huy Ích",
       "code": "PHI",
-      "opening_date": "03/07/2026",
-      "iso_date": "2026-07-03",
+      "opening_date": "10/07/2026",
+      "iso_date": "2026-07-10",
+      "status_type": "reschedule",
+      "status_text": "Dời lịch: 03/07/2026 → 10/07/2026"
+    },
+    {
+      "name": "Bàu Cát - TBI",
+      "code": "",
+      "opening_date": "22/05/2026",
+      "iso_date": "2026-05-22",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "Đường A4 - TBI",
+      "code": "",
+      "opening_date": "29/05/2026",
+      "iso_date": "2026-05-29",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "Sunrise Citiview - Q7",
+      "code": "",
+      "opening_date": "19/06/2026",
+      "iso_date": "2026-06-19",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "DS59 Gò Vấp",
+      "code": "",
+      "opening_date": "19/06/2026",
+      "iso_date": "2026-06-19",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "Lê Trọng Tấn - Dĩ An",
+      "code": "",
+      "opening_date": "25/06/2026",
+      "iso_date": "2026-06-25",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "VHGP BS08 - TDU",
+      "code": "",
+      "opening_date": "27/06/2026",
+      "iso_date": "2026-06-27",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "KFM_HCM_TDU - 305 Nguyễn Duy Trinh",
+      "code": "NDT",
+      "opening_date": "28/08/2026",
+      "iso_date": "2026-08-28",
+      "status_type": "reschedule",
+      "status_text": "Dời lịch: 27/06/2026 → 28/08/2026"
+    },
+    {
+      "name": "VHGP S20.01 - TDU",
+      "code": "",
+      "opening_date": "24/07/2026",
+      "iso_date": "2026-07-24",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "Phú Hoàng Anh - NBE",
+      "code": "",
+      "opening_date": "25/07/2026",
+      "iso_date": "2026-07-25",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "Empire City - Thủ Đức",
+      "code": "",
+      "opening_date": "05/09/2026",
+      "iso_date": "2026-09-05",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
     }
   ],
   "calendar_events": [
     {
-      "date": "2026-06-19",
+      "date": "2026-06-05",
       "label": "A185 - VHGP Q9 - BS1501",
       "code": "A185",
       "type": "reschedule"
@@ -226,28 +298,22 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-05-07",
-      "label": "A189 - 91-93 Nguyễn Sơn",
-      "code": "A189",
-      "type": "reschedule"
-    },
-    {
       "date": "2026-05-08",
       "label": "A171 - 819-821 Phạm Thế Hiển",
       "code": "A171",
-      "type": "upcoming"
+      "type": "opening"
     },
     {
       "date": "2026-05-09",
       "label": "A190 - BOTANICA PREMIER",
       "code": "A190",
-      "type": "upcoming"
+      "type": "opening"
     },
     {
       "date": "2026-05-09",
       "label": "A188 - CC Thuận Việt",
       "code": "A188",
-      "type": "upcoming"
+      "type": "opening"
     },
     {
       "date": "2026-05-15",
@@ -256,7 +322,7 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-05-22",
+      "date": "2026-05-28",
       "label": "None - Millennium - Q4 - mới bổ sung",
       "code": "",
       "type": "reschedule"
@@ -304,7 +370,7 @@
       "type": "reschedule"
     },
     {
-      "date": "2026-09-05",
+      "date": "2026-07-03",
       "label": "LVT - 173 Lê Văn Chí - Thủ Đức",
       "code": "LVT",
       "type": "reschedule"
@@ -340,176 +406,236 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-07-03",
+      "date": "2026-07-10",
       "label": "PHI - DS1 An Hội Đông - GVA",
       "code": "PHI",
+      "type": "reschedule"
+    },
+    {
+      "date": "2026-05-22",
+      "label": "None - Bàu Cát - TBI",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-05-29",
+      "label": "None - Đường A4 - TBI",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-19",
+      "label": "None - Sunrise Citiview - Q7",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-19",
+      "label": "None - DS59 Gò Vấp",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-25",
+      "label": "None - Lê Trọng Tấn - Dĩ An",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-27",
+      "label": "None - VHGP BS08 - TDU",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-08-28",
+      "label": "NDT - 1132 Nguyễn Duy Trinh (67 NDT) - TDU",
+      "code": "NDT",
+      "type": "reschedule"
+    },
+    {
+      "date": "2026-07-24",
+      "label": "None - VHGP S20.01 - TDU",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-07-25",
+      "label": "None - Phú Hoàng Anh - NBE",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-09-05",
+      "label": "None - Empire City - Thủ Đức",
+      "code": "",
       "type": "upcoming"
     }
   ],
   "schedules": [
     {
-      "label": "KFM_BDU_DAN - 9 Đường M, Khu Phố Nhị Đồng 2 (A189)",
-      "version": 1500,
+      "label": "KFM_HCM_TPH - H.38 Melody Residences Âu Cơ (A186)",
+      "version": 1000,
       "days": [
         {
-          "date": "07/05/2026",
-          "day_name": "Thứ 5",
+          "date": "16/05/2026",
+          "day_name": "Thứ 7",
           "label": "D",
-          "ksl": 2800,
+          "ksl": 2500,
           "dm": 0
         },
         {
-          "date": "08/05/2026",
-          "day_name": "Thứ 6",
+          "date": "17/05/2026",
+          "day_name": "CN",
           "label": "D+1",
-          "ksl": 4200,
+          "ksl": 4000,
           "dm": 400
         },
         {
-          "date": "09/05/2026",
-          "day_name": "Thứ 7",
-          "label": "D+2",
-          "ksl": 2800,
-          "dm": 0
-        },
-        {
-          "date": "10/05/2026",
-          "day_name": "CN",
-          "label": "D+3",
-          "ksl": 2300,
-          "dm": 0
-        },
-        {
-          "date": "11/05/2026",
+          "date": "18/05/2026",
           "day_name": "Thứ 2",
+          "label": "D+2",
+          "ksl": 2500,
+          "dm": 0
+        },
+        {
+          "date": "19/05/2026",
+          "day_name": "Thứ 3",
+          "label": "D+3",
+          "ksl": 2100,
+          "dm": 0
+        },
+        {
+          "date": "20/05/2026",
+          "day_name": "Thứ 4",
           "label": "D+4",
           "ksl": "Daily",
           "dm": 0
         },
         {
-          "date": "12/05/2026",
-          "day_name": "Thứ 3",
+          "date": "21/05/2026",
+          "day_name": "Thứ 5",
           "label": "D+5",
           "ksl": "Daily",
           "dm": 0
         },
         {
-          "date": "13/05/2026",
-          "day_name": "Thứ 4",
+          "date": "22/05/2026",
+          "day_name": "Thứ 6",
           "label": "D+6",
           "ksl": "Daily",
           "dm": 0
         }
       ],
-      "total_ksl": 12100,
+      "total_ksl": 11100,
       "total_dm": 400
     },
     {
-      "label": "KFM_HCM_Q08 - 819 Phạm Thế Hiển (A171)",
-      "version": 2000,
+      "label": "KFM_HCM_TDU - B6-D.TMDV.02 Masteri Center Point (A181)",
+      "version": 1000,
       "days": [
         {
-          "date": "08/05/2026",
+          "date": "15/05/2026",
           "day_name": "Thứ 6",
           "label": "D",
-          "ksl": 3500,
+          "ksl": 2500,
           "dm": 0
         },
         {
-          "date": "09/05/2026",
+          "date": "16/05/2026",
           "day_name": "Thứ 7",
           "label": "D+1",
-          "ksl": 5500,
+          "ksl": 4000,
           "dm": 400
         },
         {
-          "date": "10/05/2026",
+          "date": "17/05/2026",
           "day_name": "CN",
           "label": "D+2",
-          "ksl": 3500,
+          "ksl": 2500,
           "dm": 0
         },
         {
-          "date": "11/05/2026",
+          "date": "18/05/2026",
           "day_name": "Thứ 2",
           "label": "D+3",
-          "ksl": 3000,
+          "ksl": 2100,
           "dm": 0
         },
         {
-          "date": "12/05/2026",
+          "date": "19/05/2026",
           "day_name": "Thứ 3",
           "label": "D+4",
           "ksl": "Daily",
           "dm": 0
         },
         {
-          "date": "13/05/2026",
+          "date": "20/05/2026",
           "day_name": "Thứ 4",
           "label": "D+5",
           "ksl": "Daily",
           "dm": 0
         },
         {
-          "date": "14/05/2026",
+          "date": "21/05/2026",
           "day_name": "Thứ 5",
           "label": "D+6",
           "ksl": "Daily",
           "dm": 0
         }
       ],
-      "total_ksl": 15500,
+      "total_ksl": 11100,
       "total_dm": 400
     },
     {
-      "label": "KFM_HCM_PNH - BPB-01.08 Botanica Premier (A190)",
+      "label": "KFM_HCM_PNH - GM-1.06 Golden Mansion (A175)",
       "version": 700,
       "days": [
         {
-          "date": "09/05/2026",
-          "day_name": "Thứ 7",
+          "date": "15/05/2026",
+          "day_name": "Thứ 6",
           "label": "D",
           "ksl": 1800,
           "dm": 0
         },
         {
-          "date": "10/05/2026",
-          "day_name": "CN",
+          "date": "16/05/2026",
+          "day_name": "Thứ 7",
           "label": "D+1",
           "ksl": 3000,
           "dm": 400
         },
         {
-          "date": "11/05/2026",
-          "day_name": "Thứ 2",
+          "date": "17/05/2026",
+          "day_name": "CN",
           "label": "D+2",
           "ksl": 1800,
           "dm": 0
         },
         {
-          "date": "12/05/2026",
-          "day_name": "Thứ 3",
+          "date": "18/05/2026",
+          "day_name": "Thứ 2",
           "label": "D+3",
           "ksl": 1500,
           "dm": 0
         },
         {
-          "date": "13/05/2026",
-          "day_name": "Thứ 4",
+          "date": "19/05/2026",
+          "day_name": "Thứ 3",
           "label": "D+4",
           "ksl": "Daily",
           "dm": 0
         },
         {
-          "date": "14/05/2026",
-          "day_name": "Thứ 5",
+          "date": "20/05/2026",
+          "day_name": "Thứ 4",
           "label": "D+5",
           "ksl": "Daily",
           "dm": 0
         },
         {
-          "date": "15/05/2026",
-          "day_name": "Thứ 6",
+          "date": "21/05/2026",
+          "day_name": "Thứ 5",
           "label": "D+6",
           "ksl": "Daily",
           "dm": 0
@@ -519,60 +645,60 @@
       "total_dm": 400
     },
     {
-      "label": "KFM_HCM_Q11 - CH0.08 Chung Cư Thuận Việt (A188)",
-      "version": 700,
+      "label": "KFM_HCM_BCH - L1.08 Saigon Mia (A184)",
+      "version": 1000,
       "days": [
         {
-          "date": "09/05/2026",
-          "day_name": "Thứ 7",
+          "date": "15/05/2026",
+          "day_name": "Thứ 6",
           "label": "D",
-          "ksl": 1800,
+          "ksl": 2500,
           "dm": 0
         },
         {
-          "date": "10/05/2026",
-          "day_name": "CN",
+          "date": "16/05/2026",
+          "day_name": "Thứ 7",
           "label": "D+1",
-          "ksl": 3000,
+          "ksl": 4000,
           "dm": 400
         },
         {
-          "date": "11/05/2026",
-          "day_name": "Thứ 2",
+          "date": "17/05/2026",
+          "day_name": "CN",
           "label": "D+2",
-          "ksl": 1800,
+          "ksl": 2500,
           "dm": 0
         },
         {
-          "date": "12/05/2026",
-          "day_name": "Thứ 3",
+          "date": "18/05/2026",
+          "day_name": "Thứ 2",
           "label": "D+3",
-          "ksl": 1500,
+          "ksl": 2100,
           "dm": 0
         },
         {
-          "date": "13/05/2026",
-          "day_name": "Thứ 4",
+          "date": "19/05/2026",
+          "day_name": "Thứ 3",
           "label": "D+4",
           "ksl": "Daily",
           "dm": 0
         },
         {
-          "date": "14/05/2026",
-          "day_name": "Thứ 5",
+          "date": "20/05/2026",
+          "day_name": "Thứ 4",
           "label": "D+5",
           "ksl": "Daily",
           "dm": 0
         },
         {
-          "date": "15/05/2026",
-          "day_name": "Thứ 6",
+          "date": "21/05/2026",
+          "day_name": "Thứ 5",
           "label": "D+6",
           "ksl": "Daily",
           "dm": 0
         }
       ],
-      "total_ksl": 8100,
+      "total_ksl": 11100,
       "total_dm": 400
     }
   ],
@@ -606,5 +732,5 @@
       "total": 8100
     }
   },
-  "week_range": "04/05/2026 → 10/05/2026"
+  "week_range": "11/05/2026 → 17/05/2026"
 }

@@ -327,7 +327,7 @@ class NsoMaster:
                 added.append(ms["name_mail"][:25])
 
         # Enrich with DSST
-        noise = {"chung", "cư", "siêu", "thị", "mới", "bổ", "sung", "kfm", "hcm"}
+        noise = {"chung", "cư", "siêu", "thị", "mới", "bổ", "sung", "kfm", "hcm", "quận", "phường"}
         for store in self.stores:
             code = store.get("code")
             if code:
@@ -339,18 +339,19 @@ class NsoMaster:
                     store["version"] = dsst["version"]
                 continue
 
-            # Fuzzy match
+            # Fuzzy match — keywords ≥4 chars to avoid false positives
             mail_name = (store.get("name_mail") or store.get("name_full") or "").lower()
             if not mail_name:
                 continue
-            keywords = [w for w in re.split(r'[\s\-/,\.]+', mail_name) if len(w) > 1 and w not in noise]
+            keywords = [w for w in re.split(r'[\s\-/,\.]+', mail_name) if len(w) >= 4 and w not in noise]
             best_match, best_score = None, 0
             for dsst_code, dsst_info in dsst_lookup.items():
                 dsst_name = (dsst_info.get("branch_name") or dsst_info.get("name_full") or "").lower()
                 if not dsst_name:
                     continue
                 score = sum(1 for kw in keywords if kw in dsst_name)
-                if score > best_score and score >= 2:
+                # Require score ≥ 2 AND ≥50% keywords matched
+                if score > best_score and score >= 2 and (len(keywords) == 0 or score / len(keywords) >= 0.5):
                     best_score = score
                     best_match = (dsst_code, dsst_info)
             if best_match:
