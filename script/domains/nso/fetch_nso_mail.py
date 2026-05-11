@@ -498,6 +498,8 @@ def _normalize(s):
     for noise in ['- mới bổ sung', 'mới bổ sung', '- tbi', '- bth', '- q1',
                   'shophoue', 'shophouse']:
         s = s.replace(noise, '')
+    # Strip dashes/hyphens so 'golden mansion - 119' matches 'golden mansion 119'
+    s = s.replace('-', ' ')
     return ' '.join(s.split())
 
 
@@ -523,8 +525,8 @@ def _is_name_match(a, b):
     """Check if two normalized names match.
 
     Rules:
-    - If both ≥10 chars: longest common substring ≥10 → match
     - If shorter name <10 chars: shorter must be fully contained in longer
+    - Otherwise: LCS ≥10 AND LCS ≥60% of shorter name length
     """
     if not a or not b:
         return False
@@ -535,8 +537,9 @@ def _is_name_match(a, b):
             return a in b
         else:
             return b in a
-    # Both ≥10 chars → LCS ≥10
-    return _lcs_length(a, b) >= 10
+    # Both ≥10 chars → LCS ≥10 AND ≥55% of shorter name
+    lcs = _lcs_length(a, b)
+    return lcs >= 10 and lcs / shorter >= 0.55
 
 
 def _name_match(name_mail, store):
@@ -617,15 +620,9 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
             dsst_name = _normalize(dsst_info.get("name_full") or "")
             if not dsst_name:
                 continue
-            lcs = _lcs_length(mail_name, dsst_name)
-            shorter = min(len(mail_name), len(dsst_name))
-            # Match rule: ≥10 chars LCS, or full match if shorter <10
-            if shorter < 10:
-                if not _is_name_match(mail_name, dsst_name):
-                    continue
-                lcs = shorter  # treat as max score
-            elif lcs < 10:
+            if not _is_name_match(mail_name, dsst_name):
                 continue
+            lcs = _lcs_length(mail_name, dsst_name)
             if lcs > best_lcs:
                 best_lcs = lcs
                 best_match = (dsst_code, dsst_info)

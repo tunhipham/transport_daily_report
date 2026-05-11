@@ -1,10 +1,10 @@
 {
-  "_updated": "11/05/2026 10:02",
+  "_updated": "11/05/2026 10:11",
   "stats": {
-    "total": 32,
-    "upcoming": 20,
+    "total": 33,
+    "upcoming": 23,
     "opening": 3,
-    "reschedule": 9
+    "reschedule": 7
   },
   "stores": [
     {
@@ -146,10 +146,10 @@
     {
       "name": "KFM_HCM_GVA - 308 Lê Văn Thọ",
       "code": "LVT",
-      "opening_date": "05/09/2026",
-      "iso_date": "2026-09-05",
-      "status_type": "reschedule",
-      "status_text": "Dời lịch: 03/07/2026 → 05/09/2026"
+      "opening_date": "03/07/2026",
+      "iso_date": "2026-07-03",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
     },
     {
       "name": "KFM_HCM_Q07 - 571 Huỳnh Tấn Phát",
@@ -184,22 +184,6 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KDC Thới An - Q12",
-      "code": "",
-      "opening_date": "26/06/2026",
-      "iso_date": "2026-06-26",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
-    },
-    {
-      "name": "DS1 An Hội Đông - GVA",
-      "code": "",
-      "opening_date": "10/07/2026",
-      "iso_date": "2026-07-10",
-      "status_type": "reschedule",
-      "status_text": "Dời lịch: 03/07/2026 → 10/07/2026"
-    },
-    {
       "name": "KFM_HCM_Q07 - X1.013 Sunrise City North",
       "code": "A141",
       "opening_date": "19/06/2026",
@@ -220,6 +204,14 @@
       "code": "",
       "opening_date": "25/06/2026",
       "iso_date": "2026-06-25",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "KDC Thới An - Q12",
+      "code": "",
+      "opening_date": "26/06/2026",
+      "iso_date": "2026-06-26",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
     },
@@ -248,6 +240,14 @@
       "status_text": "Dời lịch: 27/06/2026 → 28/08/2026"
     },
     {
+      "name": "DS1 An Hội Đông - GVA",
+      "code": "",
+      "opening_date": "10/07/2026",
+      "iso_date": "2026-07-10",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
       "name": "VHGP S20.01 - TDU",
       "code": "",
       "opening_date": "24/07/2026",
@@ -260,6 +260,14 @@
       "code": "A144",
       "opening_date": "25/07/2026",
       "iso_date": "2026-07-25",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "Empire City - Thủ Đức",
+      "code": "",
+      "opening_date": "05/09/2026",
+      "iso_date": "2026-09-05",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
     }
@@ -368,10 +376,10 @@
       "type": "reschedule"
     },
     {
-      "date": "2026-09-05",
+      "date": "2026-07-03",
       "label": "LVT - 173 Lê Văn Chí - Thủ Đức",
       "code": "LVT",
-      "type": "reschedule"
+      "type": "upcoming"
     },
     {
       "date": "2026-09-25",
@@ -398,18 +406,6 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-06-26",
-      "label": "None - KDC Thới An - Q12",
-      "code": "",
-      "type": "upcoming"
-    },
-    {
-      "date": "2026-07-10",
-      "label": "None - DS1 An Hội Đông - GVA",
-      "code": "",
-      "type": "reschedule"
-    },
-    {
       "date": "2026-06-19",
       "label": "A141 - Sunrise Citiview - Q7",
       "code": "A141",
@@ -424,6 +420,12 @@
     {
       "date": "2026-06-25",
       "label": "None - Lê Trọng Tấn - Dĩ An",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-26",
+      "label": "None - KDC Thới An - Q12",
       "code": "",
       "type": "upcoming"
     },
@@ -446,6 +448,12 @@
       "type": "reschedule"
     },
     {
+      "date": "2026-07-10",
+      "label": "None - DS1 An Hội Đông - GVA",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
       "date": "2026-07-24",
       "label": "None - VHGP S20.01 - TDU",
       "code": "",
@@ -455,6 +463,12 @@
       "date": "2026-07-25",
       "label": "A144 - Phú Hoàng Anh - NBE",
       "code": "A144",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-09-05",
+      "label": "None - Empire City - Thủ Đức",
+      "code": "",
       "type": "upcoming"
     }
   ],
