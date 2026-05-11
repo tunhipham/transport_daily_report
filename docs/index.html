@@ -1026,6 +1026,26 @@
       color: var(--pur)
     }
 
+    .cal-ev.completed {
+      background: rgba(148, 163, 184, .08);
+      color: var(--t4);
+      opacity: .5
+    }
+
+    .badge-muted {
+      background: rgba(148, 163, 184, .08);
+      color: var(--t4);
+      border: 1px solid rgba(148, 163, 184, .15)
+    }
+
+    tr.row-completed td {
+      opacity: .4
+    }
+
+    tr.row-completed:hover td {
+      opacity: .7
+    }
+
     [data-theme="light"] .cal-ev.upcoming {
       background: rgba(5, 150, 105, .15);
       color: var(--grn);
@@ -3272,44 +3292,45 @@
         const d = new Date(isoDate); d.setHours(0,0,0,0);
         return Math.floor((todayMs - d) / 86400000);
       }
-      // Filter stores: keep only those where delta <= 3 (not past D+3)
+      // Keep ALL stores — completed ones shown with faded style
       const allStores = data.stores || [];
-      const stores = allStores.filter(s => {
+      const stores = allStores.map(s => {
         const delta = daysDiff(s.iso_date);
-        if (delta > 3) return false; // past D+3 → hide
         // Re-compute status_type/text based on current date
         if (delta < 0) { s.status_type = 'upcoming'; s.status_text = 'Sắp khai trương'; }
         else if (delta >= 0 && delta <= 3 && s.status_type !== 'reschedule') { s.status_type = 'opening'; s.status_text = 'Đang khai trương'; }
-        return true;
+        else if (delta > 3) { s.status_type = 'completed'; s.status_text = 'Đã khai trương (' + s.opening_date + ')'; }
+        return s;
       });
-      // Sort by opening date: nearest first → farthest
-      stores.sort((a, b) => a.iso_date.localeCompare(b.iso_date));
-      // Filter calendar events the same way
+      // Sort: active first (upcoming → opening → reschedule), then completed at bottom
+      const statusOrder = {opening:0, upcoming:1, reschedule:2, completed:3};
+      stores.sort((a, b) => (statusOrder[a.status_type]||9) - (statusOrder[b.status_type]||9) || a.iso_date.localeCompare(b.iso_date));
+      // Calendar events — include completed
       const allCalEvents = data.calendar_events || [];
-      const calEvents = allCalEvents.filter(ev => {
+      const calEvents = allCalEvents.map(ev => {
         const delta = daysDiff(ev.date);
-        if (delta > 3) return false;
-        // Re-compute type based on current date (same logic as stores)
         if (delta < 0) { ev.type = 'upcoming'; }
         else if (delta >= 0 && delta <= 3 && ev.type !== 'reschedule') { ev.type = 'opening'; }
-        return true;
+        else if (delta > 3) { ev.type = 'completed'; }
+        return ev;
       });
-      // Recalculate stats from filtered data
+      // Recalculate stats
       const stats = {
         total: stores.length,
         upcoming: stores.filter(s => s.status_type === 'upcoming').length,
         opening: stores.filter(s => s.status_type === 'opening').length,
         reschedule: stores.filter(s => s.status_type === 'reschedule').length,
+        completed: stores.filter(s => s.status_type === 'completed').length,
       };
       const schedules = data.schedules || [];
       const versionRules = data.version_rules || {};
 
       // Stats
       let html = `<div class="stats-grid">
-    <div class="stat-card"><div class="value" style="color:var(--blu)">${stats.total || 0}</div><div class="label">Tổng Store Active</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--blu)">${stats.total || 0}</div><div class="label">Tổng NSO</div></div>
     <div class="stat-card"><div class="value" style="color:var(--grn)">${stats.upcoming || 0}</div><div class="label">Sắp Khai Trương</div></div>
     <div class="stat-card"><div class="value" style="color:var(--org)">${stats.opening || 0}</div><div class="label">Đang Khai Trương</div></div>
-    <div class="stat-card"><div class="value" style="color:var(--pur)">${stats.reschedule || 0}</div><div class="label">Dời Lịch</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--t4)">${stats.completed || 0}</div><div class="label">Đã Khai Trương</div></div>
   </div>`;
 
       // Calendar
@@ -3324,12 +3345,13 @@
       <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(245,158,11,.25);border:1px solid var(--org);vertical-align:middle;margin-right:4px"></span><span style="color:var(--org)">Đang Khai Trương</span></span>
       <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(16,185,129,.2);border:1px solid var(--grn);vertical-align:middle;margin-right:4px"></span><span style="color:var(--grn)">Sắp Khai Trương</span></span>
       <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(168,85,247,.2);border:1px solid var(--pur);vertical-align:middle;margin-right:4px"></span><span style="color:var(--pur)">Dời Lịch Khai Trương</span></span>
+      <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(148,163,184,.1);border:1px solid var(--t4);vertical-align:middle;margin-right:4px"></span><span style="color:var(--t4)">Đã Khai Trương</span></span>
     </div>
     <div class="cal-grid" id="nsoCalGrid"></div>
   </div></div>`;
 
-      // Store Table with inline column filters
-      html += `<div class="section"><div class="section-header"><span class="icon">📋</span><h2>Lịch Khai Trương NSO</h2></div>
+      // Store Table with inline column filters + Export button
+      html += `<div class="section"><div class="section-header" style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:.6rem"><span class="icon">📋</span><h2>Lịch Khai Trương NSO</h2></div><button class="fbtn primary" onclick="nsoExportExcel()" style="font-size:.75rem;padding:.35rem .8rem">📥 Xuất Excel</button></div>
   <div style="display:flex; align-items:center; gap:1rem; margin-bottom:.5rem; flex-wrap:wrap">
     <div class="filter-bar" style="display:flex; align-items:center; gap:.5rem; padding:0; border:none; background:none">
       <label style="color:var(--t2);font-size:.8rem">Từ:</label><input type="date" id="nsoDateFrom" onchange="nsoInlineFilter()" style="font-size:.75rem;padding:.3rem .5rem">
@@ -3351,13 +3373,15 @@
           <option value="opening">🟠 Đang khai trương</option>
           <option value="upcoming">🟢 Sắp khai trương</option>
           <option value="reschedule">🟣 Dời lịch</option>
+          <option value="completed">⚪ Đã khai trương</option>
         </select></td>
       </tr>
     </thead>
     <tbody id="nsoStoreBody">`;
       stores.forEach((s, i) => {
-        const badgeCls = s.status_type === 'upcoming' ? 'badge-green' : s.status_type === 'opening' ? 'badge-orange' : 'badge-purple';
-        html += `<tr class="nso-store-row" data-date="${s.iso_date}" data-status="${s.status_type}" data-name="${(s.name||'').toLowerCase()}" data-code="${(s.code||'').toLowerCase()}" data-datestr="${s.opening_date}">
+        const badgeCls = s.status_type === 'upcoming' ? 'badge-green' : s.status_type === 'opening' ? 'badge-orange' : s.status_type === 'completed' ? 'badge-muted' : 'badge-purple';
+        const rowCls = s.status_type === 'completed' ? 'nso-store-row row-completed' : 'nso-store-row';
+        html += `<tr class="${rowCls}" data-date="${s.iso_date}" data-status="${s.status_type}" data-name="${(s.name||'').toLowerCase()}" data-code="${(s.code||'').toLowerCase()}" data-datestr="${s.opening_date}">
       <td class="tc nso-stt">${i + 1}</td><td>${s.name}</td>
       <td class="tc"><span class="badge badge-blue">${s.code || '—'}</span></td>
       <td class="tc">${s.opening_date}</td>
@@ -3473,6 +3497,31 @@
         document.getElementById('nsoFltDate').value = '';
         document.getElementById('nsoFltStatus').value = '';
         nsoInlineFilter();
+      };
+
+      // Export visible stores to Excel (CSV)
+      window.nsoExportExcel = function () {
+        const rows = document.querySelectorAll('.nso-store-row');
+        let csv = '\uFEFF'; // BOM for Excel UTF-8
+        csv += 'STT,Tên Siêu Thị,Code,Ngày Khai Trương,Trạng Thái\n';
+        let idx = 0;
+        rows.forEach(r => {
+          if (r.style.display === 'none') return;
+          idx++;
+          const tds = r.querySelectorAll('td');
+          const name = (tds[1]?.textContent || '').replace(/"/g, '""');
+          const code = (tds[2]?.textContent || '').trim();
+          const date = (tds[3]?.textContent || '').trim();
+          const status = (tds[4]?.textContent || '').trim();
+          csv += `${idx},"${name}",${code},${date},"${status}"\n`;
+        });
+        const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Lich_Khai_Truong_NSO.csv';
+        a.click();
+        URL.revokeObjectURL(url);
       };
     }
 

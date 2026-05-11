@@ -300,7 +300,7 @@ def get_short_label(store):
     return f'{store["code"]} - {store["name_mail"]}'
 
 def get_status(store, today):
-    """Trả về dict(type, text, css) hoặc None nếu hết hạn (D+3 xong)."""
+    """Trả về dict(type, text, css). 'completed' = đã qua D+3."""
     d = parse_date(store["opening_date"])
     delta = (today - d).days
 
@@ -308,7 +308,7 @@ def get_status(store, today):
     if store.get("original_date"):
         orig = parse_date(store["original_date"])
         if delta > 3:
-            return None  # đã khai trương xong → loại
+            return {"type": "completed", "text": f'Đã khai trương ({store["opening_date"]})', "css": "badge-completed"}
         direction = "Dời lịch" if d > orig else "Đôn lịch"
         return {
             "type": "reschedule",
@@ -321,7 +321,7 @@ def get_status(store, today):
     elif 0 <= delta <= 3:
         return {"type": "opening", "text": "Đang khai trương", "css": "badge-opening"}
     else:
-        return None  # loại khỏi list
+        return {"type": "completed", "text": f'Đã khai trương ({store["opening_date"]})', "css": "badge-completed"}
 
 def week_range(today):
     """Mon-Sun of current week."""

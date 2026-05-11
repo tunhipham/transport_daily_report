@@ -1,12 +1,52 @@
 {
-  "_updated": "11/05/2026 10:40",
+  "_updated": "11/05/2026 10:52",
   "stats": {
-    "total": 33,
+    "total": 45,
     "upcoming": 23,
     "opening": 3,
     "reschedule": 7
   },
   "stores": [
+    {
+      "name": "KFM_HCM_NBE - A2.SH28-30 The Park Residence",
+      "code": "A161",
+      "opening_date": "17/04/2026",
+      "iso_date": "2026-04-17",
+      "status_type": "completed",
+      "status_text": "Đã khai trương (17/04/2026)"
+    },
+    {
+      "name": "KFM_HCM_BTH - 127 Tân Cảng",
+      "code": "A148",
+      "opening_date": "17/04/2026",
+      "iso_date": "2026-04-17",
+      "status_type": "completed",
+      "status_text": "Đã khai trương (17/04/2026)"
+    },
+    {
+      "name": "KFM_HCM_TDU - A1.02 Him Lam Phú An",
+      "code": "A179",
+      "opening_date": "17/04/2026",
+      "iso_date": "2026-04-17",
+      "status_type": "completed",
+      "status_text": "Đã khai trương (17/04/2026)"
+    },
+    {
+      "name": "KFM_HCM_Q07 - 1016/21 Chung Cư Sky Garden 2-R1-2",
+      "code": "A177",
+      "opening_date": "18/04/2026",
+      "iso_date": "2026-04-18",
+      "status_type": "completed",
+      "status_text": "Đã khai trương (18/04/2026)"
+    },
+    {
+      "name": "KFM_BDU_DAN - B2.01.05 Tháp B Opal Boulevard",
+      "code": "A164",
+      "opening_date": "23/04/2026",
+      "iso_date": "2026-04-23",
+      "status_type": "completed",
+      "status_text": "Đã khai trương (23/04/2026)"
+    },
     {
       "name": "KFM_HCM_TDU - BS15 Vinhomes Grand Park",
       "code": "A185",
@@ -14,6 +54,54 @@
       "iso_date": "2026-06-05",
       "status_type": "reschedule",
       "status_text": "Dời lịch: 23/04/2026 → 05/06/2026"
+    },
+    {
+      "name": "KFM_HCM_NBE - G16 Celesta Rise",
+      "code": "A178",
+      "opening_date": "24/04/2026",
+      "iso_date": "2026-04-24",
+      "status_type": "completed",
+      "status_text": "Đã khai trương (24/04/2026)"
+    },
+    {
+      "name": "KFM_HCM_Q01 - 35 Nguyễn Hữu Cầu",
+      "code": "A191",
+      "opening_date": "24/04/2026",
+      "iso_date": "2026-04-24",
+      "status_type": "completed",
+      "status_text": "Đã khai trương (24/04/2026)"
+    },
+    {
+      "name": "KFM_HCM_NBE - A.1.05 Sunrise Riverside",
+      "code": "A176",
+      "opening_date": "24/04/2026",
+      "iso_date": "2026-04-24",
+      "status_type": "completed",
+      "status_text": "Đã khai trương (24/04/2026)"
+    },
+    {
+      "name": "KFM_HCM_TPH - S2.0.28 Block A6 Alnata Plus Celadon City",
+      "code": "A163",
+      "opening_date": "25/04/2026",
+      "iso_date": "2026-04-25",
+      "status_type": "completed",
+      "status_text": "Đã khai trương (25/04/2026)"
+    },
+    {
+      "name": "KFM_HCM_TDU - TM1.15 Chung Cư 9 View",
+      "code": "A167",
+      "opening_date": "25/04/2026",
+      "iso_date": "2026-04-25",
+      "status_type": "completed",
+      "status_text": "Đã khai trương (25/04/2026)"
+    },
+    {
+      "name": "KFM_HCM_BTH - 61 Bùi Đình Túy",
+      "code": "A192",
+      "opening_date": "25/04/2026",
+      "iso_date": "2026-04-25",
+      "status_type": "completed",
+      "status_text": "Đã khai trương (25/04/2026)"
     },
     {
       "name": "KFM_HCM_TPH - H.38 Melody Residences Âu Cơ",
@@ -46,6 +134,14 @@
       "iso_date": "2026-05-15",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "KFM_HCM_TPH - 91 Nguyễn Sơn",
+      "code": "A195",
+      "opening_date": "07/05/2026",
+      "iso_date": "2026-05-07",
+      "status_type": "completed",
+      "status_text": "Đã khai trương (07/05/2026)"
     },
     {
       "name": "KFM_HCM_Q08 - 819 Phạm Thế Hiển",
@@ -274,10 +370,76 @@
   ],
   "calendar_events": [
     {
+      "date": "2026-04-17",
+      "label": "A161 - The Park Residence",
+      "code": "A161",
+      "type": "completed"
+    },
+    {
+      "date": "2026-04-17",
+      "label": "A148 - 127 Tân Cảng",
+      "code": "A148",
+      "type": "completed"
+    },
+    {
+      "date": "2026-04-17",
+      "label": "A179 - Him Lam Phú An",
+      "code": "A179",
+      "type": "completed"
+    },
+    {
+      "date": "2026-04-18",
+      "label": "A177 - Sky Garden 2",
+      "code": "A177",
+      "type": "completed"
+    },
+    {
+      "date": "2026-04-23",
+      "label": "A164 - Opal Boulevard",
+      "code": "A164",
+      "type": "completed"
+    },
+    {
       "date": "2026-06-05",
       "label": "A185 - VHGP Q9 - BS1501",
       "code": "A185",
       "type": "reschedule"
+    },
+    {
+      "date": "2026-04-24",
+      "label": "A178 - Celesta Rise G16",
+      "code": "A178",
+      "type": "completed"
+    },
+    {
+      "date": "2026-04-24",
+      "label": "A191 - 35-37 Nguyễn Hữu Cầu",
+      "code": "A191",
+      "type": "completed"
+    },
+    {
+      "date": "2026-04-24",
+      "label": "A176 - Sunrise Riverside",
+      "code": "A176",
+      "type": "completed"
+    },
+    {
+      "date": "2026-04-25",
+      "label": "A163 - Celadon Boulevard",
+      "code": "A163",
+      "type": "completed"
+    },
+    {
+      "date": "2026-04-25",
+      "label": "A167 - Shophouse 9 View",
+      "code": "A167",
+      "type": "completed"
+    },
+    {
+      "date": "2026-04-25",
+      "label": "A192 - 61 Bùi Đình Túy",
+      "code": "A192",
+      "type": "completed"
     },
     {
       "date": "2026-05-16",
@@ -302,6 +464,12 @@
       "label": "A175 - Golden Mansion 119 Phổ Quang",
       "code": "A175",
       "type": "upcoming"
+    },
+    {
+      "date": "2026-05-07",
+      "label": "A195 - 91-93 Nguyễn Sơn",
+      "code": "A195",
+      "type": "completed"
     },
     {
       "date": "2026-05-08",
