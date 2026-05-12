@@ -3028,40 +3028,45 @@
         const visibleDays = dailyAll.slice(startIdx, endIdx);
         if (!visibleDays.length) { el.innerHTML = ''; return; }
 
-        const lastDay = visibleDays[visibleDays.length - 1];
         const accKey = elId === 'invInsightItem' ? 'acc_item' : elId === 'invInsightSKU' ? 'acc_sku' : 'acc_kg';
-        const curVal = lastDay[accKey];
-        const avg = visibleDays.reduce((s, d) => s + d[accKey], 0) / visibleDays.length;
 
-        // v/s hôm qua
-        const dayIdx = dailyAll.indexOf(lastDay);
-        const prevDay = dayIdx > 0 ? dailyAll[dayIdx - 1] : null;
-        const prevVal = prevDay ? prevDay[accKey] : null;
+        // Determine current week from filter or from last visible day
+        let curWk = document.getElementById('invChartWeek')?.value;
+        if (!curWk) {
+          // Find which week the last visible day belongs to
+          const lastIso = visibleDays[visibleDays.length - 1].iso;
+          curWk = availWeeks.find(w => weeks[w] && weeks[w].includes(lastIso)) || '';
+        }
 
-        // v/s LFL (same weekday last week)
-        const lflIdx = dayIdx - 7;
-        const lflDay = lflIdx >= 0 ? dailyAll[lflIdx] : null;
-        const lflVal = lflDay ? lflDay[accKey] : null;
+        // Helper: get average acc for a week
+        function weekAvg(wk) {
+          if (!wk || !weeks[wk]) return null;
+          const wkDays = weeks[wk].map(iso => dailyByIso[iso]).filter(Boolean);
+          if (!wkDays.length) return null;
+          return Math.round(wkDays.reduce((s, d) => s + d[accKey], 0) / wkDays.length * 100) / 100;
+        }
+
+        const curWkIdx = availWeeks.indexOf(curWk);
+        const curAvg = weekAvg(curWk);
+
+        // v/s TB tuần (average of current week)
+        const visibleAvg = Math.round(visibleDays.reduce((s, d) => s + d[accKey], 0) / visibleDays.length * 100) / 100;
+        const lastVal = visibleDays[visibleDays.length - 1][accKey];
 
         let badges = '';
-        badges += invBadge('v/s Hôm qua', curVal, prevVal);
-        badges += invBadge('v/s LFL', curVal, lflVal);
-        badges += invBadge('v/s TB', curVal, Math.round(avg * 100) / 100);
 
-        // v/s tuần trước (only if week filter is active)
-        const wk = document.getElementById('invChartWeek')?.value;
-        if (wk && weeks[wk]) {
-          const wkIdx = availWeeks.indexOf(wk);
-          if (wkIdx > 0) {
-            const prevWk = availWeeks[wkIdx - 1];
-            const prevWkDates = new Set(weeks[prevWk]);
-            const prevWkDays = dailyAll.filter(d => prevWkDates.has(d.iso));
-            if (prevWkDays.length) {
-              const prevWkAvg = prevWkDays.reduce((s, d) => s + d[accKey], 0) / prevWkDays.length;
-              badges += invBadge(`v/s ${prevWk}`, Math.round(avg * 100) / 100, Math.round(prevWkAvg * 100) / 100);
-            }
-          }
-        }
+        // 1. v/s Tuần trước
+        const prevWk = curWkIdx > 0 ? availWeeks[curWkIdx - 1] : null;
+        const prevAvg = weekAvg(prevWk);
+        badges += invBadge(prevWk ? `v/s ${prevWk}` : 'v/s Tuần trước', curAvg, prevAvg);
+
+        // 2. v/s LFL tuần (~4 weeks back)
+        const lflWk = curWkIdx >= 4 ? availWeeks[curWkIdx - 4] : null;
+        const lflAvg = weekAvg(lflWk);
+        badges += invBadge(lflWk ? `v/s LFL ${lflWk}` : 'v/s LFL', curAvg, lflAvg);
+
+        // 3. v/s TB tuần
+        badges += invBadge('v/s TB tuần', lastVal, curAvg);
 
         el.innerHTML = badges;
       }
