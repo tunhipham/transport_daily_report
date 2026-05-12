@@ -204,6 +204,8 @@ def generate_html_dong_mat(rows, date_str):
 <br>
 <p>SCM gửi thông tin kế hoạch giao hàng Đông Mát ngày {date_str}.</p>
 <br>
+<p>Siêu thị lưu ý giúp em: tùy vào tình hình giao thông và tiến độ nhận hàng của ST trước trong cùng tuyến, xe có thể đến sớm hoặc muộn 1 tiếng so với giờ giao dự kiến.</p>
+<br>
 <p>Em cảm ơn ạ.</p>
 <br>"""
 
@@ -216,6 +218,8 @@ def generate_html_thit_ca(rows, date_str):
     body = f"""<p>Dear team Siêu Thị,</p>
 <br>
 <p>SCM gửi thông tin kế hoạch giao hàng Thịt Cá ngày {date_str}.</p>
+<br>
+<p>Siêu thị lưu ý giúp em: tùy vào tình hình giao thông và tiến độ nhận hàng của ST trước trong cùng tuyến, xe có thể đến sớm hoặc muộn 30 phút so với giờ giao dự kiến.</p>
 <br>
 <p>Em cảm ơn ạ.</p>
 <br>"""
@@ -290,7 +294,7 @@ def _add_minutes(gio_str, minutes):
 
 def _make_table_dong_mat(rows):
     """Generate HTML table for ĐÔNG MÁT (4 columns with loại hàng).
-    Time displayed = gio_den + 90 minutes (estimated delivery at store).
+    Time displayed = gio_den + 30 minutes (estimated delivery at store).
     """
     headers = ["Ngày", "Điểm đến", "Giờ giao dự kiến (+- 1 tiếng)", "Loại hàng"]
     style = 'style="border-collapse:collapse;border:1px solid #000;font-family:Arial,sans-serif;font-size:12px"'
@@ -309,7 +313,7 @@ def _make_table_dong_mat(rows):
             row_td = f'style="{td_style_base}"'
 
         loai = r.get("loai_hang", "")
-        gio = _add_minutes(r["gio_den"], 90)  # +90 min offset
+        gio = _add_minutes(r["gio_den"], 30)  # +30 min offset
         gio = _format_time_hhmm(gio)
         html += f'<tr><td {row_td}>{_safe_date(r["date"])}</td><td {row_td}>{r["diem_den"]}</td><td {row_td}>{gio}</td><td {row_td}>{loai}</td></tr>\n'
 

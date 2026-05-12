@@ -62,7 +62,7 @@ Operations, Operations Training & Development, Operations Excellence, Sales, Del
 ### Table columns
 - **KRC, DRY, THỊT CÁ**: Ngày | Điểm đến | Giờ đến dự kiến (+-30')
 - **ĐÔNG MÁT**: Ngày | Điểm đến | Giờ giao dự kiến (+- 1 tiếng) | Loại hàng
-  - ⚠ Giờ hiển thị = `gio_den + 90 phút` (script tự cộng)
+  - ⚠ Giờ hiển thị = `gio_den + 30 phút` (script tự cộng)
 
 ---
 
