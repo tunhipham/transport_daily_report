@@ -2792,11 +2792,31 @@
           <div class="chart-box" style="margin-bottom:1rem"><div class="chart-title">Trend Chính Xác Item</div><div class="chart-wrap" style="height:280px"><canvas id="invChartItem"></canvas></div><div id="invInsightItem" class="insight-bar"></div></div>
           <div class="chart-box" style="margin-bottom:1rem"><div class="chart-title">Trend Chính Xác SKU</div><div class="chart-wrap" style="height:280px"><canvas id="invChartSKU"></canvas></div><div id="invInsightSKU" class="insight-bar"></div></div>
           <div class="chart-box" style="margin-bottom:1rem"><div class="chart-title">Trend Chính Xác KG</div><div class="chart-wrap" style="height:280px"><canvas id="invChartKG"></canvas></div><div id="invInsightKG" class="insight-bar"></div></div>
-          <div class="chart-grid" style="grid-template-columns:repeat(2,1fr)">
-            <div class="chart-box"><div class="chart-title">Tỷ Trọng Item theo Phân Loại</div><div id="invPieItem" class="donut-section" style="min-height:200px"></div></div>
-            <div class="chart-box"><div class="chart-title">Tỷ Trọng KG theo Phân Loại</div><div id="invPie" class="donut-section" style="min-height:200px"></div></div>
-          </div>
         </div>`;
+      }
+
+      // Section 4b: Tỷ Trọng Phân Loại (independent filter)
+      html += `<div class="section">
+        <div class="section-header"><span class="icon">🍩</span><h2>Tỷ Trọng Phân Loại</h2></div>
+        <div class="filter-bar" id="invPieFilter">
+          <div class="pill-bar" style="margin-left:0">
+            <button class="pill" id="invPieModeWeek" onclick="invPieToggle('week')">📆 Tuần</button>
+            <button class="pill active" id="invPieModeDay" onclick="invPieToggle('day')">📅 Ngày</button>
+          </div>
+          <select id="invPieWeek" onchange="invPieChange()" style="display:none">
+            ${availWeeks.map(w => `<option value="${w}"${w === latestWeek ? ' selected' : ''}>${w}</option>`).join('')}
+          </select>
+          <select id="invPieDate" onchange="invPieChange()">
+            ${dailyAll.map(d => `<option value="${d.iso}"${d === latestDay ? ' selected' : ''}>${d.date}</option>`).join('')}
+          </select>
+          <span class="filter-info" id="invPieInfo"></span>
+        </div>
+        <div id="invPieCompare" class="insight-bar" style="margin-bottom:.8rem"></div>
+        <div class="chart-grid" style="grid-template-columns:repeat(2,1fr)">
+          <div class="chart-box"><div class="chart-title">Tỷ Trọng Item theo Phân Loại</div><div id="invPieItem" class="donut-section" style="min-height:200px"></div></div>
+          <div class="chart-box"><div class="chart-title">Tỷ Trọng KG theo Phân Loại</div><div id="invPie" class="donut-section" style="min-height:200px"></div></div>
+        </div>
+      </div>`;
       }
 
       // Section 5: Chi Tiết Mã Bị Lệch
@@ -3087,13 +3107,32 @@
         renderInsights(trend.sku_acc, start, end, 'invInsightSKU');
         renderInsights(trend.kg_acc, start, end, 'invInsightKG');
 
-        // Pie charts
-        const pieDay = dailyAll[end - 1] || latestDay;
+      }
 
+      // ══════════════════════════════════════════════
+      // Section 4b: Tỷ Trọng Phân Loại (independent)
+      // ══════════════════════════════════════════════
+      let _invPieMode = 'day'; // 'day' or 'week'
+
+      function aggDaysForPie(days) {
+        // Aggregate item_KFM and kg_KFM across multiple days (sum)
+        const agg = {};
+        cats.forEach(c => { agg[c] = { item_KFM: 0, kg_KFM: 0 }; });
+        days.forEach(d => {
+          cats.forEach(c => {
+            const cs = d.categories[c] || {};
+            agg[c].item_KFM += cs.item_KFM || 0;
+            agg[c].kg_KFM += cs.kg_KFM || 0;
+          });
+        });
+        return agg;
+      }
+
+      function renderPieFromAgg(agg) {
         // Pie Item
         const pieItemEl = document.getElementById('invPieItem');
-        if (pieItemEl && pieDay) {
-          const vals = cats.map(c => pieDay.categories[c]?.item_KFM || 0);
+        if (pieItemEl) {
+          const vals = cats.map(c => agg[c].item_KFM);
           const total = vals.reduce((a, b) => a + b, 0);
           if (total > 0) {
             let stops = [], legs = '', cum = 0;
@@ -3104,13 +3143,14 @@
               cum += pct;
             });
             pieItemEl.innerHTML = `<div class="donut" style="background:conic-gradient(${stops.join(', ')})"><div class="donut-hole"><span class="donut-val">${total.toLocaleString()}</span><span class="donut-lbl">Items</span></div></div><div class="legend">${legs}</div>`;
+          } else {
+            pieItemEl.innerHTML = '<p style="color:var(--t3);text-align:center;padding:2rem">Không có dữ liệu</p>';
           }
         }
-
         // Pie KG
         const pieEl = document.getElementById('invPie');
-        if (pieEl && pieDay) {
-          const vals = cats.map(c => pieDay.categories[c]?.kg_KFM || 0);
+        if (pieEl) {
+          const vals = cats.map(c => agg[c].kg_KFM);
           const total = vals.reduce((a, b) => a + b, 0);
           if (total > 0) {
             let stops = [], legs = '', cum = 0;
@@ -3121,9 +3161,125 @@
               cum += pct;
             });
             pieEl.innerHTML = `<div class="donut" style="background:conic-gradient(${stops.join(', ')})"><div class="donut-hole"><span class="donut-val">${(total / 1000).toFixed(1)}T</span><span class="donut-lbl">Tấn</span></div></div><div class="legend">${legs}</div>`;
+          } else {
+            pieEl.innerHTML = '<p style="color:var(--t3);text-align:center;padding:2rem">Không có dữ liệu</p>';
           }
         }
       }
+
+      function pieCmpBadge(label, curVal, prevVal) {
+        if (prevVal == null || prevVal === 0) return `<div class="ibadge"><span class="ibadge-lbl">${label}</span><span class="ibadge-val" style="color:var(--t3)">N/A</span></div>`;
+        const diff = Math.round((curVal - prevVal) / prevVal * 10000) / 100;
+        const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—';
+        const color = diff > 0 ? 'var(--grn)' : diff < 0 ? 'var(--red)' : 'var(--t3)';
+        const sign = diff > 0 ? '+' : '';
+        return `<div class="ibadge"><span class="ibadge-lbl">${label}</span><span class="ibadge-val" style="color:${color}">${arrow} ${sign}${diff.toFixed(1)}%</span><span class="ibadge-sub">${prevVal.toLocaleString()} → ${curVal.toLocaleString()}</span></div>`;
+      }
+
+      function pieCmpBadgeKg(label, curVal, prevVal) {
+        if (prevVal == null || prevVal === 0) return `<div class="ibadge"><span class="ibadge-lbl">${label}</span><span class="ibadge-val" style="color:var(--t3)">N/A</span></div>`;
+        const diff = Math.round((curVal - prevVal) / prevVal * 10000) / 100;
+        const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—';
+        const color = diff > 0 ? 'var(--grn)' : diff < 0 ? 'var(--red)' : 'var(--t3)';
+        const sign = diff > 0 ? '+' : '';
+        const fmtCur = (curVal/1000).toFixed(1) + 'T';
+        const fmtPrev = (prevVal/1000).toFixed(1) + 'T';
+        return `<div class="ibadge"><span class="ibadge-lbl">${label}</span><span class="ibadge-val" style="color:${color}">${arrow} ${sign}${diff.toFixed(1)}%</span><span class="ibadge-sub">${fmtPrev} → ${fmtCur}</span></div>`;
+      }
+
+      function renderPieCompare(curAgg, cmpLabel1, cmpAgg1, cmpLabel2, cmpAgg2) {
+        const el = document.getElementById('invPieCompare');
+        if (!el) return;
+        const curItemTotal = cats.reduce((s, c) => s + curAgg[c].item_KFM, 0);
+        const curKgTotal = cats.reduce((s, c) => s + curAgg[c].kg_KFM, 0);
+        let badges = '';
+        if (cmpAgg1) {
+          const prevItem = cats.reduce((s, c) => s + cmpAgg1[c].item_KFM, 0);
+          const prevKg = cats.reduce((s, c) => s + cmpAgg1[c].kg_KFM, 0);
+          badges += pieCmpBadge(`Item ${cmpLabel1}`, curItemTotal, prevItem);
+          badges += pieCmpBadgeKg(`KG ${cmpLabel1}`, curKgTotal, prevKg);
+        }
+        if (cmpAgg2) {
+          const lflItem = cats.reduce((s, c) => s + cmpAgg2[c].item_KFM, 0);
+          const lflKg = cats.reduce((s, c) => s + cmpAgg2[c].kg_KFM, 0);
+          badges += pieCmpBadge(`Item ${cmpLabel2}`, curItemTotal, lflItem);
+          badges += pieCmpBadgeKg(`KG ${cmpLabel2}`, curKgTotal, lflKg);
+        }
+        el.innerHTML = badges;
+      }
+
+      function getWeekDays(wk) {
+        if (!wk || !weeks[wk]) return [];
+        return weeks[wk].map(iso => dailyByIso[iso]).filter(Boolean);
+      }
+
+      function invPieRender() {
+        const infoEl = document.getElementById('invPieInfo');
+        if (_invPieMode === 'day') {
+          // ── Day mode ──
+          const iso = document.getElementById('invPieDate').value;
+          const curDay = dailyByIso[iso];
+          if (!curDay) return;
+          const curAgg = aggDaysForPie([curDay]);
+          renderPieFromAgg(curAgg);
+
+          // Compare 1: vs previous day
+          const curIdx = dailyAll.indexOf(curDay);
+          const prevDay = curIdx > 0 ? dailyAll[curIdx - 1] : null;
+          const prevAgg = prevDay ? aggDaysForPie([prevDay]) : null;
+          const prevLabel = prevDay ? `v/s ${prevDay.date}` : 'v/s Hôm trước';
+
+          // Compare 2: vs LFL day of previous week (same weekday, -7 days)
+          const lflIdx = curIdx - 7;
+          const lflDay = lflIdx >= 0 ? dailyAll[lflIdx] : null;
+          const lflAgg = lflDay ? aggDaysForPie([lflDay]) : null;
+          const lflLabel = lflDay ? `v/s LFL ${lflDay.date}` : 'v/s LFL tuần trước';
+
+          renderPieCompare(curAgg, prevLabel, prevAgg, lflLabel, lflAgg);
+          if (infoEl) infoEl.textContent = curDay.date + ' (' + curDay.thu + ')';
+
+        } else {
+          // ── Week mode ──
+          const wk = document.getElementById('invPieWeek').value;
+          const curDays = getWeekDays(wk);
+          if (!curDays.length) return;
+          const curAgg = aggDaysForPie(curDays);
+          renderPieFromAgg(curAgg);
+
+          // Compare 1: vs previous week
+          const wkIdx = availWeeks.indexOf(wk);
+          const prevWk = wkIdx > 0 ? availWeeks[wkIdx - 1] : null;
+          const prevDays = prevWk ? getWeekDays(prevWk) : [];
+          const prevAgg = prevDays.length ? aggDaysForPie(prevDays) : null;
+          const prevLabel = prevWk ? `v/s ${prevWk}` : 'v/s Tuần trước';
+
+          // Compare 2: vs LFL week of previous month (~4 weeks back)
+          const lflWk = wkIdx >= 4 ? availWeeks[wkIdx - 4] : null;
+          const lflDays = lflWk ? getWeekDays(lflWk) : [];
+          const lflAgg = lflDays.length ? aggDaysForPie(lflDays) : null;
+          const lflLabel = lflWk ? `v/s LFL ${lflWk}` : 'v/s LFL tháng trước';
+
+          renderPieCompare(curAgg, prevLabel, prevAgg, lflLabel, lflAgg);
+          if (infoEl) infoEl.textContent = `${wk} (${curDays.length} ngày)`;
+        }
+      }
+
+      window.invPieToggle = function(mode) {
+        _invPieMode = mode;
+        const dayBtn = document.getElementById('invPieModeDay');
+        const weekBtn = document.getElementById('invPieModeWeek');
+        const dayEl = document.getElementById('invPieDate');
+        const weekEl = document.getElementById('invPieWeek');
+        if (mode === 'day') {
+          dayBtn.classList.add('active'); weekBtn.classList.remove('active');
+          dayEl.style.display = ''; weekEl.style.display = 'none';
+        } else {
+          weekBtn.classList.add('active'); dayBtn.classList.remove('active');
+          weekEl.style.display = ''; dayEl.style.display = 'none';
+        }
+        invPieRender();
+      };
+      window.invPieChange = function() { invPieRender(); };
 
       function getChartRange() {
         const wk = document.getElementById('invChartWeek')?.value;
@@ -3274,6 +3430,7 @@
       }
       renderBctk(getBctkDays());
       renderCharts(0, trend?.dates?.length || 0);
+      invPieRender();
       renderDiscTable(latestDay?.iso || '');
     }
 
