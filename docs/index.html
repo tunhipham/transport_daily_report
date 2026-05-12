@@ -3019,7 +3019,7 @@
         const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—';
         const color = diff > 0 ? 'var(--grn)' : diff < 0 ? 'var(--red)' : 'var(--t3)';
         const sign = diff > 0 ? '+' : '';
-        return `<div class="ibadge"><span class="ibadge-lbl">${label}</span><span class="ibadge-val" style="color:${color}">${arrow} ${sign}${diff.toFixed(2)}%</span><span class="ibadge-sub">${prev.toFixed(2)}% → ${cur.toFixed(2)}%</span></div>`;
+        return `<div class="ibadge"><span class="ibadge-lbl">${label}</span><span class="ibadge-val" style="color:${color}">${arrow} ${sign}${diff.toFixed(2)}%</span><span class="ibadge-sub">${cur.toFixed(2)}% vs ${prev.toFixed(2)}%</span></div>`;
       }
 
       function renderInsights(accArr, startIdx, endIdx, elId) {
@@ -3049,9 +3049,9 @@
         const curWkIdx = availWeeks.indexOf(curWk);
         const curAvg = weekAvg(curWk);
 
-        // v/s TB tuần (average of current week)
-        const visibleAvg = Math.round(visibleDays.reduce((s, d) => s + d[accKey], 0) / visibleDays.length * 100) / 100;
-        const lastVal = visibleDays[visibleDays.length - 1][accKey];
+        // Overall average across all weeks
+        const allWeekAvgs = availWeeks.map(w => weekAvg(w)).filter(v => v != null);
+        const overallAvg = allWeekAvgs.length ? Math.round(allWeekAvgs.reduce((s, v) => s + v, 0) / allWeekAvgs.length * 100) / 100 : null;
 
         let badges = '';
 
@@ -3065,8 +3065,8 @@
         const lflAvg = weekAvg(lflWk);
         badges += invBadge(lflWk ? `v/s LFL ${lflWk}` : 'v/s LFL', curAvg, lflAvg);
 
-        // 3. v/s TB tuần
-        badges += invBadge('v/s TB tuần', lastVal, curAvg);
+        // 3. v/s TB tuần (current week avg vs overall avg all weeks)
+        badges += invBadge('v/s TB tuần', curAvg, overallAvg);
 
         el.innerHTML = badges;
       }
@@ -3177,7 +3177,7 @@
         const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—';
         const color = diff > 0 ? 'var(--grn)' : diff < 0 ? 'var(--red)' : 'var(--t3)';
         const sign = diff > 0 ? '+' : '';
-        return `<div class="ibadge"><span class="ibadge-lbl">${label}</span><span class="ibadge-val" style="color:${color}">${arrow} ${sign}${diff.toFixed(1)}%</span><span class="ibadge-sub">${prevVal.toLocaleString()} → ${curVal.toLocaleString()}</span></div>`;
+        return `<div class="ibadge"><span class="ibadge-lbl">${label}</span><span class="ibadge-val" style="color:${color}">${arrow} ${sign}${diff.toFixed(1)}%</span><span class="ibadge-sub">${curVal.toLocaleString()} vs ${prevVal.toLocaleString()}</span></div>`;
       }
 
       function pieCmpBadgeKg(label, curVal, prevVal) {
@@ -3188,7 +3188,7 @@
         const sign = diff > 0 ? '+' : '';
         const fmtCur = (curVal/1000).toFixed(1) + 'T';
         const fmtPrev = (prevVal/1000).toFixed(1) + 'T';
-        return `<div class="ibadge"><span class="ibadge-lbl">${label}</span><span class="ibadge-val" style="color:${color}">${arrow} ${sign}${diff.toFixed(1)}%</span><span class="ibadge-sub">${fmtPrev} → ${fmtCur}</span></div>`;
+        return `<div class="ibadge"><span class="ibadge-lbl">${label}</span><span class="ibadge-val" style="color:${color}">${arrow} ${sign}${diff.toFixed(1)}%</span><span class="ibadge-sub">${fmtCur} vs ${fmtPrev}</span></div>`;
       }
 
       function renderPieCompare(curAgg, cmpLabel1, cmpAgg1, cmpLabel2, cmpAgg2) {
