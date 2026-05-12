@@ -3196,13 +3196,13 @@
           const prevItem = cats.reduce((s, c) => s + cmpAgg1[c].item_KFM, 0);
           const prevKg = cats.reduce((s, c) => s + cmpAgg1[c].kg_KFM, 0);
           badges += pieCmpBadge(`Item ${cmpLabel1}`, curItemTotal, prevItem);
-          badges += pieCmpBadgeKg(`KG ${cmpLabel1}`, curKgTotal, prevKg);
+          badges += pieCmpBadgeKg(`Tấn ${cmpLabel1}`, curKgTotal, prevKg);
         }
         if (cmpAgg2) {
           const lflItem = cats.reduce((s, c) => s + cmpAgg2[c].item_KFM, 0);
           const lflKg = cats.reduce((s, c) => s + cmpAgg2[c].kg_KFM, 0);
           badges += pieCmpBadge(`Item ${cmpLabel2}`, curItemTotal, lflItem);
-          badges += pieCmpBadgeKg(`KG ${cmpLabel2}`, curKgTotal, lflKg);
+          badges += pieCmpBadgeKg(`Tấn ${cmpLabel2}`, curKgTotal, lflKg);
         }
         el.innerHTML = badges;
       }
