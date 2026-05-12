@@ -3156,7 +3156,7 @@
             cats.forEach((c, i) => {
               const pct = vals[i] / total * 100;
               stops.push(`${catColors[c]} ${cum.toFixed(1)}% ${(cum + pct).toFixed(1)}%`);
-              legs += `<div class="legend-item"><span class="legend-color" style="background:${catColors[c]}"></span>${catLabels[c]} ${vals[i].toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1})} (${pct.toFixed(1)}%)</div>`;
+              legs += `<div class="legend-item"><span class="legend-color" style="background:${catColors[c]}"></span>${catLabels[c]} ${(vals[i]/1000).toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1})}T (${pct.toFixed(1)}%)</div>`;
               cum += pct;
             });
             pieEl.innerHTML = `<div class="donut" style="background:conic-gradient(${stops.join(', ')})"><div class="donut-hole"><span class="donut-val">${(total / 1000).toFixed(1)}T</span><span class="donut-lbl">Tấn</span></div></div><div class="legend">${legs}</div>`;
