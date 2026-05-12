@@ -1,9 +1,9 @@
 {
-  "_updated": "11/05/2026 10:52",
+  "_updated": "12/05/2026 09:30",
   "stats": {
     "total": 45,
     "upcoming": 23,
-    "opening": 3,
+    "opening": 2,
     "reschedule": 7
   },
   "stores": [
@@ -148,8 +148,8 @@
       "code": "A171",
       "opening_date": "08/05/2026",
       "iso_date": "2026-05-08",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
+      "status_type": "completed",
+      "status_text": "Đã khai trương (08/05/2026)"
     },
     {
       "name": "KFM_HCM_PNH - BPB-01.08 Botanica Premier",
@@ -475,7 +475,7 @@
       "date": "2026-05-08",
       "label": "A171 - 819-821 Phạm Thế Hiển",
       "code": "A171",
-      "type": "opening"
+      "type": "completed"
     },
     {
       "date": "2026-05-09",

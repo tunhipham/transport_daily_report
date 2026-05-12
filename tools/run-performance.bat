@@ -32,10 +32,32 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo  Running performance report...
+REM ── Auto-detect current month/year ──
+for /f %%m in ('python -c "from datetime import date; print(date.today().month)"') do set CUR_MONTH=%%m
+for /f %%y in ('python -c "from datetime import date; print(date.today().year)"') do set CUR_YEAR=%%y
+for /f %%s in ('python -c "print(','.join(str(m) for m in range(3, %CUR_MONTH%+1)))"') do set MONTHS=%%s
+
+echo  Current month: T%CUR_MONTH%/%CUR_YEAR%
+echo  Report range:  months=%MONTHS%
 echo.
 
-python script\domains\performance\generate.py
+REM ── Step 1: Fetch ONLY current month (old months already cached) ──
+echo  [1/3] Fetching plan data for T%CUR_MONTH%/%CUR_YEAR% only...
+echo        (old months use cached monthly_plan_T*.json)
+echo.
+
+python -u script\domains\performance\fetch_monthly.py --month %CUR_MONTH% --year %CUR_YEAR%
+
+if errorlevel 1 (
+    echo  [WARN] Fetch failed, continuing with cached data...
+)
+
+REM ── Step 2: Generate report (uses cached trip data + plan for all months) ──
+echo.
+echo  [2/3] Running performance report...
+echo.
+
+python -u script\domains\performance\generate.py --months %MONTHS% --year %CUR_YEAR% --sla-weeks auto
 
 if errorlevel 1 (
     echo.
@@ -45,8 +67,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
+REM ── Step 3: Export dashboard data ──
 echo.
-echo  Exporting dashboard data...
+echo  [3/3] Exporting dashboard data...
 python script\dashboard\export_data.py --domain performance >nul 2>&1
 
 echo.
