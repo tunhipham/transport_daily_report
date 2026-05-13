@@ -2566,7 +2566,215 @@
 
       el.innerHTML = '<div id="perfMonthContent"></div>';
       if (window._perfChartInstances) { Object.values(window._perfChartInstances).forEach(function(c){try{c.destroy();}catch(e){}}); window._perfChartInstances = {}; }
+      
+      // Override weekly_tables_html with dynamically combined tables across all months
+      window._perfData = { fullCharts: combined.charts, isoDates: combined.iso_dates };
+      combined.weekly_tables_html = perfRenderWeeklyTables();
+      
       perfRenderMonth(combined);
+    }
+    
+    function perfRenderWeeklyTables() {
+        const pd = window._perfData;
+        if (!pd || !pd.isoDates || !pd.isoDates.length) return '';
+        
+        const weeks = {};
+        pd.isoDates.forEach((iso, idx) => {
+            const d = new Date(iso);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            const monday = new Date(d.setDate(diff));
+            
+            const firstJan = new Date(monday.getFullYear(), 0, 1);
+            const days = Math.floor((monday - firstJan) / 86400000);
+            const wkNum = Math.ceil((days + firstJan.getDay() + 1) / 7);
+            const wkKey = `W${wkNum}`;
+            
+            if (!weeks[wkKey]) weeks[wkKey] = { monday: monday, days: [] };
+            const dayIdx = day === 0 ? 6 : day - 1;
+            weeks[wkKey].days[dayIdx] = { iso, idx, dateObj: d };
+        });
+        
+        const sortedWks = Object.keys(weeks).sort((a,b) => weeks[a].monday - weeks[b].monday).filter(k => k!=='W9'&&k!=='W10');
+        
+        const fmt = (d) => {
+            if (!d) return '';
+            const pad = n => n<10?'0'+n:n;
+            return `${pad(d.getDate())}/${pad(d.getMonth()+1)}`;
+        };
+        const DAY_NAMES = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
+        
+        let html = '';
+        const configs = [
+            { kho: 'THỊT CÁ', title: 'THỊT CÁ', useSla: true, addSla: true },
+            { kho: 'ĐÔNG MÁT', title: 'ĐÔNG MÁT', useSla: false, addSla: true },
+            { kho: 'ĐÔNG', title: 'HÀNG ĐÔNG', useSla: false, addSla: true },
+            { kho: 'MÁT', title: 'HÀNG MÁT', useSla: false, addSla: true }
+        ];
+        
+        const khoColors = { 'THỊT CÁ': '#FF9F5A', 'ĐÔNG MÁT': '#7DD87D', 'ĐÔNG': '#4CAF50', 'MÁT': '#81D4FA' };
+        
+        const getColor = (val, thresholds) => {
+            let bg = thresholds[thresholds.length-1][1], fc = thresholds[thresholds.length-1][2];
+            for(let t of thresholds) {
+                if (val >= t[0]) { bg = t[1]; fc = t[2]; break; }
+            }
+            return `background:${bg};color:${fc};font-weight:600`;
+        };
+        
+        const t_sla = [[99, 'rgba(34,197,94,0.35)', '#4ADE80'], [95, 'rgba(250,204,21,0.28)', '#EAB308'], [0, 'rgba(220,38,38,0.4)', '#FCA5A5']];
+        const t_plan = [[90, 'rgba(34,197,94,0.35)', '#4ADE80'], [85, 'rgba(250,204,21,0.28)', '#EAB308'], [0, 'rgba(220,38,38,0.4)', '#FCA5A5']];
+
+        configs.forEach(cfg => {
+            const { kho, title, useSla, addSla } = cfg;
+            const color = khoColors[kho] || '#A8BCFF';
+            
+            let thead1 = `<tr><th rowspan="2" class="wt-kho">KHO</th><th rowspan="2" class="wt-metric">Chỉ Tiêu</th>`;
+            let thead2 = `<tr>`;
+            
+            sortedWks.forEach(wk => {
+                const d = weeks[wk].monday;
+                const sun = new Date(d); sun.setDate(d.getDate()+6);
+                thead1 += `<th colspan="1" class="wt-wk-total">${wk}</th><th colspan="7" class="wt-wk-header">${wk} (${fmt(d)} - ${fmt(sun)}/${d.getFullYear()})</th>`;
+                thead2 += `<td class="wt-wk-label">Tổng</td>`;
+                for(let i=0; i<7; i++) {
+                    const dayObj = new Date(d); dayObj.setDate(d.getDate()+i);
+                    thead2 += `<td class="wt-day">${DAY_NAMES[i]}<br>${fmt(dayObj)}</td>`;
+                }
+            });
+            thead1 += '</tr>';
+            thead2 += '</tr>';
+            
+            let rows = {
+                'Tổng Điểm Giao': [],
+                'Đúng & Sớm KH': [],
+            };
+            if (addSla) rows['% On Time (SLA)'] = [];
+            rows['% Đúng Kế Hoạch'] = [];
+            rows['Tổng Số Chuyến'] = [];
+            
+            const fc = pd.fullCharts;
+            const getV = (chartKey, type, idx) => {
+                if (!fc[chartKey] || !fc[chartKey].kho_bars || !fc[chartKey].kho_bars[kho]) return 0;
+                return fc[chartKey].kho_bars[kho][type][idx] || 0;
+            };
+            
+            sortedWks.forEach(wk => {
+                const daysInfo = weeks[wk].days;
+                let wDiemGiao = 0, wDungSom = 0, wSlaOn = 0, wSlaLate = 0;
+                let wPlanC = 0, wPlanW = 0, wTripT = 0;
+                
+                for(let i=0; i<7; i++) {
+                    const dInfo = daysInfo[i];
+                    if (dInfo) {
+                        const idx = dInfo.idx;
+                        const slaOn = getV('sla', 'on', idx);
+                        const slaLate = getV('sla', 'late', idx);
+                        const planOn = getV('plan', 'on', idx);
+                        const planLate = getV('plan', 'late', idx);
+                        const pcOn = getV('plan_compliance', 'on', idx);
+                        const pcLate = getV('plan_compliance', 'late', idx);
+                        const tripOn = getV('trips_completion', 'on', idx);
+                        const tripLate = getV('trips_completion', 'late', idx);
+                        
+                        wSlaOn += slaOn; wSlaLate += slaLate;
+                        wPlanC += pcOn; wPlanW += pcLate;
+                        wTripT += (tripOn + tripLate);
+                        
+                        if (useSla) {
+                            wDiemGiao += (slaOn + slaLate);
+                            wDungSom += slaOn;
+                        } else {
+                            wDiemGiao += (planOn + planLate);
+                            wDungSom += planOn;
+                        }
+                    }
+                }
+                
+                rows['Tổng Điểm Giao'].push(wDiemGiao > 0 ? wDiemGiao : '');
+                rows['Đúng & Sớm KH'].push(wDiemGiao > 0 ? wDungSom : '');
+                if (addSla) {
+                    const total = wSlaOn + wSlaLate;
+                    rows['% On Time (SLA)'].push(total > 0 ? (wSlaOn / total * 100).toFixed(1) : '');
+                }
+                const pcT = wPlanC + wPlanW;
+                rows['% Đúng Kế Hoạch'].push(pcT > 0 ? (wPlanC / pcT * 100).toFixed(1) : '');
+                rows['Tổng Số Chuyến'].push(wTripT > 0 ? wTripT : '');
+                
+                for(let i=0; i<7; i++) {
+                    const dInfo = daysInfo[i];
+                    if (dInfo) {
+                        const idx = dInfo.idx;
+                        const slaOn = getV('sla', 'on', idx);
+                        const slaLate = getV('sla', 'late', idx);
+                        const planOn = getV('plan', 'on', idx);
+                        const planLate = getV('plan', 'late', idx);
+                        const pcOn = getV('plan_compliance', 'on', idx);
+                        const pcLate = getV('plan_compliance', 'late', idx);
+                        const tripOn = getV('trips_completion', 'on', idx);
+                        const tripLate = getV('trips_completion', 'late', idx);
+                        
+                        let diemGiao = useSla ? (slaOn + slaLate) : (planOn + planLate);
+                        let dungSom = useSla ? slaOn : planOn;
+                        
+                        rows['Tổng Điểm Giao'].push(diemGiao > 0 ? diemGiao : '');
+                        rows['Đúng & Sớm KH'].push(diemGiao > 0 ? dungSom : '');
+                        
+                        if (addSla) {
+                            let t = slaOn + slaLate;
+                            rows['% On Time (SLA)'].push(t > 0 ? (slaOn / t * 100).toFixed(1) : '');
+                        }
+                        let pct = pcOn + pcLate;
+                        rows['% Đúng Kế Hoạch'].push(pct > 0 ? (pcOn / pct * 100).toFixed(1) : '');
+                        let tTrip = tripOn + tripLate;
+                        rows['Tổng Số Chuyến'].push(tTrip > 0 ? tTrip : '');
+                    } else {
+                        rows['Tổng Điểm Giao'].push('');
+                        rows['Đúng & Sớm KH'].push('');
+                        if (addSla) rows['% On Time (SLA)'].push('');
+                        rows['% Đúng Kế Hoạch'].push('');
+                        rows['Tổng Số Chuyến'].push('');
+                    }
+                }
+            });
+            
+            let tbody = '';
+            let rowIdx = 0;
+            const numRows = Object.keys(rows).length;
+            
+            for (const [rName, rVals] of Object.entries(rows)) {
+                tbody += '<tr>';
+                if (rowIdx === 0) tbody += `<td rowspan="${numRows}" class="wt-kho-cell" style="border-left:3px solid ${color}">${kho}</td>`;
+                tbody += `<td class="wt-metric-cell">${rName}</td>`;
+                
+                rVals.forEach((val, cIdx) => {
+                    let isTotal = cIdx % 8 === 0;
+                    let cls = isTotal ? 'wt-total-cell' : 'wt-day-cell';
+                    if (rName.includes('%') && val !== '') {
+                        let v = parseFloat(val);
+                        let st = getColor(v, rName.includes('SLA') ? t_sla : t_plan);
+                        tbody += `<td class="${cls}" style="${st}">${val}%</td>`;
+                    } else {
+                        tbody += `<td class="${cls}">${val}</td>`;
+                    }
+                });
+                tbody += '</tr>';
+                rowIdx++;
+            }
+            
+            html += `<div class="chart-box" style="margin-top:1.5rem;overflow-x:auto">
+      <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:1rem;color:var(--t1);display:flex;align-items:center;gap:8px">
+        <span style="display:inline-block;width:12px;height:16px;background:${color};border-radius:3px"></span>
+        ${title} — Bảng Tổng Hợp Tuần (On-time SLA)
+      </h3>
+      <table class="weekly-table">
+        <thead>${thead1}${thead2}</thead>
+        <tbody>${tbody}</tbody>
+      </table>
+    </div>`;
+        });
+        
+        return html;
     }
 
     // -- Render single month data --
