@@ -2507,38 +2507,67 @@
       const el = document.getElementById('perf-content');
       el.style.display = 'block';
 
-      // -- Detect multi-month vs legacy format --
-      let monthsMap, availMonths, currentMonth;
+      let monthsMap, availMonths;
       if (data.months) {
         monthsMap = data.months;
         availMonths = data.available_months || Object.keys(monthsMap).sort();
-        currentMonth = data.current_month || availMonths[availMonths.length - 1];
       } else {
         const key = data.year + '-' + String(data.month).padStart(2,'0');
         monthsMap = {}; monthsMap[key] = data;
         availMonths = [key];
-        currentMonth = key;
       }
-      window._perfMonthsMap = monthsMap;
-      window._perfAvailMonths = availMonths;
 
-      // -- Build month selector --
-      const mN = ['','Th\u00e1ng 1','Th\u00e1ng 2','Th\u00e1ng 3','Th\u00e1ng 4','Th\u00e1ng 5','Th\u00e1ng 6','Th\u00e1ng 7','Th\u00e1ng 8','Th\u00e1ng 9','Th\u00e1ng 10','Th\u00e1ng 11','Th\u00e1ng 12'];
-      let mO = '';
+      let combined = {
+        labels: [], iso_dates: [], raw_data: [],
+        charts: null, cards: null, kho_names: null, kho_colors: null,
+        weekly_tables_html: ''
+      };
+
       availMonths.forEach(function(mk) {
-        var md = monthsMap[mk], lbl = md ? (mN[md.month]||mk)+'/'+md.year : mk, ic = mk===currentMonth;
-        mO += '<option value="'+mk+'"'+(ic?' selected':'')+'>' + lbl + (ic?' (M\u1edbi nh\u1ea5t)':'') + '</option>';
+        var md = monthsMap[mk];
+        if (!md) return;
+        
+        combined.labels.push(...(md.labels || []));
+        combined.iso_dates.push(...(md.iso_dates || []));
+        combined.raw_data.push(...(md.raw_data || []));
+        combined.weekly_tables_html += (md.weekly_tables_html || '');
+        
+        if (!combined.charts) {
+          combined.charts = JSON.parse(JSON.stringify(md.charts));
+          combined.cards = md.cards;
+          combined.kho_names = md.kho_names;
+          combined.kho_colors = md.kho_colors;
+        } else {
+          const cSrc = md.charts, cDst = combined.charts;
+          ['sla', 'plan', 'route', 'plan_compliance', 'trips_completion'].forEach(ch => {
+            if (!cSrc[ch] || !cDst[ch]) return;
+            ['on_times', 'lates', 'corrects', 'wrongs', 'avg'].forEach(k => {
+              if (cSrc[ch][k] && cDst[ch][k]) cDst[ch][k].push(...cSrc[ch][k]);
+            });
+            if (cSrc[ch].kho_bars && cDst[ch].kho_bars) {
+              Object.keys(cSrc[ch].kho_bars).forEach(kho => {
+                if (cDst[ch].kho_bars[kho] && cSrc[ch].kho_bars[kho]) {
+                  cDst[ch].kho_bars[kho].on.push(...cSrc[ch].kho_bars[kho].on);
+                  cDst[ch].kho_bars[kho].late.push(...cSrc[ch].kho_bars[kho].late);
+                }
+              });
+            }
+            if (cSrc[ch].trends && cDst[ch].trends) {
+              for(let i=0; i<cSrc[ch].trends.length; i++) {
+                if (cDst[ch].trends[i] && cSrc[ch].trends[i]) {
+                  cDst[ch].trends[i].data.push(...cSrc[ch].trends[i].data);
+                }
+              }
+            }
+          });
+          combined.cards = md.cards;
+        }
       });
-      el.innerHTML = '<div class="filter-bar" style="margin-bottom:.6rem"><label>\ud83d\udcc5 Th\u00e1ng:</label><select id="perfMonthPicker" onchange="perfSwitchMonth(this.value)" style="min-width:160px;font-weight:600">'+mO+'</select><span class="filter-info" id="perfMonthInfo">'+availMonths.length+' th\u00e1ng c\u00f3 d\u1eef li\u1ec7u</span></div><div id="perfMonthContent"></div>';
-      perfRenderMonth(monthsMap[currentMonth]);
-    }
 
-    // -- Switch month (no refetch) --
-    window.perfSwitchMonth = function(mk) {
-      var md = window._perfMonthsMap[mk]; if (!md) return;
+      el.innerHTML = '<div id="perfMonthContent"></div>';
       if (window._perfChartInstances) { Object.values(window._perfChartInstances).forEach(function(c){try{c.destroy();}catch(e){}}); window._perfChartInstances = {}; }
-      perfRenderMonth(md);
-    };
+      perfRenderMonth(combined);
+    }
 
     // -- Render single month data --
     function perfRenderMonth(data) {
@@ -2589,7 +2618,8 @@
     <label>📈 Khoảng:</label>
     <button class="fbtn" onclick="perfChartSetRange(7,this)">7 ngày</button>
     <button class="fbtn" onclick="perfChartSetRange(14,this)">14 ngày</button>
-    <button class="fbtn active" onclick="perfChartSetRange(0,this)">Tất cả</button>
+    <button class="fbtn active" onclick="perfChartSetRange(30,this)">30 ngày</button>
+    <button class="fbtn" onclick="perfChartSetRange(0,this)">Tất cả</button>
     <span style="color:var(--t4);margin:0 6px">|</span>
     <label>Từ:</label><input type="date" id="perfChartFrom" value="${isoDates[0] || ''}" onchange="perfChartApplyRange()">
     <label>Đến:</label><input type="date" id="perfChartTo" value="${isoDates[isoDates.length - 1] || ''}" onchange="perfChartApplyRange()">
@@ -2743,6 +2773,12 @@
 
       initSLA(null); initPlanCmp(null); initTrips(null);
 
+      // Default to 30 days if possible
+      setTimeout(() => {
+        const btn30 = Array.from(document.querySelectorAll('#perfChartCtrl .fbtn')).find(b => b.textContent.includes('30 ngày'));
+        if (btn30) window.perfChartSetRange(30, btn30);
+      }, 0);
+
       // ── Single date picker → summary tables ──
       window.perfOnDatePick = function (isoDate) {
         const pd = window._perfData;
@@ -2805,10 +2841,12 @@
       };
 
       window.perfChartReset = function () {
-        window.perfChartSetRange(0, document.querySelector('#perfChartCtrl .fbtn:last-of-type'));
-        // Re-activate "Tất cả" button
-        document.querySelectorAll('#perfChartCtrl .fbtn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('#perfChartCtrl .fbtn').forEach(b => { if (b.textContent.includes('Tất cả')) b.classList.add('active'); });
+        const btn30 = Array.from(document.querySelectorAll('#perfChartCtrl .fbtn')).find(b => b.textContent.includes('30 ngày'));
+        if (btn30) {
+            window.perfChartSetRange(30, btn30);
+        } else {
+            window.perfChartSetRange(0, document.querySelector('#perfChartCtrl .fbtn:last-of-type'));
+        }
       };
 
       // ── Excel Export ──
