@@ -1,10 +1,10 @@
 {
-  "_updated": "12/05/2026 09:30",
+  "_updated": "13/05/2026 11:34",
   "stats": {
-    "total": 45,
+    "total": 44,
     "upcoming": 23,
-    "opening": 2,
-    "reschedule": 7
+    "opening": 0,
+    "reschedule": 6
   },
   "stores": [
     {
@@ -46,14 +46,6 @@
       "iso_date": "2026-04-23",
       "status_type": "completed",
       "status_text": "Đã khai trương (23/04/2026)"
-    },
-    {
-      "name": "KFM_HCM_TDU - BS15 Vinhomes Grand Park",
-      "code": "A185",
-      "opening_date": "05/06/2026",
-      "iso_date": "2026-06-05",
-      "status_type": "reschedule",
-      "status_text": "Dời lịch: 23/04/2026 → 05/06/2026"
     },
     {
       "name": "KFM_HCM_NBE - G16 Celesta Rise",
@@ -156,16 +148,16 @@
       "code": "A190",
       "opening_date": "09/05/2026",
       "iso_date": "2026-05-09",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
+      "status_type": "completed",
+      "status_text": "Đã khai trương (09/05/2026)"
     },
     {
       "name": "KFM_HCM_Q11 - CH0.08 Chung Cư Thuận Việt",
       "code": "A188",
       "opening_date": "09/05/2026",
       "iso_date": "2026-05-09",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
+      "status_type": "completed",
+      "status_text": "Đã khai trương (09/05/2026)"
     },
     {
       "name": "KFM_HCM_BCH - L1.08 Saigon Mia",
@@ -182,14 +174,6 @@
       "iso_date": "2026-05-28",
       "status_type": "reschedule",
       "status_text": "Dời lịch: 08/05/2026 → 28/05/2026"
-    },
-    {
-      "name": "6/1 Đường 13 (Thạnh Xuân 13)",
-      "code": "",
-      "opening_date": "22/05/2026",
-      "iso_date": "2026-05-22",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
     },
     {
       "name": "52 Thoại Ngọc Hầu",
@@ -366,6 +350,14 @@
       "iso_date": "2026-09-05",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "KFM_HCM_TDU - S10.02 Vinhomes Grand Park",
+      "code": "VH2",
+      "opening_date": "05/06/2026",
+      "iso_date": "2026-06-05",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
     }
   ],
   "calendar_events": [
@@ -398,12 +390,6 @@
       "label": "A164 - Opal Boulevard",
       "code": "A164",
       "type": "completed"
-    },
-    {
-      "date": "2026-06-05",
-      "label": "A185 - VHGP Q9 - BS1501",
-      "code": "A185",
-      "type": "reschedule"
     },
     {
       "date": "2026-04-24",
@@ -481,13 +467,13 @@
       "date": "2026-05-09",
       "label": "A190 - BOTANICA PREMIER",
       "code": "A190",
-      "type": "opening"
+      "type": "completed"
     },
     {
       "date": "2026-05-09",
       "label": "A188 - CC Thuận Việt",
       "code": "A188",
-      "type": "opening"
+      "type": "completed"
     },
     {
       "date": "2026-05-15",
@@ -500,12 +486,6 @@
       "label": "A194 - Millennium - Q4 - mới bổ sung",
       "code": "A194",
       "type": "reschedule"
-    },
-    {
-      "date": "2026-05-22",
-      "label": "None - 6/1 Đường 13 (Thạnh Xuân 13)",
-      "code": "",
-      "type": "upcoming"
     },
     {
       "date": "2026-05-22",
@@ -637,6 +617,12 @@
       "date": "2026-09-05",
       "label": "None - Empire City - Thủ Đức",
       "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-05",
+      "label": "VH2 - Vinhomes Grand Park - S8.02",
+      "code": "VH2",
       "type": "upcoming"
     }
   ],
