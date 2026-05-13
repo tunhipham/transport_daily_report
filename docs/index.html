@@ -2398,7 +2398,7 @@
       // Alert bar
       if(alertEl) {
         if(alertDays.length > 0) {
-          alertEl.innerHTML = `<div class="cap-alert warn">⚠️ ${alertDays.length} ngày vượt ${threshold}% capacity benchmark (${key==='krc'?benchmark+'T':fN(benchmark)+' items'})</div>`;
+          alertEl.innerHTML = `<div class="cap-alert warn">⚠️ ${alertDays.length} ngày vượt ${threshold}% capacity benchmark (${key==='krc'?benchmark+' Tấn':fN(benchmark)+' items'})</div>`;
         } else {
           alertEl.innerHTML = `<div class="cap-alert ok">✅ Tất cả ngày trong ngưỡng capacity an toàn</div>`;
         }
@@ -2406,7 +2406,7 @@
 
       // Info cards
       if(infoEl) {
-        const fmtV = v => key==='krc' ? v.toFixed(1)+' T' : fN(v);
+        const fmtV = v => key==='krc' ? v.toFixed(1)+' Tấn' : fN(v);
         infoEl.innerHTML = `
           <div class="cap-info"><div class="ci-val" style="color:${color}">${fmtV(avg)}</div><div class="ci-lbl">Trung bình/ngày</div></div>
           <div class="cap-info"><div class="ci-val" style="color:var(--redl)">${fmtV(max)}</div><div class="ci-lbl">Cao nhất</div></div>
@@ -2461,16 +2461,16 @@
                 benchLine: {
                   type: 'line', yMin: benchmark, yMax: benchmark,
                   borderColor: 'rgba(99,102,241,.8)', borderWidth: 2, borderDash: [8,4],
-                  label: { display: true, content: key==='krc' ? `Benchmark ${benchmark}T` : `Benchmark ${fN(benchmark)} items`,
+                  label: { display: true, content: key==='krc' ? `Benchmark ${benchmark} Tấn` : `Benchmark ${fN(benchmark)} items`,
                     position: 'start', backgroundColor: 'rgba(99,102,241,.2)', color: '#818cf8',
-                    font: { size: 11, weight: '600' }, padding: 4 }
+                    font: { size: 11, weight: '600' }, padding: 4, yAdjust: -16 }
                 },
                 alertLine: {
                   type: 'line', yMin: alertLimit, yMax: alertLimit,
                   borderColor: 'rgba(239,68,68,.5)', borderWidth: 1.5, borderDash: [4,4],
                   label: { display: true, content: `+${threshold}% Alert`,
                     position: 'end', backgroundColor: 'rgba(239,68,68,.15)', color: '#f87171',
-                    font: { size: 10, weight: '600' }, padding: 3 }
+                    font: { size: 10, weight: '600' }, padding: 3, yAdjust: 16 }
                 }
               }
             }
@@ -2478,7 +2478,7 @@
           scales: {
             x: { ticks: { color: tc.chartText, font: { size: 11, weight: '600' }, maxRotation: 45 }, grid: { color: tc.chartGrid } },
             y: { ticks: { color: tc.chartText, font: { size: 11, weight: '600' },
-              callback: v => key==='krc' ? v+'T' : v>=1000 ? (v/1000).toFixed(0)+'K' : v
+              callback: v => key==='krc' ? v+' Tấn' : v>=1000 ? (v/1000).toFixed(0)+'K' : v
             }, grid: { color: tc.chartGrid }, beginAtZero: true }
           }
         }
