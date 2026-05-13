@@ -1825,6 +1825,20 @@
       const KHOS = data.kho_list || [];
       const COLORS = data.kho_colors || {};
 
+      // Normalize: split combined "ĐÔNG MÁT" → "ĐÔNG" + "MÁT" in old entries
+      const emptyKho = {san_luong_tan:0, sl_items:0, sl_xe:0, sl_sthi:0};
+      [cur, ...history].forEach(entry => {
+        const k = entry.khos;
+        if (!k) return;
+        if (k['ĐÔNG MÁT'] && !k['ĐÔNG']) {
+          k['MÁT'] = k['ĐÔNG MÁT'];
+          k['ĐÔNG'] = {...emptyKho};
+          delete k['ĐÔNG MÁT'];
+        } else if (k['ĐÔNG MÁT']) {
+          delete k['ĐÔNG MÁT'];
+        }
+      });
+
       // Cards — dynamic container, filled by dailyRenderCards()
       let html = `<div class="stats-grid" id="dailyCards"></div>`;
 

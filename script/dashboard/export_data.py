@@ -40,9 +40,22 @@ def export_daily():
         print("  ⚠ Empty history")
         return False
 
-    REPORT_KHOS = ["KRC", "THỊT CÁ", "ĐÔNG MÁT", "KSL-SÁNG", "KSL-TỐI"]
-    KHO_COLORS = {"KRC": "#4caf50", "THỊT CÁ": "#e53935", "ĐÔNG MÁT": "#1e88e5",
+    REPORT_KHOS = ["KRC", "THỊT CÁ", "ĐÔNG", "MÁT", "KSL-SÁNG", "KSL-TỐI"]
+    KHO_COLORS = {"KRC": "#4caf50", "THỊT CÁ": "#e53935",
+                  "ĐÔNG": "#1e88e5", "MÁT": "#00acc1",
                   "KSL-SÁNG": "#ff9800", "KSL-TỐI": "#9c27b0"}
+
+    # Normalize old history entries: split combined "ĐÔNG MÁT" → "ĐÔNG" + "MÁT"
+    EMPTY_KHO = {"san_luong_tan": 0, "sl_items": 0, "sl_xe": 0, "sl_sthi": 0}
+    for entry in history:
+        khos = entry.get("khos", {})
+        if "ĐÔNG MÁT" in khos and "ĐÔNG" not in khos:
+            # Old combined entry → move to MÁT, set ĐÔNG to zero
+            khos["MÁT"] = khos.pop("ĐÔNG MÁT")
+            khos["ĐÔNG"] = dict(EMPTY_KHO)
+        elif "ĐÔNG MÁT" in khos:
+            # Both exist (shouldn't happen, but be safe) — remove combined
+            del khos["ĐÔNG MÁT"]
 
     # Build current (latest entry)
     current = history[-1]
