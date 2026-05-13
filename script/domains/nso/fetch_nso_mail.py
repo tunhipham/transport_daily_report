@@ -465,22 +465,40 @@ def parse_nso_table(driver):
 
 
 def read_dsst():
-    """Read DSST store data from local cache.
+    """Fetch DSST store data live from Google Sheet, fallback to cache.
 
-    Cache file: data/dsst_cache.json (refreshed by _save_dsst.py)
+    Always tries to fetch fresh data first. Uses cache only if fetch fails.
     Returns dict: code -> {name_system, name_full, branch_name, version}
     """
     cache_path = os.path.join(REPO_ROOT, "data", "dsst_cache.json")
-    print("  📖 Reading DSST cache...")
 
+    # Try live fetch first
+    try:
+        from domains.nso._save_dsst import refresh_dsst
+        print("  🔄 Fetching DSST live from Google Sheet...")
+        lookup = refresh_dsst()
+        print(f"  ✅ DSST live: {len(lookup)} stores")
+        return lookup
+    except Exception as e:
+        print(f"  ⚠ DSST live fetch failed: {e}")
+        print(f"  📖 Falling back to cache...")
+
+    # Fallback to cache
     if not os.path.exists(cache_path):
         print(f"  ⚠ DSST cache not found: {cache_path}")
         return {}
 
     try:
         with open(cache_path, "r", encoding="utf-8") as f:
-            lookup = json.load(f)
-        print(f"  ✅ DSST lookup: {len(lookup)} stores")
+            data = json.load(f)
+        # Support both old format (flat dict) and new format (with _meta)
+        if "stores" in data and "_meta" in data:
+            lookup = data["stores"]
+            updated = data["_meta"].get("updated", "?")
+            print(f"  ✅ DSST cache: {len(lookup)} stores (updated: {updated})")
+        else:
+            lookup = data
+            print(f"  ✅ DSST cache: {len(lookup)} stores (legacy format)")
         return lookup
     except Exception as e:
         print(f"  ⚠ DSST cache read failed: {e}")
