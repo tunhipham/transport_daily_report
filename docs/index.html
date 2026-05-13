@@ -1422,6 +1422,21 @@
     .nx-fallback .nx-icon { font-size:3rem; opacity:.5 }
     .nx-fallback .nx-msg { font-size:.9rem; font-weight:500 }
     .nx-fallback .nx-sub { font-size:.75rem; color:var(--t4) }
+
+    /* ═══ CAPACITY FORECAST ═══ */
+    .cap-tabs { display:flex; gap:4px; margin-bottom:0 }
+    .cap-tab { padding:8px 20px; border-radius:10px 10px 0 0; border:1px solid var(--bd2); border-bottom:none; background:transparent; color:var(--t3); cursor:pointer; font-family:inherit; font-size:.82rem; font-weight:600; transition:all .2s }
+    .cap-tab:hover { color:var(--t1); background:var(--pill-hover) }
+    .cap-tab.active { background:var(--surface); color:var(--acl); border-color:var(--bd2); border-bottom:1px solid transparent; position:relative; z-index:1 }
+    .cap-panel { display:none; background:var(--surface); border:1px solid var(--bd2); border-radius:0 var(--radius) var(--radius) var(--radius); padding:1.25rem; margin-top:-1px }
+    .cap-panel.active { display:block }
+    .cap-alert { display:flex; align-items:center; gap:.6rem; padding:.6rem 1rem; border-radius:8px; font-size:.8rem; font-weight:600; margin-bottom:1rem }
+    .cap-alert.ok { background:rgba(16,185,129,.1); color:var(--grn); border:1px solid rgba(16,185,129,.2) }
+    .cap-alert.warn { background:rgba(239,68,68,.1); color:var(--redl); border:1px solid rgba(239,68,68,.2); animation:pulse 2s infinite }
+    .cap-info-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.8rem; margin-bottom:1rem }
+    .cap-info { background:var(--bg3); border:1px solid var(--bd); border-radius:10px; padding:.8rem 1rem; text-align:center }
+    .cap-info .ci-val { font-size:1.3rem; font-weight:800 }
+    .cap-info .ci-lbl { font-size:.7rem; color:var(--t3); text-transform:uppercase; font-weight:600; margin-top:2px }
   </style>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
@@ -1865,6 +1880,32 @@
     <div class="chart-box"><div class="chart-title">% Đóng Góp Sản Lượng (Tuần)</div><div id="weeklyDonut" class="donut-section" style="min-height:200px"></div></div>
   </div>`;
 
+      // ── Capacity Forecast Section ──
+      html += `<div class="section" style="margin-top:2rem">
+  <div class="section-header"><span class="icon">🏭</span><h2>Capacity Forecast — Sản Lượng Dự Báo</h2></div>
+  <div class="filter-bar" id="capFilterBar">
+    <label>📅 Khoảng:</label>
+    <label>Từ:</label><input type="date" id="capDateFrom" onchange="capApplyRange()">
+    <label>Đến:</label><input type="date" id="capDateTo" onchange="capApplyRange()">
+    <button class="fbtn" onclick="capResetRange()">↻ Reset</button>
+    <span class="filter-info" id="capRangeInfo"></span>
+  </div>
+  <div class="cap-tabs">
+    <button class="cap-tab active" onclick="capSwitchTab('krc',this)">🥬 KRC — Rau Củ</button>
+    <button class="cap-tab" onclick="capSwitchTab('ksl',this)">📦 KSL — Dry</button>
+  </div>
+  <div class="cap-panel active" id="capPanel-krc">
+    <div id="capAlert-krc"></div>
+    <div class="cap-info-grid" id="capInfo-krc"></div>
+    <div class="chart-wrap" style="height:380px"><canvas id="capChart-krc"></canvas></div>
+  </div>
+  <div class="cap-panel" id="capPanel-ksl">
+    <div id="capAlert-ksl"></div>
+    <div class="cap-info-grid" id="capInfo-ksl"></div>
+    <div class="chart-wrap" style="height:380px"><canvas id="capChart-ksl"></canvas></div>
+  </div>
+</div>`;
+
       el.innerHTML = html;
 
       // Render cards + table + sorting init
@@ -1882,6 +1923,9 @@
       document.getElementById('dailyDateTo').value = histDates[histDates.length - 1];
 
       dailyInitCharts(14);
+
+      // Load capacity forecast data
+      capLoadData();
     }
 
     function dailyRenderTable(entry) {
@@ -2281,6 +2325,165 @@
       document.getElementById('dailyDateTo').value = histDates[n - 1];
       dailyInitCharts(days);
     };
+
+    // ═══════════════════════════════════════════════
+    // CAPACITY FORECAST (KRC + KSL)
+    // ═══════════════════════════════════════════════
+    let capCharts = {};
+    window._capData = null;
+
+    async function capLoadData() {
+      try {
+        const data = await fetchJSON('data/capacity_forecast.json');
+        window._capData = data;
+        // Set date range defaults
+        const allISO = [...(data.krc.data||[]).map(d=>d.iso), ...(data.ksl.data||[]).map(d=>d.iso)].sort();
+        if (allISO.length) {
+          const fromEl = document.getElementById('capDateFrom');
+          const toEl = document.getElementById('capDateTo');
+          if (fromEl) fromEl.value = allISO[0];
+          if (toEl) toEl.value = allISO[allISO.length-1];
+        }
+        capRenderAll();
+      } catch(e) {
+        const el = document.getElementById('capPanel-krc');
+        if (el) el.innerHTML = `<div style="color:var(--t3);text-align:center;padding:2rem">📊 Chưa có dữ liệu Capacity Forecast.<br><small>${e.message}</small><br><small>Chạy <code>python script/domains/daily/capacity_forecast.py</code></small></div>`;
+      }
+    }
+
+    window.capSwitchTab = function(tab, btn) {
+      document.querySelectorAll('.cap-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.cap-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('capPanel-'+tab).classList.add('active');
+    };
+
+    window.capApplyRange = function() { capRenderAll(); };
+    window.capResetRange = function() {
+      const d = window._capData; if(!d) return;
+      const allISO = [...(d.krc.data||[]).map(x=>x.iso), ...(d.ksl.data||[]).map(x=>x.iso)].sort();
+      if(allISO.length){
+        document.getElementById('capDateFrom').value = allISO[0];
+        document.getElementById('capDateTo').value = allISO[allISO.length-1];
+      }
+      capRenderAll();
+    };
+
+    function capFilterByRange(arr) {
+      const from = document.getElementById('capDateFrom')?.value;
+      const to = document.getElementById('capDateTo')?.value;
+      if(!from||!to) return arr;
+      return arr.filter(d => d.iso >= from && d.iso <= to);
+    }
+
+    function capRenderAll() {
+      const d = window._capData; if(!d) return;
+      const krcFiltered = capFilterByRange(d.krc.data||[]);
+      const kslFiltered = capFilterByRange(d.ksl.data||[]);
+      const info = document.getElementById('capRangeInfo');
+      if(info) info.textContent = `KRC: ${krcFiltered.length} ngày · KSL: ${kslFiltered.length} ngày`;
+      capRenderChart('krc', krcFiltered, d.krc.benchmark_tons, d.krc.alert_threshold_pct, 'Tấn', '#10b981');
+      capRenderChart('ksl', kslFiltered, d.ksl.benchmark_items, d.ksl.alert_threshold_pct, 'Items', '#f59e0b');
+    }
+
+    function capRenderChart(key, data, benchmark, threshold, unit, color) {
+      const alertEl = document.getElementById('capAlert-'+key);
+      const infoEl = document.getElementById('capInfo-'+key);
+      const alertLimit = benchmark * (1 + threshold/100);
+      const alertDays = data.filter(d => key==='krc' ? d.tons>alertLimit : d.items>alertLimit);
+      const values = data.map(d => key==='krc' ? d.tons : d.items);
+      const avg = values.length ? values.reduce((a,b)=>a+b,0)/values.length : 0;
+      const max = values.length ? Math.max(...values) : 0;
+
+      // Alert bar
+      if(alertEl) {
+        if(alertDays.length > 0) {
+          alertEl.innerHTML = `<div class="cap-alert warn">⚠️ ${alertDays.length} ngày vượt ${threshold}% capacity benchmark (${key==='krc'?benchmark+'T':fN(benchmark)+' items'})</div>`;
+        } else {
+          alertEl.innerHTML = `<div class="cap-alert ok">✅ Tất cả ngày trong ngưỡng capacity an toàn</div>`;
+        }
+      }
+
+      // Info cards
+      if(infoEl) {
+        const fmtV = v => key==='krc' ? v.toFixed(1)+' T' : fN(v);
+        infoEl.innerHTML = `
+          <div class="cap-info"><div class="ci-val" style="color:${color}">${fmtV(avg)}</div><div class="ci-lbl">Trung bình/ngày</div></div>
+          <div class="cap-info"><div class="ci-val" style="color:var(--redl)">${fmtV(max)}</div><div class="ci-lbl">Cao nhất</div></div>
+          <div class="cap-info"><div class="ci-val" style="color:${alertDays.length?'var(--redl)':'var(--grn)'}">${alertDays.length}/${data.length}</div><div class="ci-lbl">Ngày vượt ${threshold}%</div></div>`;
+      }
+
+      // Chart
+      if(capCharts[key]) capCharts[key].destroy();
+      const canvas = document.getElementById('capChart-'+key);
+      if(!canvas) return;
+      const tc = getThemeColors();
+      const labels = data.map(d => d.date.substring(0,5));
+      const barColors = data.map(d => {
+        const v = key==='krc' ? d.tons : d.items;
+        return v > alertLimit ? 'rgba(239,68,68,.85)' : color;
+      });
+      const borderColors = data.map(d => {
+        const v = key==='krc' ? d.tons : d.items;
+        return v > alertLimit ? '#ef4444' : color;
+      });
+
+      capCharts[key] = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: key==='krc' ? 'Tấn/ngày' : 'Items/ngày',
+            data: values,
+            backgroundColor: barColors,
+            borderColor: borderColors,
+            borderWidth: 1, borderRadius: 4, barPercentage: 0.7, categoryPercentage: 0.85,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: tc.tooltipBg, titleColor: tc.tooltipTitle, bodyColor: tc.tooltipBody,
+              borderColor: tc.tooltipBorder, borderWidth: 1, padding: 10,
+              callbacks: {
+                label: ctx => {
+                  const v = ctx.parsed.y;
+                  const pct = (v/benchmark*100).toFixed(1);
+                  const fmt = key==='krc' ? v.toFixed(1)+' Tấn' : fN(v)+' items';
+                  return `${fmt} (${pct}% capacity)`;
+                }
+              }
+            },
+            annotation: {
+              annotations: {
+                benchLine: {
+                  type: 'line', yMin: benchmark, yMax: benchmark,
+                  borderColor: 'rgba(99,102,241,.8)', borderWidth: 2, borderDash: [8,4],
+                  label: { display: true, content: key==='krc' ? `Benchmark ${benchmark}T` : `Benchmark ${fN(benchmark)} items`,
+                    position: 'start', backgroundColor: 'rgba(99,102,241,.2)', color: '#818cf8',
+                    font: { size: 11, weight: '600' }, padding: 4 }
+                },
+                alertLine: {
+                  type: 'line', yMin: alertLimit, yMax: alertLimit,
+                  borderColor: 'rgba(239,68,68,.5)', borderWidth: 1.5, borderDash: [4,4],
+                  label: { display: true, content: `+${threshold}% Alert`,
+                    position: 'end', backgroundColor: 'rgba(239,68,68,.15)', color: '#f87171',
+                    font: { size: 10, weight: '600' }, padding: 3 }
+                }
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: tc.chartText, font: { size: 11, weight: '600' }, maxRotation: 45 }, grid: { color: tc.chartGrid } },
+            y: { ticks: { color: tc.chartText, font: { size: 11, weight: '600' },
+              callback: v => key==='krc' ? v+'T' : v>=1000 ? (v/1000).toFixed(0)+'K' : v
+            }, grid: { color: tc.chartGrid }, beginAtZero: true }
+          }
+        }
+      });
+    }
 
     // ═══════════════════════════════════════════════
     // PERFORMANCE TAB
