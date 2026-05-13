@@ -49,8 +49,9 @@ python script\dashboard\export_data.py --domain daily >nul 2>&1
 
 echo.
 echo  [OK] Done!
-echo  - HTML report: output\artifacts\daily\
+echo  - HTML report + Capacity Forecast: output\artifacts\daily\
 echo  - Dashboard data: docs\data\daily.json
+echo  - Capacity forecast: docs\data\capacity_forecast.json
 echo  - Refresh localhost:8080 to see updated dashboard
 echo.
 

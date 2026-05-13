@@ -1691,6 +1691,119 @@ def _wrap_section(body_content):
 </body></html>"""
 
 
+def _generate_capacity_pngs(cap_data, output_dir, date_tag):
+    """Generate 2 capacity forecast PNGs (KRC tons + KSL items) from cap data."""
+    from playwright.sync_api import sync_playwright
+
+    def _build_cap_svg(key, data_list, benchmark, threshold, title, color, bar_ok, bar_alert):
+        alert_limit = benchmark * (1 + threshold / 100)
+        if not data_list:
+            return ""
+        values = [d.get('tons', d.get('items', 0)) for d in data_list]
+        max_val = max(max(values) * 1.15, alert_limit * 1.15)
+        avg_val = sum(values) / len(values)
+        peak_val = max(values)
+        alert_days = sum(1 for v in values if v > alert_limit)
+        fmt_val = lambda v: f"{v:.1f} Tấn" if key == 'krc' else f"{v/1000:.0f}K"
+
+        cw, ch = 1600, 500
+        pl, pr, pt, pb = 90, 40, 40, 80
+        pw, ph = cw - pl - pr, ch - pt - pb
+        n = len(values)
+        bw = max(8, min(50, (pw / n) * 0.7)) if n > 0 else 30
+        gap = (pw - bw * n) / max(n - 1, 1) if n > 1 else 0
+        xp = lambda i: pl + i * (bw + gap) + bw / 2
+        yp = lambda v: pt + ph * (1 - v / max_val) if max_val > 0 else pt + ph
+
+        s = [f'<svg viewBox="0 0 {cw} {ch}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">']
+        for i in range(6):
+            y = pt + ph * i / 5
+            v = max_val * (5 - i) / 5
+            s.append(f'<line x1="{pl}" y1="{y:.0f}" x2="{cw-pr}" y2="{y:.0f}" stroke="#3a3f4a" stroke-width="0.5"/>')
+            s.append(f'<text x="{pl-8}" y="{y+5:.0f}" text-anchor="end" font-size="14" font-weight="600" fill="#b0b5c0">{fmt_val(v)}</text>')
+        by = yp(benchmark)
+        s.append(f'<line x1="{pl}" y1="{by:.1f}" x2="{cw-pr}" y2="{by:.1f}" stroke="#6366f1" stroke-width="2.5" stroke-dasharray="10,5"/>')
+        lbl = f"Benchmark {fmt_val(benchmark)}"
+        s.append(f'<rect x="{pl+5}" y="{by+4:.1f}" width="{len(lbl)*7+12}" height="16" rx="3" fill="rgba(99,102,241,0.25)"/>')
+        s.append(f'<text x="{pl+11}" y="{by+16:.1f}" font-size="10" font-weight="700" fill="#818cf8">{lbl}</text>')
+        ay = yp(alert_limit)
+        s.append(f'<line x1="{pl}" y1="{ay:.1f}" x2="{cw-pr}" y2="{ay:.1f}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.6"/>')
+        s.append(f'<text x="{cw-pr-5}" y="{ay-8:.1f}" text-anchor="end" font-size="11" font-weight="600" fill="#f87171">+{threshold}% Alert</text>')
+        for i, (d, v) in enumerate(zip(data_list, values)):
+            x = pl + i * (bw + gap)
+            y = yp(v)
+            h = pt + ph - y
+            ia = v > alert_limit
+            s.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bw:.1f}" height="{h:.1f}" rx="3" fill="{bar_alert if ia else bar_ok}" stroke="{"#ef4444" if ia else color}" stroke-width="1"/>')
+            if n <= 30 or ia:
+                label = f"{v:.1f}" if key == 'krc' else f"{v/1000:.0f}K"
+                s.append(f'<text x="{xp(i):.1f}" y="{y-6:.1f}" text-anchor="middle" font-size="12" font-weight="700" fill="{"#ef4444" if ia else "#ffffff"}">{label}</text>')
+        step = max(1, n // 25)
+        for i, d in enumerate(data_list):
+            if i % step == 0 or i == n - 1:
+                s.append(f'<text x="{xp(i):.1f}" y="{pt+ph+22:.0f}" text-anchor="middle" font-size="12" font-weight="600" fill="#b0b5c0">{d["date"][:5]}</text>')
+        s.append('</svg>')
+
+        if alert_days > 0:
+            alert_html = f'<div style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px 18px;border-radius:10px;font-size:17px;font-weight:700;margin-bottom:14px">⚠️ {alert_days} ngày vượt {threshold}% capacity benchmark ({fmt_val(benchmark)})</div>'
+        else:
+            alert_html = f'<div style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);color:#10b981;padding:10px 18px;border-radius:10px;font-size:17px;font-weight:700;margin-bottom:14px">✅ Tất cả ngày trong ngưỡng capacity an toàn</div>'
+        info_html = f'''<div style="display:flex;gap:14px;margin-bottom:16px">
+          <div style="flex:1;background:#1e2029;border:1px solid #3a3f4a;border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:28px;font-weight:800;color:{color}">{fmt_val(avg_val)}</div>
+            <div style="font-size:13px;color:#8a8f9a;font-weight:600;text-transform:uppercase;margin-top:4px">Trung bình/ngày</div></div>
+          <div style="flex:1;background:#1e2029;border:1px solid #3a3f4a;border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:28px;font-weight:800;color:#f87171">{fmt_val(peak_val)}</div>
+            <div style="font-size:13px;color:#8a8f9a;font-weight:600;text-transform:uppercase;margin-top:4px">Cao nhất</div></div>
+          <div style="flex:1;background:#1e2029;border:1px solid #3a3f4a;border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:28px;font-weight:800;color:{'#f87171' if alert_days else '#10b981'}">{alert_days}/{len(values)}</div>
+            <div style="font-size:13px;color:#8a8f9a;font-weight:600;text-transform:uppercase;margin-top:4px">Ngày vượt {threshold}%</div></div>
+        </div>'''
+        return f'''<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>*{{margin:0;padding:0;box-sizing:border-box}}body{{background:#1e2029;color:#e8eaef;font-family:'Inter','Segoe UI',sans-serif;padding:24px}}
+.title{{font-size:22px;font-weight:800;color:#f0c060;text-align:center;text-transform:uppercase;letter-spacing:1px;margin-bottom:18px}}</style></head>
+<body><div class="title">{title}</div>{alert_html}{info_html}
+<div style="background:#252830;border:1px solid #3a3f4a;border-radius:12px;padding:16px">{"".join(s)}</div></body></html>'''
+
+    updated = cap_data.get('_updated', '')[:10]
+    configs = [
+        ('krc', cap_data['krc']['data'], cap_data['krc']['benchmark_tons'], cap_data['krc']['alert_threshold_pct'],
+         f"CAPACITY FORECAST — KRC (RAU CỦ) — {updated}", '#10b981', 'rgba(16,185,129,0.7)', 'rgba(239,68,68,0.75)'),
+        ('ksl', cap_data['ksl']['data'], cap_data['ksl']['benchmark_items'], cap_data['ksl']['alert_threshold_pct'],
+         f"CAPACITY FORECAST — KSL DRY (SÁNG + TỐI) — {updated}", '#f59e0b', 'rgba(245,158,11,0.7)', 'rgba(239,68,68,0.75)'),
+    ]
+    paths = []
+    suffixes = ['6_CAP_KRC', '7_CAP_KSL']
+    labels = ['Capacity KRC', 'Capacity KSL']
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        ctx = browser.new_context(viewport={"width": 1750, "height": 1200}, device_scale_factor=3)
+        for (key, data, bench, thresh, title, color, bar_ok, bar_alert), suffix, label in zip(configs, suffixes, labels):
+            html = _build_cap_svg(key, data, bench, thresh, title, color, bar_ok, bar_alert)
+            if not html:
+                continue
+            temp = os.path.join(output_dir, f"_cap_{suffix}.html")
+            with open(temp, "w", encoding="utf-8") as f:
+                f.write(html)
+            page = ctx.new_page()
+            page.goto(f"file:///{temp.replace(os.sep, '/')}")
+            page.wait_for_load_state("networkidle")
+            body = page.query_selector("body")
+            box = body.bounding_box()
+            out_path = os.path.join(output_dir, f"BAO_CAO_{date_tag}_{suffix}.png")
+            page.screenshot(path=out_path, clip={"x": 0, "y": 0, "width": box["width"], "height": box["height"]})
+            page.close()
+            paths.append(out_path)
+            print(f"    ✅ {label}: {os.path.basename(out_path)}")
+            try:
+                os.remove(temp)
+            except OSError:
+                pass
+        browser.close()
+    return paths
+
+
 def build_section_htmls(result, history, weekly_history=None):
     """Build 5 separate HTML strings, one for each section of the report."""
     date = result["date"]
@@ -2789,6 +2902,31 @@ def main():
     section_htmls = build_section_htmls(result, history, weekly_history)
     section_paths = export_section_images(section_htmls, output_dir, date_tag)
 
+    # Step 6b: Generate capacity forecast data + PNGs
+    cap_paths = []
+    try:
+        print(f"\n🏭 Generating capacity forecast...")
+        cap_script = os.path.join(BASE, "script", "domains", "daily", "capacity_forecast.py")
+        cap_result = subprocess.run(
+            [sys.executable, cap_script], cwd=BASE,
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600
+        )
+        if cap_result.returncode == 0:
+            print(f"  ✅ capacity_forecast.json generated")
+        else:
+            print(f"  ⚠ capacity_forecast.py exit {cap_result.returncode}")
+
+        # Generate PNGs from capacity_forecast.json
+        cap_json_path = os.path.join(BASE, "docs", "data", "capacity_forecast.json")
+        if os.path.exists(cap_json_path):
+            with open(cap_json_path, "r", encoding="utf-8") as f:
+                cap_data = json.load(f)
+            cap_paths = _generate_capacity_pngs(cap_data, output_dir, date_tag)
+        else:
+            print(f"  ⚠ capacity_forecast.json not found, skipping PNGs")
+    except Exception as e:
+        print(f"  ⚠ Capacity forecast error: {e}")
+
     # Step 7: Send to Telegram (only if --send flag is passed)
     if send_telegram:
         print(f"\n📤 Sending to Telegram...")
@@ -2803,6 +2941,14 @@ def main():
         for img_path, sec_label in zip(section_paths, section_labels):
             pairs = send_telegram_photo(img_path, f"{caption}\n{sec_label}")
             all_sent.extend(pairs)
+
+        # Send capacity forecast images
+        cap_labels = ["🏭 Capacity Forecast — KRC (Rau Củ)", "🏭 Capacity Forecast — KSL Dry (Sáng+Tối)"]
+        for img_path, sec_label in zip(cap_paths, cap_labels):
+            if os.path.exists(img_path):
+                pairs = send_telegram_photo(img_path, f"{caption}\n{sec_label}")
+                all_sent.extend(pairs)
+
         dashboard_text = f"📊 Dashboard đã cập nhật: {date_str}\n🔗 https://tunhipham.github.io/transport_daily_report/\n⏱ Refresh sau 1-2 phút để xem dữ liệu mới nhất"
         pairs = send_telegram_text(dashboard_text)
         all_sent.extend(pairs)
@@ -2820,7 +2966,7 @@ def main():
             print(f"  💾 Đã lưu {len(all_sent)} message IDs ({n_groups} group(s))")
     else:
         print(f"\n📌 Review report:")
-        for sp in section_paths:
+        for sp in section_paths + cap_paths:
             print(f"   • {sp}")
         print(f"   Để gửi Telegram, chạy lại với: python script/domains/daily/generate.py --date {date_str} --send")
 

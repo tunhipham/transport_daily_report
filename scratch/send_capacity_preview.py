@@ -66,13 +66,13 @@ def build_cap_html(key, data_list, benchmark, threshold, title, unit, color, bar
     # Benchmark line
     by = ypos(benchmark)
     svg_parts.append(f'<line x1="{pad_l}" y1="{by:.1f}" x2="{chart_w-pad_r}" y2="{by:.1f}" stroke="#6366f1" stroke-width="2.5" stroke-dasharray="10,5"/>')
-    svg_parts.append(f'<rect x="{pad_l+5}" y="{by-28:.1f}" width="{len(f"Benchmark {fmt_val(benchmark)}")*9+16}" height="22" rx="4" fill="rgba(99,102,241,0.25)"/>')
-    svg_parts.append(f'<text x="{pad_l+13}" y="{by-12:.1f}" font-size="13" font-weight="700" fill="#818cf8">Benchmark {fmt_val(benchmark)}</text>')
+    svg_parts.append(f'<rect x="{pad_l+5}" y="{by+4:.1f}" width="{len(f"Benchmark {fmt_val(benchmark)}")*7+12}" height="16" rx="3" fill="rgba(99,102,241,0.25)"/>')
+    svg_parts.append(f'<text x="{pad_l+11}" y="{by+16:.1f}" font-size="10" font-weight="700" fill="#818cf8">Benchmark {fmt_val(benchmark)}</text>')
     
     # Alert line
     ay = ypos(alert_limit)
     svg_parts.append(f'<line x1="{pad_l}" y1="{ay:.1f}" x2="{chart_w-pad_r}" y2="{ay:.1f}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.6"/>')
-    svg_parts.append(f'<text x="{chart_w-pad_r-5}" y="{ay+18:.1f}" text-anchor="end" font-size="11" font-weight="600" fill="#f87171">+{threshold}% Alert</text>')
+    svg_parts.append(f'<text x="{chart_w-pad_r-5}" y="{ay-8:.1f}" text-anchor="end" font-size="11" font-weight="600" fill="#f87171">+{threshold}% Alert</text>')
     
     # Bars
     for i, (d, v) in enumerate(zip(data_list, values)):

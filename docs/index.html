@@ -2463,14 +2463,14 @@
                   borderColor: 'rgba(99,102,241,.8)', borderWidth: 2, borderDash: [8,4],
                   label: { display: true, content: key==='krc' ? `Benchmark ${benchmark} Tấn` : `Benchmark ${fN(benchmark)} items`,
                     position: 'start', backgroundColor: 'rgba(99,102,241,.2)', color: '#818cf8',
-                    font: { size: 11, weight: '600' }, padding: 4, yAdjust: -16 }
+                    font: { size: 11, weight: '600' }, padding: 4, yAdjust: 16 }
                 },
                 alertLine: {
                   type: 'line', yMin: alertLimit, yMax: alertLimit,
                   borderColor: 'rgba(239,68,68,.5)', borderWidth: 1.5, borderDash: [4,4],
                   label: { display: true, content: `+${threshold}% Alert`,
                     position: 'end', backgroundColor: 'rgba(239,68,68,.15)', color: '#f87171',
-                    font: { size: 10, weight: '600' }, padding: 3, yAdjust: 16 }
+                    font: { size: 10, weight: '600' }, padding: 3, yAdjust: -16 }
                 }
               }
             }
