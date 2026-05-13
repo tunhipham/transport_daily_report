@@ -1,8 +1,8 @@
 {
-  "_updated": "13/05/2026 11:34",
+  "_updated": "13/05/2026 11:35",
   "stats": {
-    "total": 44,
-    "upcoming": 23,
+    "total": 45,
+    "upcoming": 24,
     "opening": 0,
     "reschedule": 6
   },
@@ -314,10 +314,10 @@
     {
       "name": "KFM_HCM_TDU - 305 Nguyễn Duy Trinh",
       "code": "NDT",
-      "opening_date": "28/08/2026",
-      "iso_date": "2026-08-28",
+      "opening_date": "27/06/2026",
+      "iso_date": "2026-06-27",
       "status_type": "reschedule",
-      "status_text": "Dời lịch: 27/06/2026 → 28/08/2026"
+      "status_text": "Đôn lịch: 28/08/2026 → 27/06/2026"
     },
     {
       "name": "DS1 An Hội Đông - GVA",
@@ -356,6 +356,14 @@
       "code": "VH2",
       "opening_date": "05/06/2026",
       "iso_date": "2026-06-05",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "902 Nguyễn Duy Trinh - TDU",
+      "code": "",
+      "opening_date": "28/08/2026",
+      "iso_date": "2026-08-28",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
     }
@@ -590,7 +598,7 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-08-28",
+      "date": "2026-06-27",
       "label": "NDT - 1132 Nguyễn Duy Trinh (67 NDT) - TDU",
       "code": "NDT",
       "type": "reschedule"
@@ -623,6 +631,12 @@
       "date": "2026-06-05",
       "label": "VH2 - Vinhomes Grand Park - S8.02",
       "code": "VH2",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-08-28",
+      "label": "None - 902 Nguyễn Duy Trinh - TDU",
+      "code": "",
       "type": "upcoming"
     }
   ],
