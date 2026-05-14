@@ -22,6 +22,33 @@ Before doing ANYTHING:
 4. **Excel format**: 10 cột (A-J), không xuất Lịch chia/Lịch về/Khai trương/Kiểm kê columns
 5. **Không viết tắt**: Tất cả label trên dashboard và report phải viết đầy đủ
 
+## Quản lý / Cập nhật Siêu thị (Interactive & CLI Tool)
+
+Để thêm mới hoặc thay đổi lịch giao hàng (ca Ngày/Đêm, lịch về) một cách nhanh chóng và tự động lưu vào các file JSON chuẩn (`master_schedule.json`, `nso_schedule.json`), bạn có thể dùng file `.bat` chạy tương tác hoặc CLI script.
+
+### Cách 1: Chạy Interactive (Dành cho người dùng)
+Click đúp vào file `run_manage_stores.bat` ở thư mục gốc. Script sẽ:
+1. Tự động quét tìm các siêu thị NSO mới khai trương nhưng **chưa có lịch** trong Master Schedule và hỏi bạn có muốn cập nhật không.
+2. Cho phép bạn gõ tay mã Code của bất kỳ siêu thị nào để cập nhật đổi ca/đổi lịch.
+
+### Cách 2: Chạy CLI (Dành cho Agent/Automation)
+```powershell
+python script/domains/weekly_plan/manage_stores.py --code <CODE> [options]
+```
+
+**Các options chính:**
+- `--code`: Mã siêu thị (VD: A186)
+- `--name`: Tên đầy đủ của siêu thị (VD: KFM_HCM_TPH - H.38 Melody Residences)
+- `--shift`: Ca giao hàng (`Ngày` hoặc `Đêm`)
+- `--ve`: Lịch về (VD: `Thứ 3-5-7`)
+- `--chia`: Lịch chia (VD: `Thứ 2-4-6`)
+- `--is-nso`: Thêm flag này nếu là siêu thị mới khai trương (NSO).
+- `--opening-date`: Ngày khai trương (nếu có, VD: 16/05/2026)
+
+**Ví dụ:**
+- Đổi ca: `python script/domains/weekly_plan/manage_stores.py --code A112 --shift Ngày --ve "Thứ 2-4-6"`
+- Thêm mới NSO: `python script/domains/weekly_plan/manage_stores.py --code A186 --name "KFM_HCM_TPH - ..." --shift Đêm --ve "Thứ 3-5-7" --chia "Thứ 2-4-6" --is-nso`
+
 ## Workflow
 
 ### 1. Generate file Excel tuần mới
