@@ -315,7 +315,10 @@ def apply_nso(stores, week_dates):
         for i, wd in enumerate(week_dates):
             delta = (wd - opening).days
 
-            if 0 <= delta <= 3:
+            if delta < 0:
+                # Store chưa khai trương → không giao hàng
+                matched["days"][i] = ""
+            elif 0 <= delta <= 3:
                 matched["days"][i] = "Châm hàng"
             elif 3 < delta <= 13:  # Only within 2-week NSO window
                 if skip_date and wd == skip_date:

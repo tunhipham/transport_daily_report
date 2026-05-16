@@ -450,7 +450,10 @@ def apply_nso_cham_hang(week_data, cham_hang, dsst_names=None):
             
             delta = (wd - opening).days
             
-            if 0 <= delta <= 3:
+            if delta < 0:
+                # Store chưa khai trương → không giao hàng
+                matched_store["days"][i] = ""
+            elif 0 <= delta <= 3:
                 # D to D+3: mark as Châm hàng
                 matched_store["days"][i] = "Châm hàng"
             elif 3 < delta <= 13:  # Only within 2-week NSO window
