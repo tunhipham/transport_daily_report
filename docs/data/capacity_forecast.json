@@ -1,5 +1,5 @@
 {
-  "_updated": "15/05/2026 08:57",
+  "_updated": "16/05/2026 10:22",
   "krc": {
     "benchmark_tons": 65,
     "alert_threshold_pct": 5,
@@ -108,6 +108,13 @@
         "tons": 69.64,
         "pct_capacity": 107.1,
         "exceeds_alert": true
+      },
+      {
+        "date": "16/05/2026",
+        "iso": "2026-05-16",
+        "tons": 66.49,
+        "pct_capacity": 102.3,
+        "exceeds_alert": false
       }
     ]
   },
@@ -583,6 +590,13 @@
         "items": 270399,
         "pct_capacity": 100.1,
         "exceeds_alert": false
+      },
+      {
+        "date": "16/05/2026",
+        "iso": "2026-05-16",
+        "items": 295249,
+        "pct_capacity": 109.4,
+        "exceeds_alert": true
       }
     ]
   }
