@@ -50,48 +50,144 @@ Next action: Implement Phase A (Task Registry + Runner)
 
 Hệ thống automation logistics cho KFM warehouse: fetch data → generate reports → deploy dashboard → send notifications. Chạy **dual-mode** (AI agent hoặc manual bat files).
 
-### 1.2 Folder Structure (Current)
+### 1.2 Folder Structure (Target v2)
+
+> [!IMPORTANT]
+> **3 tầng chính**: `workspace/` (code, git tracked) → `runtime/` (data, gitignored) → `snapshots/` (frozen versions)
+> `.agents/` và `tools/` giữ ở root vì convention + UX.
 
 ```
 transport_daily_report/
-├── .agents/workflows/          ← Slash commands (10 workflows)
-├── agents/                     ← AI context
-│   ├── role.md
-│   ├── prompts/                  Per-domain knowledge (9 files)
-│   └── reference/
-│       └── project.md            ★ THIS FILE
-├── config/                     ← Credentials & configs
-├── data/                       ← Input data (gitignored)
-│   ├── raw/{daily,inventory}/
-│   ├── shared/                   Master data
-│   └── nso_stores.json
-├── script/                     ← All code
-│   ├── lib/                      Shared (sources.py, telegram.py)
-│   ├── domains/                  Business logic (5 domains)
-│   │   ├── daily/
-│   │   ├── performance/
-│   │   ├── inventory/
-│   │   ├── nso/
-│   │   └── weekly_plan/
-│   ├── compose/                  Mail automation
-│   ├── dashboard/                Export + deploy
-│   ├── external/                 External deploy (PR-based)
-│   ├── telegram/                 Group management
-│   └── orchestrator/
-├── docs/                       ← GitHub Pages dashboard
-│   ├── index.html                SPA (6 tabs)
-│   ├── data/*.json
-│   └── external/                 External contributor tabs
+│
+├── .agents/workflows/                   ← Slash commands (giữ root — Gemini convention)
+│   ├── daily-report.md
+│   ├── sync-and-report.md
+│   ├── performance-report.md
+│   ├── inventory.md
+│   ├── nso-scan.md
+│   ├── weekly-plan.md
+│   ├── compose-mail.md
+│   ├── backup-inject.md
+│   └── telegram-group.md
+│
+├── workspace/                           ← ⭐ CODE + CONFIG (git tracked)
+│   │
+│   ├── data_pipeline/                   ← ETL PIPELINE
+│   │   ├── __init__.py
+│   │   ├── run.py                         Pipeline entry point
+│   │   ├── config.py                      DB config loader
+│   │   ├── validators.py                  Schema validation
+│   │   ├── extractors/                    Data extractors
+│   │   │   ├── _base.py                     Base interface
+│   │   │   ├── starrocks_transfer.py        PT Transfer (CDC)
+│   │   │   ├── starrocks_trips.py           Trip details (CDC)
+│   │   │   ├── clickhouse_master.py         Master barcode→weight
+│   │   │   ├── clickhouse_schedules.py      Lịch giao
+│   │   │   ├── clickhouse_transfer_mart.py  Transfer mart
+│   │   │   ├── file_yeu_cau.py              Yêu cầu KSL (local)
+│   │   │   └── file_kh_meat.py              KH MEAT (local)
+│   │   └── contracts/                     ⭐ Schema / interfaces
+│   │       ├── transfer.schema.json
+│   │       ├── trip.schema.json
+│   │       ├── inventory.schema.json
+│   │       └── state.schema.json
+│   │
+│   ├── script/
+│   │   ├── domains/                       📊 Business logic (5 domains)
+│   │   │   ├── daily/generate.py
+│   │   │   ├── performance/generate.py
+│   │   │   ├── inventory/generate.py
+│   │   │   ├── nso/scan.py
+│   │   │   └── weekly_plan/finalize.py
+│   │   │
+│   │   ├── lib/                           🔧 Shared library
+│   │   │   ├── sources.py                   Data source helpers
+│   │   │   ├── telegram.py                  Telegram send utilities
+│   │   │   ├── logger.py                    Structured logging
+│   │   │   └── state_manager.py             ⭐ State + locking
+│   │   │
+│   │   ├── orchestrator/                  🎯 Session management
+│   │   │   ├── run_all.py                   Session runner
+│   │   │   ├── dependency_graph.py          Task dependencies
+│   │   │   └── retry_handler.py             Retry logic
+│   │   │
+│   │   ├── dashboard/                     🚀 Export + deploy
+│   │   │   ├── export_data.py
+│   │   │   ├── deploy.py
+│   │   │   └── export_weekly_plan.py
+│   │   │
+│   │   ├── compose/                       ✉️ Mail automation
+│   │   ├── telegram/                      📱 Group management
+│   │   ├── external/                      👥 External contributor
+│   │   ├── deprecated/                    🔒 Old business logic
+│   │   └── experimental/                  🧪 WIP / thử nghiệm
+│   │
+│   ├── config/                            🔑 Credentials & configs
+│   │   ├── mcp_starrocks.json
+│   │   ├── mcp_clickhouse.json
+│   │   ├── telegram.json
+│   │   ├── mail_schedule.json
+│   │   └── env.example
+│   │
+│   ├── agents/                            🤖 AI context
+│   │   ├── role.md
+│   │   ├── prompts/                         Per-domain knowledge
+│   │   └── reference/
+│   │       └── project.md                   ★ THIS FILE
+│   │
+│   ├── tests/                             🧪 Test scaffold (future)
+│   │   ├── pipeline/
+│   │   ├── domains/
+│   │   └── integration/
+│   │
+│   └── README.md
+│
+├── runtime/                             ← ♻️ GENERATED / RUNTIME (gitignored)
+│   │
+│   ├── storage/                           Bronze/Silver data layers
+│   │   ├── bronze/{DDMMYYYY}/               Raw extracted data
+│   │   ├── silver/{DDMMYYYY}/               Validated + lockable ★
+│   │   ├── master/                          Latest master data
+│   │   └── logs/                            Pipeline logs
+│   │
+│   ├── output/                            Domain outputs
+│   │   ├── state/                           ★ JSON state (domain bridge)
+│   │   ├── artifacts/{domain}/              PNG/HTML per domain
+│   │   ├── mail/                            Composed mail HTML
+│   │   └── logs/                            Execution logs
+│   │
+│   └── ingest/                            External input (Drive sync, manual drops)
+│       ├── daily/                           Xlsx từ Google Drive
+│       ├── transfer/                        Phiếu chuyển xlsx
+│       ├── yeu_cau/                         Yêu cầu chuyển hàng
+│       └── nso/                             NSO mail data
+│
+├── snapshots/                           ← 📦 FROZEN VERSIONS
+│   ├── {descriptive_name}/                vd: 2026_Q2_stable, pre_restructure
+│   └── ...
+│
+├── tools/                               ← 🔨 Bat files (giữ root — dễ double-click)
+│   ├── run-daily.bat
+│   ├── run-performance.bat
+│   ├── run-inventory.bat
+│   ├── run-weekly-plan.bat
+│   ├── run-nso-scan.bat
+│   ├── run-backup-inject.bat
+│   ├── run-telegram-group.bat
+│   ├── start-dashboard.bat
+│   └── ...
+│
+├── docs/                                ← 🌐 GitHub Pages dashboard
+│   ├── index.html                         SPA (6 tabs)
+│   ├── data/*.json                        Dashboard data
+│   └── external/                          External contributor tabs
 │       ├── nhap_xuat_dm.html
 │       └── claim_aba.html
-├── output/                     ← Outputs (gitignored)
-│   ├── artifacts/{domain}/       PNG/HTML per domain
-│   ├── state/                    ★ JSON state (domain bridge)
-│   ├── mail/
-│   └── logs/
-├── tools/                      ← Bat files (15 files)
-├── scratch/                    ← Temp scripts
-└── backups/
+│
+├── .gitignore
+├── requirements.txt
+├── pyproject.toml
+└── README.md
 ```
 
 ### 1.3 Design Principles
@@ -168,26 +264,78 @@ script/dashboard/export_data.py
 docs/data/*.json → deploy.py → GitHub Pages
 ```
 
-### 3.2 Target Flow (DB + Realtime)
+### 3.2 Target Flow — DB Pipeline (daily + performance ONLY)
+
+> [!IMPORTANT]
+> **Hiện tại chỉ 2 domain dùng DB**: Daily Report + Performance.
+> Các domain khác (inventory, NSO, weekly plan) vẫn file-based.
+
+#### Daily Report Pipeline — Cutoff 08:00 mỗi ngày
 
 ```
-StarRocks (CDC realtime) ──┐
-ClickHouse (batch/static) ─┤
-Local files (fallback) ────┘
-         │
-    ┌────▼─────┐
-    │ PIPELINE │  data_pipeline/sync_realtime.py
-    │ (15 min) │  extractors/ → bronze/ → silver/ 🔒
-    └────┬─────┘
-         │
-    ┌────▼──────────┐
-    │ DOMAIN SCRIPTS │  silver-first, file-fallback
-    └────┬──────────┘
-         │
-    ┌────▼──────┐
-    │ DASHBOARD │  export → deploy → GitHub Pages
-    │ + OPS TAB │  auto-refresh every 5 min
-    └───────────┘
+                    ┌──────────────────────────┐
+                    │  07:45 Task Scheduler     │
+                    │  trigger fetch            │
+                    └────────────┬─────────────┘
+                                 │
+          ┌──────────────────────┼──────────────────────┐
+          ▼                      ▼                      ▼
+┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+│ StarRocks (CDC)  │  │ StarRocks (CDC)  │  │ Local xlsx       │
+│ kf_transfer_items│  │ krc_dashboard_   │  │ KH MEAT, ĐÔNG,   │
+│ (phiếu chuyển D) │  │ delivery_schedule│  │ MÁT, Yêu cầu    │
+└────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘
+         │                     │                      │
+    ┌────▼─────────────────────▼──────────────────────▼────┐
+    │  BRONZE  runtime/storage/bronze/{DDMMYYYY}/          │
+    └────────────────────────┬─────────────────────────────┘
+                             │ validate (contracts/*.schema.json)
+    ┌────────────────────────▼─────────────────────────────┐
+    │  SILVER  runtime/storage/silver/{DDMMYYYY}/  🔒      │
+    └────────────────────────┬─────────────────────────────┘
+                             │
+    ┌────────────────────────▼─────────────────────────────┐
+    │  08:00 CUTOFF → generate.py → 5 PNG + HTML           │
+    │  → Telegram → export → deploy dashboard              │
+    │  → lock silver/{DDMMYYYY}/ (readonly)                │
+    └──────────────────────────────────────────────────────┘
+```
+
+#### Performance Report Pipeline — 2 Cutoffs (weekly cycle)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  CUTOFF 1 — Thứ 2 (Monday) 08:00                           │
+│                                                             │
+│  StarRocks: kf_trips (T2→CN tuần trước)                    │
+│       │                                                     │
+│       ▼                                                     │
+│  Scan incomplete trips (missing completion_time)            │
+│       │                                                     │
+│       ▼                                                     │
+│  📱 Alert Telegram: "X trips chưa hoàn thành"              │
+│  → Ops xử lý manual trong T2-T3                            │
+└─────────────────────────────────────────────────────────────┘
+                             │
+                        T2-T3 gap
+                      (ops resolve)
+                             │
+┌────────────────────────────▼────────────────────────────────┐
+│  CUTOFF 2 — Thứ 3 (Tuesday) 08:00                          │
+│                                                             │
+│  StarRocks: kf_trips (final, should be complete now)        │
+│       │                                                     │
+│       ▼                                                     │
+│  generate.py → performance report                           │
+│  ┌─────────────────────────────────────────────┐            │
+│  │ Trips vẫn chưa hoàn thành?                  │            │
+│  │ → Option A: Exclude + flag "⚠️ incomplete"  │            │
+│  │ → Option B: Dùng last known status + badge  │            │
+│  └─────────────────────────────────────────────┘            │
+│       │                                                     │
+│       ▼                                                     │
+│  📱 Telegram + 🌐 Dashboard deploy                         │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### 3.3 Data Sources Inventory
@@ -216,15 +364,24 @@ Local files (fallback) ────┘
 
 ### Daily Report
 - **Script**: `script/domains/daily/generate.py`
-- **Fetches**: KRC, KFM, KH MEAT, KH ĐÔNG, KH MÁT, Transfer, Yêu cầu
+- **DB Sources**: StarRocks `kf_transfer_items` (phiếu chuyển), `krc_dashboard_delivery_schedule` (lịch giao KRC)
+- **Local Sources (fallback)**: KH THỊT CÁ, KH ĐÔNG, KH MÁT, Yêu cầu KSL — local xlsx
+- **Cutoff**: ⏰ **08:00 mỗi ngày** (D+1)
+- **Schedule**: Task Scheduler trigger 07:45 → fetch → generate → send 08:00
 - **Outputs**: `output/state/history.json`, `output/artifacts/daily/` (5 PNG + 1 HTML)
 - **Sends**: Telegram (5 PNG + HTML) → Dashboard deploy
+- **Infra**: ⚠️ **Cần local machine BẬT** (vì còn local xlsx). Khi 100% DB → chuyển VPS được.
 
 ### Performance Report
 - **Script**: `script/domains/performance/generate.py`
+- **DB Source**: StarRocks `kf_trips` (CDC) — 100% từ DB, KHÔNG cần local file
 - **Trip cache**: `output/trip_cache_T{mm}.json` (incremental)
 - **Kho mapping**: KRC, QCABA→ĐÔNG MÁT, KSL→Sáng/Tối, SLKT→KSL-Tối
 - **Sub-kho**: ĐÔNG MÁT → ĐÔNG/MÁT (by "Loại rổ" column)
+- **Cutoff 1**: ⏰ **Thứ 2 08:00** — scan incomplete trips → alert Telegram
+- **Cutoff 2**: ⏰ **Thứ 3 08:00** — generate full report → Telegram + dashboard
+- **Incomplete trip handling**: Exclude + flag "⚠️" hoặc dùng last known status
+- **Infra**: ✅ **Có thể chạy trên VPS** (100% DB, không local dependency)
 
 ### Inventory
 - **Script**: `script/domains/inventory/generate.py`
@@ -377,22 +534,85 @@ Local files (fallback) ────┘
 
 ---
 
-## 7. Operational Timeline — Một Ngày
+## 7. Operational Timeline
+
+### 7.1 Daily Cycle — Mỗi Ngày
 
 ```
 05:00  ═══ CDC bắt đầu nhận data ngày mới ══════════════════
-06:00  ▶ SYNC #1 (StarRocks schedule + transfer, partial)
-       Dashboard badge: "⏳ đang cập nhật"
-09:00  ▶ SYNC #2-4 (mỗi 15 phút, data tăng dần)
-12:00  ▶ DRY Tối compose check
+
+07:45  ▶ DAILY REPORT: Task Scheduler trigger
+         Fetch DB: transfer + KRC schedule (ngày D)
+         Fetch local: KH MEAT, ĐÔNG, MÁT, Yêu cầu
+08:00  ── DAILY REPORT CUTOFF ──
+         ★ Generate 5 PNG + HTML
+         ★ Send Telegram
+         ★ Export → deploy dashboard
+         ★ Lock silver/{D}/ (readonly)
+
+12:00  ▶ COMPOSE: DRY Tối compose check
 14:00  ── DRY Tối CUTOFF ──
-15:00  ▶ DRY Sáng + ĐÔNG MÁT compose check
+15:00  ▶ COMPOSE: DRY Sáng + ĐÔNG MÁT compose check
 16:30  ── DRY Sáng CUTOFF ──
-17:00  ▶ KRC + THỊT CÁ compose check
-19:00  ▶ FINAL LOCK: silver/ locked, final report, Telegram send
-       ── KRC + ĐM + TC CUTOFF ──
+17:00  ▶ COMPOSE: KRC + THỊT CÁ compose check
+19:00  ── COMPOSE FINAL LOCK ──
 22:00  ═══ Scheduler ngừng ═══════════════════════════════════
 ```
+
+### 7.2 Weekly Cycle — Performance Report
+
+```
+═══════════════════ TUẦN N ═════════════════════════════════
+
+T2 (Mon) 08:00  ▶ PERF SCAN
+                  Query StarRocks kf_trips: T2→CN tuần (N-1)
+                  Lọc trips chưa hoàn thành
+                  📱 Alert Telegram:
+                  "⚠️ X trips chưa có completion_time"
+                  "Cần xử lý trước T3 08:00"
+
+T2-T3           ▶ OPS RESOLVE
+                  Ops team xử lý incomplete trips:
+                  - Liên hệ tài xế/kho confirm
+                  - Update trạng thái trên hệ thống
+                  - Hoặc mark as exception
+
+T3 (Tue) 08:00  ── PERF CUTOFF ──
+                  ★ Fetch final trip data
+                  ★ Generate performance report
+                  ★ Handle remaining incompletes (exclude + flag)
+                  ★ Send Telegram + deploy dashboard
+
+════════════════════════════════════════════════════════════
+```
+
+### 7.3 Infrastructure — Bật Máy Hay Không?
+
+| Task | DB dependency | Local file dependency | Kết luận |
+|------|--------------|----------------------|----------|
+| **Daily Report** | ✅ StarRocks (transfer, KRC) | ⚠️ CÒN (KH MEAT, ĐÔNG, MÁT, Yêu cầu) | ⚠️ **Cần local machine** |
+| **Performance** | ✅ StarRocks (trips) — 100% | ❌ Không cần | ✅ **Chạy VPS được** |
+| Compose Mail | — | ✅ Cần browser (Haraworks) | ⚠️ **Cần local machine** |
+| Inventory | — | ✅ Local xlsx | ⚠️ **Cần local machine** |
+| NSO Scan | — | Telegram event | Manual trigger |
+| Weekly Plan | — | master_schedule.json | Manual trigger |
+
+**Phương án cho Daily Report (cần local machine):**
+
+| Option | Mô tả | Pros | Cons |
+|--------|--------|------|------|
+| **A. Sleep + Wake** | Machine sleep, Task Scheduler wake 07:45 | Đơn giản, không tốn tiền | Phải để máy ở chế độ Sleep (không Shutdown) |
+| **B. Always On** | Máy bật 24/7 | Đảm bảo chạy | Tốn điện |
+| **C. Migrate to DB** | Chuyển KH MEAT/ĐÔNG/MÁT lên DB | Giải phóng khỏi local | Cần upload pipeline + thời gian |
+| **D. Drive API** | Fetch local xlsx qua Google Drive API từ VPS | VPS chạy tự do | Cần setup Drive API + service account |
+
+**Phương án cho Performance (100% DB):**
+
+| Option | Mô tả | Pros | Cons |
+|--------|--------|------|------|
+| **A. VPS cron** | Cheap VPS ($5/mo) + cron T2+T3 08:00 | Không cần bật máy, luôn chạy | Tốn ~$5/tháng |
+| **B. GitHub Actions** | Scheduled workflow T2+T3 | Free (public repo) | DB phải accessible từ GitHub network |
+| **C. Local Task Scheduler** | Giống daily report | Đơn giản | Cần bật máy |
 
 ---
 
