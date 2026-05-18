@@ -8,7 +8,7 @@
 ---
 
 ## 0. Session State — Agent Handoff
-
+x`
 > [!IMPORTANT]
 > **Mỗi agent session PHẢI đọc section này trước.** Nó cho biết session trước làm gì, pending gì.
 > Sau khi hoàn thành task → **CẬP NHẬT section này** trước khi kết thúc.

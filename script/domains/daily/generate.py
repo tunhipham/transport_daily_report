@@ -2798,6 +2798,103 @@ def main():
         print("=" * 60)
         return
 
+    # ── Send-only mode: skip all data fetching, just send existing output ──
+    if "--send-only" in sys.argv:
+        date_str = ""
+        if "--date" in sys.argv:
+            idx = sys.argv.index("--date")
+            date_str = sys.argv[idx + 1]
+        if not date_str:
+            date_str = datetime.now().strftime("%d/%m/%Y")
+        parts = date_str.split("/")
+        date_tag = f"{parts[0]}{parts[1]}{parts[2]}"
+        print("=" * 60)
+        print(f"  SEND-ONLY MODE - {date_str}")
+        print("=" * 60)
+
+        # Load saved result from last run
+        last_result_file = os.path.join(BASE, "output", "state", "last_daily_result.json")
+        if not os.path.exists(last_result_file):
+            print("  ❌ Không tìm thấy kết quả report đã generate!")
+            print("     Chạy generate.py trước (không cần --send) rồi dùng --send-only")
+            sys.exit(1)
+        with open(last_result_file, "r", encoding="utf-8") as f:
+            result = json.load(f)
+        if result.get("date") != date_str:
+            print(f"  ⚠ Kết quả lưu là ngày {result.get('date')}, không khớp {date_str}")
+            print(f"     Tiếp tục gửi kết quả ngày {result.get('date')}...")
+            date_str = result["date"]
+            parts = date_str.split("/")
+            date_tag = f"{parts[0]}{parts[1]}{parts[2]}"
+
+        # Find existing PNG files
+        output_dir = os.path.join(BASE, "output", "artifacts", "daily")
+        section_suffixes = ["1_BANG", "2_DONGGOP", "3_SANLUONG", "4_ITEMS", "5_XE"]
+        section_paths = [os.path.join(output_dir, f"BAO_CAO_{date_tag}_{s}.png") for s in section_suffixes]
+        cap_paths = [
+            os.path.join(output_dir, f"BAO_CAO_{date_tag}_6_CAP_KRC.png"),
+            os.path.join(output_dir, f"BAO_CAO_{date_tag}_7_CAP_KSL.png"),
+        ]
+
+        # Verify PNGs exist
+        missing = [p for p in section_paths if not os.path.exists(p)]
+        if missing:
+            print(f"  ❌ Thiếu {len(missing)} file PNG:")
+            for m in missing:
+                print(f"     • {os.path.basename(m)}")
+            sys.exit(1)
+        print(f"  ✅ Tìm thấy {len(section_paths)} section PNGs + {sum(1 for p in cap_paths if os.path.exists(p))} capacity PNGs")
+
+        # Send Telegram
+        print(f"\n📤 Sending to Telegram (force)...")
+        delete_telegram_messages(date_tag)
+        caption = f"📊 Báo cáo xuất kho {date_str} — Tổng: {result['total_tons']:.2f} tấn, {result['total_xe']} xe, {result['total_sthi']} ST"
+        section_labels = ["📋 Bảng KPI", "🍩 % Đóng góp", "📈 Trend Sản lượng", "📦 Trend Items", "🚛 Trend Xe"]
+        all_sent = []
+        for img_path, sec_label in zip(section_paths, section_labels):
+            pairs = send_telegram_photo(img_path, f"{caption}\n{sec_label}")
+            all_sent.extend(pairs)
+        cap_labels = ["🏭 Capacity Forecast — KRC (Rau Củ)", "🏭 Capacity Forecast — KSL Dry (Sáng+Tối)"]
+        for img_path, sec_label in zip(cap_paths, cap_labels):
+            if os.path.exists(img_path):
+                pairs = send_telegram_photo(img_path, f"{caption}\n{sec_label}")
+                all_sent.extend(pairs)
+        dashboard_text = f"📊 Dashboard đã cập nhật: {date_str}\n🔗 https://tunhipham.github.io/transport_daily_report/\n⏱ Refresh sau 1-2 phút để xem dữ liệu mới nhất"
+        pairs = send_telegram_text(dashboard_text)
+        all_sent.extend(pairs)
+        if all_sent:
+            sent_data = _load_sent_messages()
+            for chat_id, mid in all_sent:
+                key = f"{date_tag}_{chat_id}"
+                if key not in sent_data:
+                    sent_data[key] = []
+                sent_data[key].append(mid)
+            _save_sent_messages(sent_data)
+            n_groups = len(set(cid for cid, _ in all_sent))
+            print(f"  💾 Đã lưu {len(all_sent)} message IDs ({n_groups} group(s))")
+
+        # Deploy dashboard
+        print(f"\n🚀 Auto-deploying dashboard...")
+        deploy_script = os.path.join(BASE, "script", "dashboard", "deploy.py")
+        if os.path.exists(deploy_script):
+            try:
+                deploy_result = subprocess.run(
+                    [sys.executable, deploy_script, "--domain", "daily"],
+                    cwd=BASE, capture_output=True, text=True,
+                    encoding="utf-8", errors="replace", timeout=120
+                )
+                for line in deploy_result.stdout.splitlines():
+                    print(f"  {line}")
+                if deploy_result.returncode != 0:
+                    print(f"  ⚠ Deploy có lỗi (exit {deploy_result.returncode})")
+            except Exception as e:
+                print(f"  ⚠ Deploy failed: {e}")
+
+        print("\n" + "=" * 60)
+        print("  DONE (send-only)")
+        print("=" * 60)
+        return
+
     # ── Normal daily report mode ──
     # Parse arguments
     date_str = ""
@@ -2851,6 +2948,11 @@ def main():
 
     # Step 4: Calculate and print summary
     result = calculate_summary(sthi_rows, pt_rows, date_str)
+
+    # Save result for --send-only mode (so bat file can re-send without re-generating)
+    last_result_file = os.path.join(BASE, "output", "state", "last_daily_result.json")
+    with open(last_result_file, "w", encoding="utf-8") as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
 
     # Step 4b: Validate data completeness vs delivery schedule rules
     #   Check 1: Source-level warnings (KFM, KRC, KH, Transfer, Yeu cau)

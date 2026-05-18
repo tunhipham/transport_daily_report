@@ -459,9 +459,52 @@ def send_telegram_text(text, bot_token, chat_ids):
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="NSO Mail Inject (Text)")
-    parser.add_argument("--file", required=True, help="Path to mail text file")
-    parser.add_argument("--send", action="store_true", help="Send to Telegram")
+    parser.add_argument("--file", required=False, help="Path to mail text file")
+    parser.add_argument("--send", action="store_true", help="Send to Telegram after full pipeline")
+    parser.add_argument("--send-only", action="store_true", dest="send_only",
+                        help="Send existing results to Telegram (no parse/merge)")
     args = parser.parse_args()
+
+    # ── Send-only mode: just send Telegram from existing data ──
+    if args.send_only:
+        print(f"\n{'='*55}")
+        print(f"  🏪 NSO SEND-ONLY — {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        print(f"{'='*55}")
+
+        from domains.nso.nso_master import NsoMaster
+        master = NsoMaster()
+        master.load()
+        print(f"  📊 Master: {len(master.stores)} stores")
+
+        # Find existing calendar PNG
+        cal_png = os.path.join(OUTPUT_DIR, "nso_calendar.png")
+        if not os.path.exists(cal_png):
+            print(f"  ⚠ Calendar PNG not found, regenerating...")
+            cal_png = render_calendar_png(master.stores)
+
+        bot_token, chat_ids = _load_telegram_config()
+        if not bot_token or not chat_ids:
+            print("  ❌ NSO Telegram chưa cấu hình!")
+            sys.exit(1)
+
+        print(f"\n  📤 Sending to Telegram...")
+        if cal_png and os.path.exists(cal_png):
+            send_telegram_photo(cal_png,
+                f"🏪 NSO Calendar — {date.today().strftime('%d/%m/%Y')}",
+                bot_token, chat_ids)
+        msg = build_telegram_summary(master.stores)
+        print(f"\n{msg}\n")
+        send_telegram_text(msg, bot_token, chat_ids)
+
+        print(f"\n{'='*55}")
+        print(f"  DONE (send-only)")
+        print(f"{'='*55}")
+        return
+
+    # ── Full pipeline requires --file ──
+    if not args.file:
+        parser.error("--file is required (unless using --send-only)")
+
 
     print(f"\n{'='*55}")
     print(f"  🏪 NSO Mail Inject (Text) — {datetime.now().strftime('%d/%m/%Y %H:%M')}")

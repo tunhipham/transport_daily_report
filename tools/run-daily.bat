@@ -41,23 +41,20 @@ if errorlevel 1 (
     echo  ============================================
     echo   Telegram bi CHAN do thieu data.
     echo   Ban co muon gui FORCE khong?
+    echo   ^(Chi gui Telegram + deploy, khong chay lai^)
     echo  ============================================
     echo.
     set /p "FORCE_CHOICE=  Bam [Y] de gui force, [N] de bo qua: "
     if /i "!FORCE_CHOICE!"=="Y" (
         echo.
-        echo  Re-running with --force...
-        python script\domains\daily\generate.py --send --force
+        echo  Sending with existing data...
+        python script\domains\daily\generate.py --send-only
     ) else (
         echo.
-        echo  [SKIP] Telegram skipped.
+        echo  [SKIP] Telegram skipped. Deploying dashboard only...
+        python script\dashboard\deploy.py --domain daily
     )
 )
-
-REM Always deploy dashboard (regardless of Telegram result)
-echo.
-echo  Deploying dashboard...
-python script\dashboard\deploy.py --domain daily
 
 echo.
 echo  Exporting dashboard data...
