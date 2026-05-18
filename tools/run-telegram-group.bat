@@ -1,5 +1,11 @@
 @echo off
+setlocal
 title Telegram Group Creator - NSO
+
+REM --- Change to project root FIRST, before chcp ---
+cd /d "G:\My Drive\DOCS\transport_daily_report"
+
+REM --- Now set UTF-8 for Python output ---
 chcp 65001 >nul 2>&1
 
 REM Add Python to PATH
@@ -11,8 +17,6 @@ echo    Telegram Group Creator - NSO
 echo    Tao group KRC / ABA / DC cho sieu thi moi
 echo  ===========================================
 echo.
-
-cd /d "G:\My Drive\DOCS\transport_daily_report"
 
 REM Check Python
 python --version >nul 2>&1
@@ -61,7 +65,7 @@ REM  Step 3: Dry run (preview)
 REM ==========================================
 echo.
 echo  [3/4] Dry run - Preview plan...
-echo  ───────────────────────────────────────────
+echo  -------------------------------------------
 echo.
 python -u script\telegram\batch_nso.py
 if errorlevel 1 (
@@ -72,7 +76,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo  ───────────────────────────────────────────
+echo  -------------------------------------------
 echo.
 set /p CONFIRM="  Ban da review xong? Tao groups? (Y/N): "
 if /i not "%CONFIRM%"=="Y" (
@@ -87,7 +91,7 @@ REM  Step 4: Execute
 REM ==========================================
 echo.
 echo  [4/4] Dang tao groups + add members + DC notice...
-echo  ───────────────────────────────────────────
+echo  -------------------------------------------
 echo.
 python -u script\telegram\batch_nso.py --execute --notice
 if errorlevel 1 (
@@ -107,3 +111,4 @@ echo    python -u script\telegram\manage_group.py list
 echo.
 
 pause
+endlocal
