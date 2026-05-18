@@ -9,6 +9,7 @@ description: Daily report automation - download data and generate summary report
 ## ⚠ Required
 
 Read `agents/prompts/daily-report.md` trước khi chạy.
+Read `agents/reference/architecture-rules.md` nếu sửa pipeline hoặc data source.
 
 ## Run
 
