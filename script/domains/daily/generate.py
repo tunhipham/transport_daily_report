@@ -2855,6 +2855,7 @@ def main():
     # Step 4b: Validate data completeness vs delivery schedule rules
     #   Check 1: Source-level warnings (KFM, KRC, KH, Transfer, Yeu cau)
     #   Check 2: Result-level kho completeness vs delivery schedule
+    _validation_blocked = False
     all_warnings = sthi_warnings + pt_warnings
     data_valid, missing_khos, val_messages = validate_data_completeness(result, date_str)
     has_source_warnings = len(all_warnings) > 0
@@ -2879,6 +2880,7 @@ def main():
             print(f"\n  🚫 THIẾU DATA (source): {len(all_warnings)} warning(s)")
         if send_telegram and not force_send:
             send_telegram = False  # Block sending
+            _validation_blocked = True
             print("  ❌ Telegram bị CHẶN do thiếu data.")
             print(f"     → Review/update data rồi chạy lại: python script/domains/daily/generate.py --date {date_str} --send")
             print(f"     → Hoặc dùng --force để bỏ qua validation: python script/domains/daily/generate.py --date {date_str} --send --force")
@@ -2995,6 +2997,10 @@ def main():
     print("\n" + "=" * 60)
     print("  DONE")
     print("=" * 60)
+
+    # Exit with code 1 if validation blocked Telegram (so bat file can offer --force)
+    if _validation_blocked:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
