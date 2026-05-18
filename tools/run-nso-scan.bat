@@ -1,5 +1,5 @@
 @echo off
-title NSO Scan - Paste Mail
+title NSO Manager
 setlocal enabledelayedexpansion
 chcp 65001 >nul
 
@@ -8,13 +8,6 @@ set "PATH=%PATH%;%LOCALAPPDATA%\Programs\Python\Python312;%LOCALAPPDATA%\Program
 
 cd /d "G:\My Drive\DOCS\transport_daily_report"
 
-echo.
-echo  =============================================
-echo    NSO Scan - Copy Mail Mode
-echo    Paste noi dung mail NSO vao file text
-echo  =============================================
-echo.
-
 REM Check Python
 python --version >nul 2>&1
 if errorlevel 1 (
@@ -22,6 +15,49 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+
+echo.
+echo  =============================================
+echo    NSO Manager
+echo  =============================================
+echo.
+echo  [1] Scan mail moi  (paste mail NSO)
+echo  [2] Doi lich khai truong (reschedule)
+echo.
+set /p "MODE=  Chon [1/2]: "
+
+if "!MODE!"=="1" goto :MODE_SCAN
+if "!MODE!"=="2" goto :MODE_RESCHEDULE
+echo  [ERROR] Lua chon khong hop le!
+pause
+exit /b 1
+
+REM ─────────────────────────────────────────────
+REM  MODE 2: Reschedule
+REM ─────────────────────────────────────────────
+:MODE_RESCHEDULE
+echo.
+echo  ============================================
+echo   Doi lich khai truong NSO
+echo  ============================================
+echo.
+set /p "RS_CODE=  Ma store (vd: A194): "
+set /p "RS_DATE=  Ngay moi (DD/MM/YYYY): "
+echo.
+echo  Reschedule: !RS_CODE! -> !RS_DATE!
+echo.
+
+python -u script\domains\nso\reschedule.py --code !RS_CODE! --date !RS_DATE! --deploy
+
+echo.
+pause
+exit /b 0
+
+REM ─────────────────────────────────────────────
+REM  MODE 1: Scan mail (original flow)
+REM ─────────────────────────────────────────────
+:MODE_SCAN
+echo.
 
 REM Determine week number
 for /f %%w in ('powershell -nologo -noprofile -command "(Get-Culture).Calendar.GetWeekOfYear((Get-Date), [System.Globalization.CalendarWeekRule]::FirstFourDayWeek, [DayOfWeek]::Monday)"') do set WEEK_NUM=%%w
