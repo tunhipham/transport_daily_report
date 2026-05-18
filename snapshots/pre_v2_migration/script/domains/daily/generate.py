@@ -1,11 +1,8 @@
 """
 generate_report.py - Read all data sources and output summary report
-Usage: python script/generate_report.py [--date DD/MM/YYYY] [--send] [--source auto|db|file]
+Usage: python script/generate_report.py [--date DD/MM/YYYY] [--send]
 
-Data source modes:
-  --source file   Original flow: Google Sheets + local xlsx (default, backward-compatible)
-  --source db     Silver-first: read from pipeline silver/ data, fail if not available
-  --source auto   Try silver first, fallback to file if silver not available
+ALL sources fetched online from Google Sheets/Drive (no local data/ files).
 """
 import os, sys, json, re, csv, subprocess
 from datetime import datetime, timedelta
@@ -18,32 +15,6 @@ sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 sys.path.insert(0, os.path.join(BASE, "script"))
 BACKUP_DIR = os.path.join(BASE, "data", "raw", "daily")
-
-# ── Data source mode (set by --source flag) ──
-_DATA_SOURCE = "file"  # file | db | auto
-
-
-def _read_krc_from_silver(date_tag):
-    """Try reading KRC schedule from silver/ pipeline data.
-    Returns list of row dicts [{kho, diem_den, tuyen}, ...] or None."""
-    try:
-        from lib.state_manager import StateManager
-        sm = StateManager()
-        silver = sm.read_silver(date_tag, "krc_schedule")
-        if not silver or not silver.get("rows"):
-            return None
-        rows = []
-        for r in silver["rows"]:
-            diem_den = str(r.get("diem_den", "")).strip()
-            tuyen = str(r.get("tuyen", "")).strip()
-            if diem_den:
-                rows.append({"kho": "KRC", "diem_den": diem_den, "tuyen": tuyen})
-        print(f"    ✅ Silver: {len(rows)} KRC rows (from pipeline)")
-        return rows
-    except Exception as e:
-        print(f"    ⚠ Silver KRC failed: {e}")
-        return None
-
 
 # ── Online data source URLs (from shared lib) ──
 from lib.sources import (
@@ -349,36 +320,25 @@ def read_sthi_data(date_str, date_for_file, date_tag=None):
     rows = []
     warnings = []
 
-    # 1. KRC — silver-first if data source mode allows
+    # 1. KRC
     krc_count = 0
-    _krc_from_silver = False
-    if _DATA_SOURCE in ("db", "auto") and date_tag:
-        silver_krc = _read_krc_from_silver(date_tag)
-        if silver_krc:
-            rows.extend(silver_krc)
-            krc_count = len(silver_krc)
-            _krc_from_silver = True
-        elif _DATA_SOURCE == "db":
-            warnings.append("KRC: silver data not found (--source db)")
-
-    if not _krc_from_silver:
-        print("  → KRC (Google Sheets)...")
-        try:
-            wb = read_xlsx_from_url(KRC_SHEET_URL, backup_name=f"krc_{date_tag}.xlsx" if date_tag else None)
-            ws = wb["KRC"]
-            for row in ws.iter_rows(min_row=2, values_only=False):
-                scv = str(row[0].value or "").strip()
-                if scv == date_str:
-                    diem_den = str(row[6].value or "").strip()
-                    gio_den = row[7].value
-                    tuyen = str(row[10].value or "").strip()
-                    if diem_den and gio_den:
-                        rows.append({"kho": "KRC", "diem_den": diem_den, "tuyen": tuyen})
-                        krc_count += 1
-            wb.close()
-            print(f"    {krc_count} rows")
-        except Exception as e:
-            warnings.append(f"KRC: lỗi tải — {e}")
+    print("  → KRC (Google Sheets)...")
+    try:
+        wb = read_xlsx_from_url(KRC_SHEET_URL, backup_name=f"krc_{date_tag}.xlsx" if date_tag else None)
+        ws = wb["KRC"]
+        for row in ws.iter_rows(min_row=2, values_only=False):
+            scv = str(row[0].value or "").strip()
+            if scv == date_str:
+                diem_den = str(row[6].value or "").strip()
+                gio_den = row[7].value
+                tuyen = str(row[10].value or "").strip()
+                if diem_den and gio_den:
+                    rows.append({"kho": "KRC", "diem_den": diem_den, "tuyen": tuyen})
+                    krc_count += 1
+        wb.close()
+        print(f"    {krc_count} rows")
+    except Exception as e:
+        warnings.append(f"KRC: lỗi tải — {e}")
     if krc_count == 0:
         warnings.append("KRC: 0 rows — Google Sheet chưa cập nhật?")
 
@@ -2946,13 +2906,6 @@ def main():
 
     send_telegram = "--send" in sys.argv
     force_send = "--force" in sys.argv
-
-    # Data source mode
-    global _DATA_SOURCE
-    if "--source" in sys.argv:
-        idx = sys.argv.index("--source")
-        _DATA_SOURCE = sys.argv[idx + 1]
-    print(f"  Data source: {_DATA_SOURCE}")
 
     parts = date_str.split("/")
     date_for_file = f"{parts[0]}.{parts[1]}.{parts[2]}"

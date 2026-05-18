@@ -1,13 +1,10 @@
 """
 generate_report.py - Read all data sources and output summary report
-Usage: python script/generate_report.py [--date DD/MM/YYYY] [--send] [--source auto|db|file]
+Usage: python script/generate_report.py [--date DD/MM/YYYY] [--send]
 
-Data source modes:
-  --source file   Original flow: Google Sheets + local xlsx (default, backward-compatible)
-  --source db     Silver-first: read from pipeline silver/ data, fail if not available
-  --source auto   Try silver first, fallback to file if silver not available
+ALL sources fetched online from Google Sheets/Drive (no local data/ files).
 """
-import os, sys, json, re, csv, subprocess
+import os, sys, json, re, csv
 from datetime import datetime, timedelta
 from io import BytesIO
 from openpyxl import load_workbook
@@ -16,62 +13,25 @@ from collections import defaultdict
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-sys.path.insert(0, os.path.join(BASE, "script"))
 BACKUP_DIR = os.path.join(BASE, "data", "raw", "daily")
 
-# ── Data source mode (set by --source flag) ──
-_DATA_SOURCE = "file"  # file | db | auto
-
-
-def _read_krc_from_silver(date_tag):
-    """Try reading KRC schedule from silver/ pipeline data.
-    Returns list of row dicts [{kho, diem_den, tuyen}, ...] or None."""
-    try:
-        from lib.state_manager import StateManager
-        sm = StateManager()
-        silver = sm.read_silver(date_tag, "krc_schedule")
-        if not silver or not silver.get("rows"):
-            return None
-        rows = []
-        for r in silver["rows"]:
-            diem_den = str(r.get("diem_den", "")).strip()
-            tuyen = str(r.get("tuyen", "")).strip()
-            if diem_den:
-                rows.append({"kho": "KRC", "diem_den": diem_den, "tuyen": tuyen})
-        print(f"    ✅ Silver: {len(rows)} KRC rows (from pipeline)")
-        return rows
-    except Exception as e:
-        print(f"    ⚠ Silver KRC failed: {e}")
-        return None
-
-
-# ── Online data source URLs (from shared lib) ──
-from lib.sources import (
-    KRC_SHEET_URL,
-    KFM_SHEET_URL as KFM_XLSX_URL,
-    MASTER_SHEET_URL,
-    TRANSFER_FOLDER_URL,
-    YECAU_FOLDER_URL,
-    KH_DONG_LOCAL,
-    KH_MAT_LOCAL,
-    KH_MEAT_LOCAL,
-    TRANSFER_LOCAL,
-    YECAU_LOCAL,
-)
+# ── Online data source URLs ──
+KRC_SHEET_URL = "https://docs.google.com/spreadsheets/d/1tWamqjpOI2j2MrYW3Ah6ptmT524CAlQvEP8fCkxfuII/export?format=xlsx"
+KFM_XLSX_URL = "https://docs.google.com/spreadsheets/d/1LkJFJhOQ8F2WEB3uCk7kA2Phvu8IskVi3YBfVr7pBx0/export?format=xlsx"
+MASTER_SHEET_URL = "https://docs.google.com/spreadsheets/d/1TG9m1xf1Yhgui-KzXo5l67689bAwcifY/export?format=xlsx"
+TRANSFER_FOLDER_URL = "https://drive.google.com/drive/folders/17Z_UPMDywWFplcg0fx3XSG87vSsG8LHb"
+YECAU_FOLDER_URL = "https://drive.google.com/drive/folders/1DpDon0QHhDRoX7_ZnEygwKlXsbcPGp-t"
 
 KH_DRIVE_FOLDERS = [
-]
-# KH from local Google Drive sync (Drive API folder scraping unreliable)
-KH_LOCAL_FOLDERS = [
-    ("KH HÀNG ĐÔNG", "ĐÔNG", 9, KH_DONG_LOCAL),
-    ("KH HÀNG MÁT", "MÁT", 9, KH_MAT_LOCAL),
-    ("KH MEAT", "THỊT CÁ", 11, KH_MEAT_LOCAL),
+    ("KH MEAT", "THỊT CÁ", 11, "https://drive.google.com/drive/folders/1GIzH8nmCbLhWfpdmxFIn9cHTvQNbnwWr"),
+    ("KH HÀNG ĐÔNG", "ĐÔNG MÁT", 9, "https://drive.google.com/drive/folders/1pQ8coYeV-K0dcHlkvXcJ8KngmH22xp1Z"),
+    ("KH HÀNG MÁT", "ĐÔNG MÁT", 9, "https://drive.google.com/drive/folders/1c2zfgcXM8O9ezkOZYj0p4t_ihaJmb98f"),
 ]
 
 # ── Kho mapping (PT raw kho → report kho) ──
-# Note: "KHO ABA QUÁ CẢNH" is NOT here — it's split into ĐÔNG/MÁT via barcode classification
 KHO_MAP = {
     "KHO ABA MIỀN ĐÔNG": "THỊT CÁ",
+    "KHO ABA QUÁ CẢNH": "ĐÔNG MÁT",
     "KHO RAU CỦ": "KRC",
     "Sáng": "KSL-SÁNG", "Tối": "KSL-TỐI",
     "Khách đặt": "KSL-TỐI", "khách đặt": "KSL-TỐI",
@@ -80,12 +40,9 @@ KHO_MAP = {
     "đi sáng": "KSL-SÁNG", "đi tối": "KSL-TỐI",
 }
 
-REPORT_KHOS = ["KRC", "THỊT CÁ", "ĐÔNG", "MÁT", "KSL-SÁNG", "KSL-TỐI"]
-KHO_COLORS = {"KRC": "#4caf50", "THỊT CÁ": "#e53935", "ĐÔNG": "#1565c0",
-              "MÁT": "#42a5f5", "KSL-SÁNG": "#ff9800", "KSL-TỐI": "#9c27b0"}
-
-# ── ABA Master Data for ĐÔNG/MÁT barcode classification ──
-ABA_MASTER_PATH = r'G:\My Drive\DOCS\DAILY\ton_aba\data\master_data\Master Data.xlsx'
+REPORT_KHOS = ["KRC", "THỊT CÁ", "ĐÔNG MÁT", "KSL-SÁNG", "KSL-TỐI"]
+KHO_COLORS = {"KRC": "#4caf50", "THỊT CÁ": "#e53935", "ĐÔNG MÁT": "#1e88e5",
+              "KSL-SÁNG": "#ff9800", "KSL-TỐI": "#9c27b0"}
 
 
 # ──────────────────────────────────────────
@@ -95,19 +52,7 @@ ABA_MASTER_PATH = r'G:\My Drive\DOCS\DAILY\ton_aba\data\master_data\Master Data.
 def parse_time_hour(time_text):
     if not time_text:
         return -1
-    # Handle Excel datetime/time objects directly
-    from datetime import datetime as _dt, time as _time
-    if isinstance(time_text, _dt):
-        return time_text.hour
-    if isinstance(time_text, _time):
-        return time_text.hour
-    # Fallback: parse "HH:MM" string format
-    s = str(time_text).strip()
-    # Handle "1900-01-01 HH:MM:SS" datetime strings from Excel
-    dt_match = re.search(r'(\d{1,2}):(\d{2})(?::(\d{2}))?$', s)
-    if dt_match:
-        return int(dt_match.group(1))
-    m = re.match(r'(\d{1,2}):', s)
+    m = re.match(r'(\d{1,2}):', str(time_text).strip())
     return int(m.group(1)) if m else -1
 
 
@@ -317,30 +262,6 @@ def load_master_data():
     return master_tl
 
 
-def load_barcode_classification():
-    """Load barcode → ĐÔNG/MÁT classification from ABA Master Data.
-    Col B (1) = Mã hàng (barcode), Col E (4) = Phân Loại (ĐÔNG / MÁT).
-    Returns dict: barcode → 'ĐÔNG' or 'MÁT'.
-    """
-    barcode_type = {}
-    print(f"  → ABA barcode classification...")
-    try:
-        wb = load_workbook(ABA_MASTER_PATH, read_only=True, data_only=True)
-        ws = wb.worksheets[0]
-        for row in ws.iter_rows(min_row=2, values_only=False):
-            bc = str(row[1].value or "").strip()
-            pl = str(row[4].value or "").strip().upper()
-            if bc and pl in ('MÁT', 'ĐÔNG'):
-                barcode_type[bc] = pl
-        wb.close()
-        mat_c = sum(1 for v in barcode_type.values() if v == 'MÁT')
-        dong_c = sum(1 for v in barcode_type.values() if v == 'ĐÔNG')
-        print(f"    {len(barcode_type)} barcodes (ĐÔNG: {dong_c}, MÁT: {mat_c})")
-    except Exception as e:
-        print(f"    ⚠ Error loading ABA Master Data: {e}")
-    return barcode_type
-
-
 # ──────────────────────────────────────────
 #  Read STHI + XE data
 # ──────────────────────────────────────────
@@ -349,36 +270,25 @@ def read_sthi_data(date_str, date_for_file, date_tag=None):
     rows = []
     warnings = []
 
-    # 1. KRC — silver-first if data source mode allows
+    # 1. KRC
     krc_count = 0
-    _krc_from_silver = False
-    if _DATA_SOURCE in ("db", "auto") and date_tag:
-        silver_krc = _read_krc_from_silver(date_tag)
-        if silver_krc:
-            rows.extend(silver_krc)
-            krc_count = len(silver_krc)
-            _krc_from_silver = True
-        elif _DATA_SOURCE == "db":
-            warnings.append("KRC: silver data not found (--source db)")
-
-    if not _krc_from_silver:
-        print("  → KRC (Google Sheets)...")
-        try:
-            wb = read_xlsx_from_url(KRC_SHEET_URL, backup_name=f"krc_{date_tag}.xlsx" if date_tag else None)
-            ws = wb["KRC"]
-            for row in ws.iter_rows(min_row=2, values_only=False):
-                scv = str(row[0].value or "").strip()
-                if scv == date_str:
-                    diem_den = str(row[6].value or "").strip()
-                    gio_den = row[7].value
-                    tuyen = str(row[10].value or "").strip()
-                    if diem_den and gio_den:
-                        rows.append({"kho": "KRC", "diem_den": diem_den, "tuyen": tuyen})
-                        krc_count += 1
-            wb.close()
-            print(f"    {krc_count} rows")
-        except Exception as e:
-            warnings.append(f"KRC: lỗi tải — {e}")
+    print("  → KRC (Google Sheets)...")
+    try:
+        wb = read_xlsx_from_url(KRC_SHEET_URL, backup_name=f"krc_{date_tag}.xlsx" if date_tag else None)
+        ws = wb["KRC"]
+        for row in ws.iter_rows(min_row=2, values_only=False):
+            scv = str(row[0].value or "").strip()
+            if scv == date_str:
+                diem_den = str(row[6].value or "").strip()
+                gio_den = row[7].value
+                tuyen = str(row[10].value or "").strip()
+                if diem_den and gio_den:
+                    rows.append({"kho": "KRC", "diem_den": diem_den, "tuyen": tuyen})
+                    krc_count += 1
+        wb.close()
+        print(f"    {krc_count} rows")
+    except Exception as e:
+        warnings.append(f"KRC: lỗi tải — {e}")
     if krc_count == 0:
         warnings.append("KRC: 0 rows — Google Sheet chưa cập nhật?")
 
@@ -460,37 +370,6 @@ def read_sthi_data(date_str, date_for_file, date_tag=None):
         except Exception as e:
             warnings.append(f"{folder_name}: lỗi — {e}")
 
-    # 3b. KH from local Google Drive sync (ĐÔNG + MÁT)
-    for folder_name, kho_name, tuyen_col, local_dir in KH_LOCAL_FOLDERS:
-        print(f"  → {folder_name} (Google Drive)...")
-        try:
-            if not os.path.isdir(local_dir):
-                warnings.append(f"{folder_name}: folder local không tìm thấy")
-                continue
-            # Find file matching date pattern
-            matched = None
-            for fname in os.listdir(local_dir):
-                if date_for_file in fname and fname.endswith('.xlsx') and not fname.startswith('~'):
-                    matched = os.path.join(local_dir, fname)
-                    break
-            if not matched:
-                warnings.append(f"{folder_name}: file {date_for_file} not found")
-                continue
-            print(f"    ↳ {os.path.basename(matched)}")
-            wb = load_workbook(matched, read_only=True, data_only=True)
-            ws = wb.worksheets[0]
-            count = 0
-            for row in ws.iter_rows(min_row=2, values_only=False):
-                diem_den = safe_val(row, 2)
-                tuyen = safe_val(row, tuyen_col)
-                if diem_den:
-                    rows.append({"kho": kho_name, "diem_den": diem_den, "tuyen": tuyen})
-                    count += 1
-            wb.close()
-            print(f"    {count} rows")
-        except Exception as e:
-            warnings.append(f"{folder_name}: lỗi — {e}")
-
     return rows, warnings
 
 
@@ -498,7 +377,7 @@ def read_sthi_data(date_str, date_for_file, date_tag=None):
 #  Read PT data (ONLINE from Google Drive)
 # ──────────────────────────────────────────
 
-def read_pt_data(date_str, master_tl, barcode_type=None):
+def read_pt_data(date_str, master_tl):
     """Read transfer + yeu_cau from Google Drive folders (online)."""
     rows = []
     warnings = []
@@ -514,7 +393,7 @@ def read_pt_data(date_str, master_tl, barcode_type=None):
     # Check local sync paths first (Google Drive desktop sync), then online
     TRANSFER_LOCAL_PATHS = [
         os.path.join(BACKUP_DIR, f"transfer_{date_tag}.xlsx"),
-        os.path.join(TRANSFER_LOCAL, f"transfer_{date_tag}.xlsx"),
+        os.path.join(r"G:\My Drive\DOCS\DAILY\transfer", f"transfer_{date_tag}.xlsx"),
     ]
     transfer_wb = None
     transfer_source = None
@@ -582,28 +461,7 @@ def read_pt_data(date_str, master_tl, barcode_type=None):
                 ngay = str(row[0].value or "").strip()
                 if ngay == date_str:
                     raw_kho = str(row[2].value or "").strip()
-                    # Split KHO ABA QUÁ CẢNH into ĐÔNG/MÁT by barcode classification
-                    if raw_kho == "KHO ABA QUÁ CẢNH" and barcode_type:
-                        classification = barcode_type.get(code)
-                        if classification in ('ĐÔNG', 'MÁT'):
-                            report_kho = classification
-                        else:
-                            # Unclassified barcode — track for warning
-                            if not hasattr(read_pt_data, '_unclassified'):
-                                read_pt_data._unclassified = {}
-                            if code not in read_pt_data._unclassified:
-                                product_name = str(row[8].value or "").strip()
-                                read_pt_data._unclassified[code] = {"name": product_name, "sl": 0}
-                            try:
-                                _sl = float(row[10].value or 0)
-                            except (ValueError, TypeError):
-                                _sl = 0
-                            read_pt_data._unclassified[code]["sl"] += _sl
-                            continue
-                    elif raw_kho == "KHO ABA QUÁ CẢNH":
-                        continue  # No classification available, skip
-                    else:
-                        report_kho = KHO_MAP.get(raw_kho)
+                    report_kho = KHO_MAP.get(raw_kho)
                     if not report_kho:
                         continue
                     sl_raw = row[10].value
@@ -627,46 +485,29 @@ def read_pt_data(date_str, master_tl, barcode_type=None):
     else:
         warnings.append(f"Transfer: no file available for {date_tag}")
 
-    # 2. Yeu cau — try local Google Drive sync first, then online
-    print(f"  → Yeu cau (tag={date_tag})...")
+    # 2. Yeu cau — from Google Drive folder (may have _nso files too)
+    print(f"  → Yeu cau (Google Drive, tag={date_tag})...")
     yc_row_count = 0
-    yc_workbooks = []  # list of (wb, source_label)
+    try:
+        yc_files = _list_drive_folder(YECAU_FOLDER_URL)
+        # Find ALL files matching this date (main + _nso variants)
+        targets = []
+        for fid, fname in yc_files:
+            if date_tag in fname and "yeu_cau_chuyen_hang_thuong" in fname:
+                targets.append((fid, fname))
 
-    # 2a. Try local files first
-    if os.path.isdir(YECAU_LOCAL):
-        for fname in os.listdir(YECAU_LOCAL):
-            if date_tag in fname and "yeu_cau_chuyen_hang_thuong" in fname and fname.endswith('.xlsx') and not fname.startswith('~'):
-                local_path = os.path.join(YECAU_LOCAL, fname)
-                try:
-                    wb = load_workbook(local_path, read_only=True, data_only=True)
-                    yc_workbooks.append((wb, f"Local: {fname}"))
-                except Exception as e:
-                    warnings.append(f"Yeu cau: lỗi đọc local {fname} — {e}")
-
-    # 2b. Fallback to online Drive scraping if no local files found
-    if not yc_workbooks:
-        try:
-            yc_files = _list_drive_folder(YECAU_FOLDER_URL)
-            targets = []
-            for fid, fname in yc_files:
-                if date_tag in fname and "yeu_cau_chuyen_hang_thuong" in fname:
-                    targets.append((fid, fname))
-            if not targets:
-                warnings.append(f"Yeu cau: file yeu_cau_{date_tag} not found")
-            for target_fid, target_fname in targets:
-                bk_name = target_fname.replace(' ', '_')
-                wb = _download_drive_file(target_fid, backup_name=bk_name)
-                if wb:
-                    yc_workbooks.append((wb, f"Online: {target_fname}"))
-                else:
-                    warnings.append(f"Yeu cau: download failed for {target_fname}")
-        except Exception as e:
-            warnings.append(f"Yeu cau: error — {e}")
-
-    # 2c. Process all matched workbooks
-    for wb, source_label in yc_workbooks:
-        try:
-            print(f"    ↳ {source_label}")
+        if not targets:
+            warnings.append(f"Yeu cau: file yeu_cau_{date_tag} not found")
+        
+        for target_fid, target_fname in targets:
+            print(f"    ↳ {target_fname}")
+            # Use filename-based backup (supports _nso variants)
+            bk_name = target_fname.replace(' ', '_')
+            wb = _download_drive_file(target_fid, backup_name=bk_name)
+            if not wb:
+                warnings.append(f"Yeu cau: download failed for {target_fname}")
+                continue
+            
             ws = None
             for name in wb.sheetnames:
                 if name == 'KF':
@@ -693,26 +534,7 @@ def read_pt_data(date_str, master_tl, barcode_type=None):
                     continue
                 product_name = safe_val(row, i_name)
                 raw_kho = safe_val(row, i_plo)
-                # Split KHO ABA QUÁ CẢNH into ĐÔNG/MÁT by barcode classification
-                if raw_kho == "KHO ABA QUÁ CẢNH" and barcode_type:
-                    classification = barcode_type.get(code)
-                    if classification in ('ĐÔNG', 'MÁT'):
-                        report_kho = classification
-                    else:
-                        if not hasattr(read_pt_data, '_unclassified'):
-                            read_pt_data._unclassified = {}
-                        if code not in read_pt_data._unclassified:
-                            read_pt_data._unclassified[code] = {"name": product_name, "sl": 0}
-                        try:
-                            _sl = float(row[i_sl].value if i_sl < len(row) else 0)
-                        except (ValueError, TypeError):
-                            _sl = 0
-                        read_pt_data._unclassified[code]["sl"] += _sl
-                        continue
-                elif raw_kho == "KHO ABA QUÁ CẢNH":
-                    continue
-                else:
-                    report_kho = KHO_MAP.get(raw_kho)
+                report_kho = KHO_MAP.get(raw_kho)
                 if not report_kho:
                     continue
                 sl_raw = row[i_sl].value if i_sl < len(row) else None
@@ -730,10 +552,10 @@ def read_pt_data(date_str, master_tl, barcode_type=None):
                 rows.append({"kho": report_kho, "sl": sl, "tl_grams": tl})
                 yc_row_count += 1
             wb.close()
-        except Exception as e:
-            warnings.append(f"Yeu cau: error processing {source_label} — {e}")
-    if yc_row_count > 0:
-        print(f"    {yc_row_count} PT rows from yeu_cau ({len(yc_workbooks)} file(s))")
+        if yc_row_count > 0:
+            print(f"    {yc_row_count} PT rows from yeu_cau ({len(targets)} file(s))")
+    except Exception as e:
+        warnings.append(f"Yeu cau: error — {e}")
 
     return rows, warnings
 
@@ -835,16 +657,9 @@ def update_history(result):
             "sl_sthi": v.get("sl_sthi", 0),
         } for k, v in result["khos"].items()},
     })
-    # Sort by date and keep last 365 days
-    HISTORY_LIMIT = 365
+    # Sort by date and keep last 30
     history.sort(key=lambda x: datetime.strptime(x["date"], "%d/%m/%Y"))
-    if len(history) > HISTORY_LIMIT:
-        dropped = history[:-HISTORY_LIMIT]
-        dropped_dates = [h["date"] for h in dropped]
-        print(f"  ⚠️  HISTORY LIMIT ({HISTORY_LIMIT}) exceeded! "
-              f"Dropping {len(dropped)} oldest entries: {', '.join(dropped_dates)}")
-        print(f"      → Backup history.json TRƯỚC khi mất data!")
-        history = history[-HISTORY_LIMIT:]
+    history = history[-30:]
     save_history(history)
     return history
 
@@ -1731,119 +1546,6 @@ def _wrap_section(body_content):
 </body></html>"""
 
 
-def _generate_capacity_pngs(cap_data, output_dir, date_tag):
-    """Generate 2 capacity forecast PNGs (KRC tons + KSL items) from cap data."""
-    from playwright.sync_api import sync_playwright
-
-    def _build_cap_svg(key, data_list, benchmark, threshold, title, color, bar_ok, bar_alert):
-        alert_limit = benchmark * (1 + threshold / 100)
-        if not data_list:
-            return ""
-        values = [d.get('tons', d.get('items', 0)) for d in data_list]
-        max_val = max(max(values) * 1.15, alert_limit * 1.15)
-        avg_val = sum(values) / len(values)
-        peak_val = max(values)
-        alert_days = sum(1 for v in values if v > alert_limit)
-        fmt_val = lambda v: f"{v:.1f} Tấn" if key == 'krc' else f"{v/1000:.0f}K"
-
-        cw, ch = 1600, 500
-        pl, pr, pt, pb = 90, 40, 40, 80
-        pw, ph = cw - pl - pr, ch - pt - pb
-        n = len(values)
-        bw = max(8, min(50, (pw / n) * 0.7)) if n > 0 else 30
-        gap = (pw - bw * n) / max(n - 1, 1) if n > 1 else 0
-        xp = lambda i: pl + i * (bw + gap) + bw / 2
-        yp = lambda v: pt + ph * (1 - v / max_val) if max_val > 0 else pt + ph
-
-        s = [f'<svg viewBox="0 0 {cw} {ch}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">']
-        for i in range(6):
-            y = pt + ph * i / 5
-            v = max_val * (5 - i) / 5
-            s.append(f'<line x1="{pl}" y1="{y:.0f}" x2="{cw-pr}" y2="{y:.0f}" stroke="#3a3f4a" stroke-width="0.5"/>')
-            s.append(f'<text x="{pl-8}" y="{y+5:.0f}" text-anchor="end" font-size="14" font-weight="600" fill="#b0b5c0">{fmt_val(v)}</text>')
-        by = yp(benchmark)
-        s.append(f'<line x1="{pl}" y1="{by:.1f}" x2="{cw-pr}" y2="{by:.1f}" stroke="#6366f1" stroke-width="2.5" stroke-dasharray="10,5"/>')
-        lbl = f"Benchmark {fmt_val(benchmark)}"
-        s.append(f'<rect x="{pl+5}" y="{by+4:.1f}" width="{len(lbl)*7+12}" height="16" rx="3" fill="rgba(99,102,241,0.25)"/>')
-        s.append(f'<text x="{pl+11}" y="{by+16:.1f}" font-size="10" font-weight="700" fill="#818cf8">{lbl}</text>')
-        ay = yp(alert_limit)
-        s.append(f'<line x1="{pl}" y1="{ay:.1f}" x2="{cw-pr}" y2="{ay:.1f}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.6"/>')
-        s.append(f'<text x="{cw-pr-5}" y="{ay-8:.1f}" text-anchor="end" font-size="11" font-weight="600" fill="#f87171">+{threshold}% Alert</text>')
-        for i, (d, v) in enumerate(zip(data_list, values)):
-            x = pl + i * (bw + gap)
-            y = yp(v)
-            h = pt + ph - y
-            ia = v > alert_limit
-            s.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bw:.1f}" height="{h:.1f}" rx="3" fill="{bar_alert if ia else bar_ok}" stroke="{"#ef4444" if ia else color}" stroke-width="1"/>')
-            if n <= 30 or ia:
-                label = f"{v:.1f}" if key == 'krc' else f"{v/1000:.0f}K"
-                s.append(f'<text x="{xp(i):.1f}" y="{y-6:.1f}" text-anchor="middle" font-size="12" font-weight="700" fill="{"#ef4444" if ia else "#ffffff"}">{label}</text>')
-        step = max(1, n // 25)
-        for i, d in enumerate(data_list):
-            if i % step == 0 or i == n - 1:
-                s.append(f'<text x="{xp(i):.1f}" y="{pt+ph+22:.0f}" text-anchor="middle" font-size="12" font-weight="600" fill="#b0b5c0">{d["date"][:5]}</text>')
-        s.append('</svg>')
-
-        if alert_days > 0:
-            alert_html = f'<div style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px 18px;border-radius:10px;font-size:17px;font-weight:700;margin-bottom:14px">⚠️ {alert_days} ngày vượt {threshold}% capacity benchmark ({fmt_val(benchmark)})</div>'
-        else:
-            alert_html = f'<div style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);color:#10b981;padding:10px 18px;border-radius:10px;font-size:17px;font-weight:700;margin-bottom:14px">✅ Tất cả ngày trong ngưỡng capacity an toàn</div>'
-        info_html = f'''<div style="display:flex;gap:14px;margin-bottom:16px">
-          <div style="flex:1;background:#1e2029;border:1px solid #3a3f4a;border-radius:10px;padding:14px;text-align:center">
-            <div style="font-size:28px;font-weight:800;color:{color}">{fmt_val(avg_val)}</div>
-            <div style="font-size:13px;color:#8a8f9a;font-weight:600;text-transform:uppercase;margin-top:4px">Trung bình/ngày</div></div>
-          <div style="flex:1;background:#1e2029;border:1px solid #3a3f4a;border-radius:10px;padding:14px;text-align:center">
-            <div style="font-size:28px;font-weight:800;color:#f87171">{fmt_val(peak_val)}</div>
-            <div style="font-size:13px;color:#8a8f9a;font-weight:600;text-transform:uppercase;margin-top:4px">Cao nhất</div></div>
-          <div style="flex:1;background:#1e2029;border:1px solid #3a3f4a;border-radius:10px;padding:14px;text-align:center">
-            <div style="font-size:28px;font-weight:800;color:{'#f87171' if alert_days else '#10b981'}">{alert_days}/{len(values)}</div>
-            <div style="font-size:13px;color:#8a8f9a;font-weight:600;text-transform:uppercase;margin-top:4px">Ngày vượt {threshold}%</div></div>
-        </div>'''
-        return f'''<!DOCTYPE html><html><head><meta charset="utf-8">
-<style>*{{margin:0;padding:0;box-sizing:border-box}}body{{background:#1e2029;color:#e8eaef;font-family:'Inter','Segoe UI',sans-serif;padding:24px}}
-.title{{font-size:22px;font-weight:800;color:#f0c060;text-align:center;text-transform:uppercase;letter-spacing:1px;margin-bottom:18px}}</style></head>
-<body><div class="title">{title}</div>{alert_html}{info_html}
-<div style="background:#252830;border:1px solid #3a3f4a;border-radius:12px;padding:16px">{"".join(s)}</div></body></html>'''
-
-    updated = cap_data.get('_updated', '')[:10]
-    configs = [
-        ('krc', cap_data['krc']['data'], cap_data['krc']['benchmark_tons'], cap_data['krc']['alert_threshold_pct'],
-         f"CAPACITY FORECAST — KRC (RAU CỦ) — {updated}", '#10b981', 'rgba(16,185,129,0.7)', 'rgba(239,68,68,0.75)'),
-        ('ksl', cap_data['ksl']['data'], cap_data['ksl']['benchmark_items'], cap_data['ksl']['alert_threshold_pct'],
-         f"CAPACITY FORECAST — KSL DRY (SÁNG + TỐI) — {updated}", '#f59e0b', 'rgba(245,158,11,0.7)', 'rgba(239,68,68,0.75)'),
-    ]
-    paths = []
-    suffixes = ['6_CAP_KRC', '7_CAP_KSL']
-    labels = ['Capacity KRC', 'Capacity KSL']
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 1750, "height": 1200}, device_scale_factor=3)
-        for (key, data, bench, thresh, title, color, bar_ok, bar_alert), suffix, label in zip(configs, suffixes, labels):
-            html = _build_cap_svg(key, data, bench, thresh, title, color, bar_ok, bar_alert)
-            if not html:
-                continue
-            temp = os.path.join(output_dir, f"_cap_{suffix}.html")
-            with open(temp, "w", encoding="utf-8") as f:
-                f.write(html)
-            page = ctx.new_page()
-            page.goto(f"file:///{temp.replace(os.sep, '/')}")
-            page.wait_for_load_state("networkidle")
-            body = page.query_selector("body")
-            box = body.bounding_box()
-            out_path = os.path.join(output_dir, f"BAO_CAO_{date_tag}_{suffix}.png")
-            page.screenshot(path=out_path, clip={"x": 0, "y": 0, "width": box["width"], "height": box["height"]})
-            page.close()
-            paths.append(out_path)
-            print(f"    ✅ {label}: {os.path.basename(out_path)}")
-            try:
-                os.remove(temp)
-            except OSError:
-                pass
-        browser.close()
-    return paths
-
-
 def build_section_htmls(result, history, weekly_history=None):
     """Build 5 separate HTML strings, one for each section of the report."""
     date = result["date"]
@@ -1889,7 +1591,7 @@ def build_section_htmls(result, history, weekly_history=None):
     kgst_t = total['total_tons'] * 1000 / total['total_sthi'] if total['total_sthi'] > 0 else 0
 
     section1 = _wrap_section(f"""
-<div class="title">BÁO CÁO SẢN LƯỢNG VÀ LƯU LƯỢNG XE XUẤT KHO NGÀY {date}</div>
+<div class="title">BÁO CÁO SẢN LƯỢNG VÀ LƯU LƯỢNG XE XUẤT KHO</div>
 {cards_html}
 <table class="report">
   <thead>
@@ -2210,77 +1912,117 @@ def export_report_image(html_content, output_path):
 
 
 # ──────────────────────────────────────────
-#  Telegram (via shared lib)
+#  Telegram
 # ──────────────────────────────────────────
-
-from lib.telegram import (
-    load_telegram_config_multi as _load_tg_config_multi,
-    send_telegram_photo as _send_tg_photo,
-    send_telegram_document as _send_tg_doc,
-    send_telegram_text as _send_tg_text,
-    delete_messages_by_tag,
-    track_sent_message,
-    load_sent_messages as _load_sent,
-    save_sent_messages as _save_sent,
-)
 
 TELEGRAM_CONFIG = os.path.join(BASE, "config", "telegram.json")
 SENT_MSGS_FILE = os.path.join(BASE, "output", "state", "sent_messages.json")
 
 def load_telegram_config():
-    """Load bot_token and ALL chat_ids for daily domain."""
-    return _load_tg_config_multi(TELEGRAM_CONFIG, domain="daily")
+    if not os.path.exists(TELEGRAM_CONFIG):
+        return None, None
+    with open(TELEGRAM_CONFIG, "r", encoding="utf-8") as f:
+        cfg = json.load(f)
+    return cfg.get("bot_token"), cfg.get("chat_id")
+
 
 def _load_sent_messages():
-    return _load_sent(SENT_MSGS_FILE)
+    if os.path.exists(SENT_MSGS_FILE):
+        with open(SENT_MSGS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
 
 def _save_sent_messages(data):
-    _save_sent(SENT_MSGS_FILE, data)
+    os.makedirs(os.path.dirname(SENT_MSGS_FILE), exist_ok=True)
+    with open(SENT_MSGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
 
 def delete_telegram_messages(date_tag):
-    """Delete all previously sent Telegram messages for a given date_tag (all groups)."""
-    bot_token, chat_ids = load_telegram_config()
-    if not bot_token or not chat_ids:
+    """Delete all previously sent Telegram messages for a given date_tag."""
+    import requests as _req, urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    bot_token, chat_id = load_telegram_config()
+    if not bot_token or not chat_id:
         return
-    for chat_id in chat_ids:
-        delete_messages_by_tag(SENT_MSGS_FILE, f"{date_tag}_{chat_id}", bot_token, chat_id)
+    sent = _load_sent_messages()
+    msg_ids = sent.get(date_tag, [])
+    if not msg_ids:
+        return
+    print(f"  🗑️  Xóa {len(msg_ids)} tin nhắn cũ (ngày {date_tag})...")
+    deleted = 0
+    for mid in msg_ids:
+        try:
+            url = f"https://api.telegram.org/bot{bot_token}/deleteMessage"
+            r = _req.post(url, data={"chat_id": chat_id, "message_id": mid}, verify=False)
+            if r.status_code == 200 and r.json().get("ok"):
+                deleted += 1
+            else:
+                print(f"    ⚠️ Không xóa được msg {mid}: {r.json().get('description', r.text[:80])}")
+        except Exception as e:
+            print(f"    ⚠️ Lỗi xóa msg {mid}: {e}")
+    print(f"  ✅ Đã xóa {deleted}/{len(msg_ids)} tin nhắn cũ")
+    # Clear saved IDs for this date
+    sent.pop(date_tag, None)
+    _save_sent_messages(sent)
+
 
 def send_telegram_photo(image_path, caption=""):
-    """Send photo to ALL Telegram groups. Returns list of message_ids."""
-    bot_token, chat_ids = load_telegram_config()
-    if not bot_token or not chat_ids:
+    """Send photo to Telegram. Returns message_id on success, None on failure."""
+    import requests, urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    bot_token, chat_id = load_telegram_config()
+    if not bot_token or not chat_id:
         print("  ❌ Telegram chưa cấu hình!")
-        return []
-    msg_ids = []
-    for chat_id in chat_ids:
-        mid = _send_tg_photo(image_path, caption, bot_token, chat_id, fallback_document=True)
-        if mid:
-            msg_ids.append((chat_id, mid))
-    return msg_ids
+        return None
+
+    # Try sendPhoto first
+    url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
+    with open(image_path, "rb") as photo:
+        resp = requests.post(url, data={"chat_id": chat_id, "caption": caption},
+                            files={"photo": photo}, verify=False)
+    if resp.status_code == 200 and resp.json().get("ok"):
+        msg_id = resp.json()["result"]["message_id"]
+        print(f"  ✅ Đã gửi lên Telegram! (msg_id={msg_id})")
+        return msg_id
+
+    # Fallback to sendDocument if photo dimensions are too large
+    if "PHOTO_INVALID_DIMENSIONS" in resp.text or "PHOTO_SAVE_FILE_INVALID" in resp.text:
+        print(f"  ⚠️ Ảnh quá lớn cho sendPhoto, chuyển sang sendDocument...")
+        url_doc = f"https://api.telegram.org/bot{bot_token}/sendDocument"
+        with open(image_path, "rb") as doc:
+            resp2 = requests.post(url_doc, data={"chat_id": chat_id, "caption": caption},
+                                 files={"document": doc}, verify=False)
+        if resp2.status_code == 200 and resp2.json().get("ok"):
+            msg_id = resp2.json()["result"]["message_id"]
+            print(f"  ✅ Đã gửi lên Telegram (as document)! (msg_id={msg_id})")
+            return msg_id
+        else:
+            print(f"  ❌ Telegram error: {resp2.text}")
+            return None
+
+    print(f"  ❌ Telegram error: {resp.text}")
+    return None
+
 
 def send_telegram_document(file_path, caption=""):
-    """Send document to ALL Telegram groups. Returns list of message_ids."""
-    bot_token, chat_ids = load_telegram_config()
-    if not bot_token or not chat_ids:
-        return []
-    msg_ids = []
-    for chat_id in chat_ids:
-        mid = _send_tg_doc(file_path, caption, bot_token, chat_id)
-        if mid:
-            msg_ids.append((chat_id, mid))
-    return msg_ids
-
-def send_telegram_text(text):
-    """Send text message to ALL Telegram groups. Returns list of message_ids."""
-    bot_token, chat_ids = load_telegram_config()
-    if not bot_token or not chat_ids:
-        return []
-    msg_ids = []
-    for chat_id in chat_ids:
-        mid = _send_tg_text(text, bot_token, chat_id)
-        if mid:
-            msg_ids.append((chat_id, mid))
-    return msg_ids
+    """Send document to Telegram. Returns message_id on success, None on failure."""
+    import requests, urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    bot_token, chat_id = load_telegram_config()
+    if not bot_token or not chat_id:
+        return None
+    url = f"https://api.telegram.org/bot{bot_token}/sendDocument"
+    with open(file_path, "rb") as doc:
+        resp = requests.post(url, data={"chat_id": chat_id, "caption": caption},
+                            files={"document": doc}, verify=False)
+    if resp.status_code == 200 and resp.json().get("ok"):
+        msg_id = resp.json()["result"]["message_id"]
+        print(f"  ✅ Đã gửi {os.path.basename(file_path)} lên Telegram! (msg_id={msg_id})")
+        return msg_id
+    print(f"  ❌ Telegram error: {resp.text}")
+    return None
 
 
 # ──────────────────────────────────────────
@@ -2724,86 +2466,6 @@ def run_filter_report(mode, value):
 
 
 # ──────────────────────────────────────────
-#  Data Completeness Validation (vs Schedule Rules)
-# ──────────────────────────────────────────
-
-# Delivery schedule rules:
-#   THỊT CÁ: 7/7 (always)
-#   KRC:     7/7 (always)
-#   ĐÔNG MÁT: 6/7 — NO Monday (weekday 0)
-#   KSL:     6/7 — NO Sunday (weekday 6), except 1-3 trips for store openings
-
-def validate_data_completeness(result, date_str):
-    """Check if all expected kho have data based on delivery schedule rules.
-    Returns (is_valid, missing_khos, messages).
-    - is_valid: True if all expected data is present
-    - missing_khos: list of kho names missing data
-    - messages: list of human-readable validation messages
-    """
-    dt = datetime.strptime(date_str, "%d/%m/%Y")
-    weekday = dt.weekday()  # 0=Mon, 6=Sun
-    day_names = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"]
-    day_name = day_names[weekday]
-
-    # Define expected kho for this day of week
-    expected_khos = []
-    skip_reasons = {}
-
-    # THỊT CÁ: always (7/7)
-    expected_khos.append("THỊT CÁ")
-    # KRC: always (7/7)
-    expected_khos.append("KRC")
-    # ĐÔNG: skip Monday
-    if weekday == 0:
-        skip_reasons["ĐÔNG"] = "Không giao Thứ 2"
-    else:
-        expected_khos.append("ĐÔNG")
-    # MÁT: skip Monday
-    if weekday == 0:
-        skip_reasons["MÁT"] = "Không giao Thứ 2"
-    else:
-        expected_khos.append("MÁT")
-    # KSL (Sáng + Tối): skip Sunday
-    if weekday == 6:
-        skip_reasons["KSL-SÁNG"] = "Không giao CN"
-        skip_reasons["KSL-TỐI"] = "Không giao CN"
-    else:
-        expected_khos.append("KSL-SÁNG")
-        expected_khos.append("KSL-TỐI")
-
-    missing_khos = []
-    messages = []
-
-    for kho in expected_khos:
-        kho_data = result["khos"].get(kho, {})
-        sl_sthi = kho_data.get("sl_sthi", 0)
-        sl_items = kho_data.get("sl_items", 0)
-        san_luong = kho_data.get("san_luong_tan", 0)
-
-        # Check: kho expected but has zero data in ALL metrics
-        if sl_sthi == 0 and sl_items == 0 and san_luong == 0:
-            missing_khos.append(kho)
-            messages.append(f"❌ {kho}: không có data (expected {day_name})")
-        elif sl_sthi == 0 or sl_items == 0 or san_luong == 0:
-            # Partial data — also flag as missing
-            parts = []
-            if sl_sthi == 0: parts.append("STHI=0")
-            if sl_items == 0: parts.append("Items=0")
-            if san_luong == 0: parts.append("Tấn=0")
-            missing_khos.append(kho)
-            messages.append(f"⚠️  {kho}: data không đủ ({', '.join(parts)})")
-
-    # Info about skipped khos
-    for kho, reason in skip_reasons.items():
-        kho_data = result["khos"].get(kho, {})
-        if kho_data.get("sl_sthi", 0) > 0 or kho_data.get("sl_items", 0) > 0:
-            messages.append(f"ℹ️  {kho}: có data dù {reason} (có thể khai trương)")
-
-    is_valid = len(missing_khos) == 0
-    return is_valid, missing_khos, messages
-
-
-# ──────────────────────────────────────────
 #  Main
 # ──────────────────────────────────────────
 
@@ -2838,103 +2500,6 @@ def main():
         print("=" * 60)
         return
 
-    # ── Send-only mode: skip all data fetching, just send existing output ──
-    if "--send-only" in sys.argv:
-        date_str = ""
-        if "--date" in sys.argv:
-            idx = sys.argv.index("--date")
-            date_str = sys.argv[idx + 1]
-        if not date_str:
-            date_str = datetime.now().strftime("%d/%m/%Y")
-        parts = date_str.split("/")
-        date_tag = f"{parts[0]}{parts[1]}{parts[2]}"
-        print("=" * 60)
-        print(f"  SEND-ONLY MODE - {date_str}")
-        print("=" * 60)
-
-        # Load saved result from last run
-        last_result_file = os.path.join(BASE, "output", "state", "last_daily_result.json")
-        if not os.path.exists(last_result_file):
-            print("  ❌ Không tìm thấy kết quả report đã generate!")
-            print("     Chạy generate.py trước (không cần --send) rồi dùng --send-only")
-            sys.exit(1)
-        with open(last_result_file, "r", encoding="utf-8") as f:
-            result = json.load(f)
-        if result.get("date") != date_str:
-            print(f"  ⚠ Kết quả lưu là ngày {result.get('date')}, không khớp {date_str}")
-            print(f"     Tiếp tục gửi kết quả ngày {result.get('date')}...")
-            date_str = result["date"]
-            parts = date_str.split("/")
-            date_tag = f"{parts[0]}{parts[1]}{parts[2]}"
-
-        # Find existing PNG files
-        output_dir = os.path.join(BASE, "output", "artifacts", "daily")
-        section_suffixes = ["1_BANG", "2_DONGGOP", "3_SANLUONG", "4_ITEMS", "5_XE"]
-        section_paths = [os.path.join(output_dir, f"BAO_CAO_{date_tag}_{s}.png") for s in section_suffixes]
-        cap_paths = [
-            os.path.join(output_dir, f"BAO_CAO_{date_tag}_6_CAP_KRC.png"),
-            os.path.join(output_dir, f"BAO_CAO_{date_tag}_7_CAP_KSL.png"),
-        ]
-
-        # Verify PNGs exist
-        missing = [p for p in section_paths if not os.path.exists(p)]
-        if missing:
-            print(f"  ❌ Thiếu {len(missing)} file PNG:")
-            for m in missing:
-                print(f"     • {os.path.basename(m)}")
-            sys.exit(1)
-        print(f"  ✅ Tìm thấy {len(section_paths)} section PNGs + {sum(1 for p in cap_paths if os.path.exists(p))} capacity PNGs")
-
-        # Send Telegram
-        print(f"\n📤 Sending to Telegram (force)...")
-        delete_telegram_messages(date_tag)
-        caption = f"📊 Báo cáo xuất kho {date_str} — Tổng: {result['total_tons']:.2f} tấn, {result['total_xe']} xe, {result['total_sthi']} ST"
-        section_labels = ["📋 Bảng KPI", "🍩 % Đóng góp", "📈 Trend Sản lượng", "📦 Trend Items", "🚛 Trend Xe"]
-        all_sent = []
-        for img_path, sec_label in zip(section_paths, section_labels):
-            pairs = send_telegram_photo(img_path, f"{caption}\n{sec_label}")
-            all_sent.extend(pairs)
-        cap_labels = ["🏭 Capacity Forecast — KRC (Rau Củ)", "🏭 Capacity Forecast — KSL Dry (Sáng+Tối)"]
-        for img_path, sec_label in zip(cap_paths, cap_labels):
-            if os.path.exists(img_path):
-                pairs = send_telegram_photo(img_path, f"{caption}\n{sec_label}")
-                all_sent.extend(pairs)
-        dashboard_text = f"📊 Dashboard đã cập nhật: {date_str}\n🔗 https://tunhipham.github.io/transport_daily_report/\n⏱ Refresh sau 1-2 phút để xem dữ liệu mới nhất"
-        pairs = send_telegram_text(dashboard_text)
-        all_sent.extend(pairs)
-        if all_sent:
-            sent_data = _load_sent_messages()
-            for chat_id, mid in all_sent:
-                key = f"{date_tag}_{chat_id}"
-                if key not in sent_data:
-                    sent_data[key] = []
-                sent_data[key].append(mid)
-            _save_sent_messages(sent_data)
-            n_groups = len(set(cid for cid, _ in all_sent))
-            print(f"  💾 Đã lưu {len(all_sent)} message IDs ({n_groups} group(s))")
-
-        # Deploy dashboard
-        print(f"\n🚀 Auto-deploying dashboard...")
-        deploy_script = os.path.join(BASE, "script", "dashboard", "deploy.py")
-        if os.path.exists(deploy_script):
-            try:
-                deploy_result = subprocess.run(
-                    [sys.executable, deploy_script, "--domain", "daily"],
-                    cwd=BASE, capture_output=True, text=True,
-                    encoding="utf-8", errors="replace", timeout=120
-                )
-                for line in deploy_result.stdout.splitlines():
-                    print(f"  {line}")
-                if deploy_result.returncode != 0:
-                    print(f"  ⚠ Deploy có lỗi (exit {deploy_result.returncode})")
-            except Exception as e:
-                print(f"  ⚠ Deploy failed: {e}")
-
-        print("\n" + "=" * 60)
-        print("  DONE (send-only)")
-        print("=" * 60)
-        return
-
     # ── Normal daily report mode ──
     # Parse arguments
     date_str = ""
@@ -2945,14 +2510,6 @@ def main():
         date_str = datetime.now().strftime("%d/%m/%Y")
 
     send_telegram = "--send" in sys.argv
-    force_send = "--force" in sys.argv
-
-    # Data source mode
-    global _DATA_SOURCE
-    if "--source" in sys.argv:
-        idx = sys.argv.index("--source")
-        _DATA_SOURCE = sys.argv[idx + 1]
-    print(f"  Data source: {_DATA_SOURCE}")
 
     parts = date_str.split("/")
     date_for_file = f"{parts[0]}.{parts[1]}.{parts[2]}"
@@ -2972,69 +2529,19 @@ def main():
     print("\n📋 Loading master data (online)...")
     master_tl = load_master_data()
 
-    # Step 2b: Load barcode classification for ĐÔNG/MÁT split
-    barcode_type = load_barcode_classification()
-
     # Step 3: Read PT (online)
     print("\n📦 Reading PT data (online)...")
-    # Reset unclassified tracker
-    if hasattr(read_pt_data, '_unclassified'):
-        del read_pt_data._unclassified
-    pt_rows, pt_warnings = read_pt_data(date_str, master_tl, barcode_type=barcode_type)
+    pt_rows, pt_warnings = read_pt_data(date_str, master_tl)
     for w in pt_warnings:
         print(f"  {w}")
-
-    # Report unclassified barcodes (ĐÔNG/MÁT split)
-    unclassified = getattr(read_pt_data, '_unclassified', {})
-    if unclassified:
-        total_unc = sum(v['sl'] for v in unclassified.values())
-        print(f"\n  ⚠️  {len(unclassified)} barcode(s) chưa phân loại ĐÔNG/MÁT ({total_unc:,.0f} items bị bỏ qua):")
-        for bc, info in sorted(unclassified.items(), key=lambda x: -x[1]['sl']):
-            print(f"      {bc}: {info['sl']:,.0f} — {info['name'][:50]}")
-        print(f"      → Cần bổ sung phân loại trong ABA Master Data (col E)")
 
     # Step 4: Calculate and print summary
     result = calculate_summary(sthi_rows, pt_rows, date_str)
 
-    # Save result for --send-only mode (so bat file can re-send without re-generating)
-    last_result_file = os.path.join(BASE, "output", "state", "last_daily_result.json")
-    with open(last_result_file, "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
-
-    # Step 4b: Validate data completeness vs delivery schedule rules
-    #   Check 1: Source-level warnings (KFM, KRC, KH, Transfer, Yeu cau)
-    #   Check 2: Result-level kho completeness vs delivery schedule
-    _validation_blocked = False
-    all_warnings = sthi_warnings + pt_warnings
-    data_valid, missing_khos, val_messages = validate_data_completeness(result, date_str)
-    has_source_warnings = len(all_warnings) > 0
-    has_missing_khos = not data_valid
-
-    print("\n🔍 DATA VALIDATION:")
-    if all_warnings:
-        print("  ── Source warnings ──")
-        for w in all_warnings:
-            print(f"  ⚠️  {w}")
-    if val_messages:
-        print("  ── Schedule check ──")
-        for msg in val_messages:
-            print(f"  {msg}")
-
-    if not has_source_warnings and not has_missing_khos:
-        print("  ✅ Đầy đủ data — sẵn sàng gửi Telegram")
-    else:
-        if has_missing_khos:
-            print(f"\n  🚫 THIẾU DATA (kho): {', '.join(missing_khos)}")
-        if has_source_warnings:
-            print(f"\n  🚫 THIẾU DATA (source): {len(all_warnings)} warning(s)")
-        if send_telegram and not force_send:
-            send_telegram = False  # Block sending
-            _validation_blocked = True
-            print("  ❌ Telegram bị CHẶN do thiếu data.")
-            print(f"     → Review/update data rồi chạy lại: python script/domains/daily/generate.py --date {date_str} --send")
-            print(f"     → Hoặc dùng --force để bỏ qua validation: python script/domains/daily/generate.py --date {date_str} --send --force")
-        elif send_telegram and force_send:
-            print("  ⚠️  --force: Bỏ qua validation, gửi Telegram anyway")
+    if sthi_warnings or pt_warnings:
+        print("\n⚠️  WARNINGS:")
+        for w in sthi_warnings + pt_warnings:
+            print(f"  • {w}")
 
     # Step 5: Update history
     history = update_history(result)
@@ -3053,30 +2560,12 @@ def main():
     section_htmls = build_section_htmls(result, history, weekly_history)
     section_paths = export_section_images(section_htmls, output_dir, date_tag)
 
-    # Step 6b: Generate capacity forecast data + PNGs
-    cap_paths = []
-    try:
-        print(f"\n🏭 Generating capacity forecast...")
-        cap_script = os.path.join(BASE, "script", "domains", "daily", "capacity_forecast.py")
-        cap_result = subprocess.run(
-            [sys.executable, cap_script], cwd=BASE,
-            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600
-        )
-        if cap_result.returncode == 0:
-            print(f"  ✅ capacity_forecast.json generated")
-        else:
-            print(f"  ⚠ capacity_forecast.py exit {cap_result.returncode}")
-
-        # Generate PNGs from capacity_forecast.json
-        cap_json_path = os.path.join(BASE, "docs", "data", "capacity_forecast.json")
-        if os.path.exists(cap_json_path):
-            with open(cap_json_path, "r", encoding="utf-8") as f:
-                cap_data = json.load(f)
-            cap_paths = _generate_capacity_pngs(cap_data, output_dir, date_tag)
-        else:
-            print(f"  ⚠ capacity_forecast.json not found, skipping PNGs")
-    except Exception as e:
-        print(f"  ⚠ Capacity forecast error: {e}")
+    # Save full HTML version for browser viewing
+    html = build_report_html(result, history, weekly_history)
+    html_path = os.path.join(output_dir, f"BAO_CAO_{date_tag}.html")
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html)
+    print(f"  ✅ HTML: {html_path}")
 
     # Step 7: Send to Telegram (only if --send flag is passed)
     if send_telegram:
@@ -3087,69 +2576,31 @@ def main():
 
         caption = f"📊 Báo cáo xuất kho {date_str} — Tổng: {result['total_tons']:.2f} tấn, {result['total_xe']} xe, {result['total_sthi']} ST"
         section_labels = ["📋 Bảng KPI", "🍩 % Đóng góp", "📈 Trend Sản lượng", "📦 Trend Items", "🚛 Trend Xe"]
-        # Collect all (chat_id, msg_id) pairs for tracking
-        all_sent = []
+        sent_msg_ids = []
         for img_path, sec_label in zip(section_paths, section_labels):
-            pairs = send_telegram_photo(img_path, f"{caption}\n{sec_label}")
-            all_sent.extend(pairs)
+            mid = send_telegram_photo(img_path, f"{caption}\n{sec_label}")
+            if mid:
+                sent_msg_ids.append(mid)
+        mid = send_telegram_document(html_path, f"📋 Báo cáo HTML {date_str} — mở bằng trình duyệt để xem chi tiết")
+        if mid:
+            sent_msg_ids.append(mid)
 
-        # Send capacity forecast images
-        cap_labels = ["🏭 Capacity Forecast — KRC (Rau Củ)", "🏭 Capacity Forecast — KSL Dry (Sáng+Tối)"]
-        for img_path, sec_label in zip(cap_paths, cap_labels):
-            if os.path.exists(img_path):
-                pairs = send_telegram_photo(img_path, f"{caption}\n{sec_label}")
-                all_sent.extend(pairs)
-
-        dashboard_text = f"📊 Dashboard đã cập nhật: {date_str}\n🔗 https://tunhipham.github.io/transport_daily_report/\n⏱ Refresh sau 1-2 phút để xem dữ liệu mới nhất"
-        pairs = send_telegram_text(dashboard_text)
-        all_sent.extend(pairs)
-
-        # Save sent message IDs per-group for future deletion
-        if all_sent:
+        # Save sent message IDs for future deletion
+        if sent_msg_ids:
             sent_data = _load_sent_messages()
-            for chat_id, mid in all_sent:
-                key = f"{date_tag}_{chat_id}"
-                if key not in sent_data:
-                    sent_data[key] = []
-                sent_data[key].append(mid)
+            sent_data[date_tag] = sent_msg_ids
             _save_sent_messages(sent_data)
-            n_groups = len(set(cid for cid, _ in all_sent))
-            print(f"  💾 Đã lưu {len(all_sent)} message IDs ({n_groups} group(s))")
+            print(f"  💾 Đã lưu {len(sent_msg_ids)} message IDs (có thể xóa khi gửi lại)")
     else:
         print(f"\n📌 Review report:")
-        for sp in section_paths + cap_paths:
+        for sp in section_paths:
             print(f"   • {sp}")
-        print(f"   Để gửi Telegram, chạy lại với: python script/domains/daily/generate.py --date {date_str} --send")
-
-    # Step 8: Auto-deploy dashboard to GitHub Pages (after --send)
-    if send_telegram:
-        print(f"\n🚀 Auto-deploying dashboard...")
-        deploy_script = os.path.join(BASE, "script", "dashboard", "deploy.py")
-        if os.path.exists(deploy_script):
-            try:
-                deploy_result = subprocess.run(
-                    [sys.executable, deploy_script, "--domain", "daily"],
-                    cwd=BASE, capture_output=True, text=True,
-                    encoding="utf-8", errors="replace", timeout=120
-                )
-                for line in deploy_result.stdout.splitlines():
-                    print(f"  {line}")
-                if deploy_result.returncode != 0:
-                    print(f"  ⚠ Deploy có lỗi (exit {deploy_result.returncode})")
-                    if deploy_result.stderr:
-                        print(f"  {deploy_result.stderr[:200]}")
-            except Exception as e:
-                print(f"  ⚠ Deploy failed: {e}")
-        else:
-            print(f"  ⚠ deploy.py not found at {deploy_script}")
+        print(f"   • {html_path}")
+        print(f"   Để gửi Telegram, chạy lại với: python script/generate_report.py --date {date_str} --send")
 
     print("\n" + "=" * 60)
     print("  DONE")
     print("=" * 60)
-
-    # Exit with code 1 if validation blocked Telegram (so bat file can offer --force)
-    if _validation_blocked:
-        sys.exit(1)
 
 
 if __name__ == "__main__":

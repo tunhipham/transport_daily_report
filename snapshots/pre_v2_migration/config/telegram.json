@@ -1,0 +1,34 @@
+{
+  "daily": {
+    "bot_token": "8786933573:AAHAus-L2ReuRM9q_Zr2IC122B62uNftisc",
+    "chat_ids": [
+      "-4511126388",
+      "-5221667525"
+    ]
+  },
+  "inventory": {
+    "bot_token": "8786933573:AAHAus-L2ReuRM9q_Zr2IC122B62uNftisc",
+    "chat_id": "-4511126388"
+  },
+  "nso": {
+    "bot_token": "8786933573:AAHAus-L2ReuRM9q_Zr2IC122B62uNftisc",
+    "chat_id": "-4511126388"
+  },
+  "performance": {
+    "bot_token": "8786933573:AAHAus-L2ReuRM9q_Zr2IC122B62uNftisc",
+    "chat_id": "-4511126388"
+  },
+  "weekly_plan": {
+    "bot_token": "8786933573:AAHAus-L2ReuRM9q_Zr2IC122B62uNftisc",
+    "chat_id": "5782090339",
+    "group_chat_id": "-4702773130"
+  },
+  "mention_watcher": {
+    "bot_token": "8786933573:AAHAus-L2ReuRM9q_Zr2IC122B62uNftisc",
+    "notify_chat_id": "5782090339"
+  },
+  "nso_remind": {
+    "bot_token": "8786933573:AAHAus-L2ReuRM9q_Zr2IC122B62uNftisc",
+    "chat_id": "5782090339"
+  }
+}

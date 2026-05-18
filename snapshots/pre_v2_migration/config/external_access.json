@@ -1,0 +1,19 @@
+{
+    "external_allowed_paths": [
+        "docs/external/nhap_xuat_dm.html",
+        "docs/external/claim_aba.html"
+    ],
+    "protected_files": [
+        "docs/index.html",
+        "docs/data/",
+        "script/",
+        "config/",
+        "agents/",
+        ".agents/",
+        ".github/"
+    ],
+    "allowed_external_authors": [
+        "ThanhPhammm111"
+    ],
+    "notes": "External collaborator chỉ được phép sửa file trong external_allowed_paths. Mọi thay đổi ngoài scope sẽ bị chặn bởi pre-push hook và deploy validation."
+}

@@ -1,0 +1,11 @@
+{
+  "project": "logistics_ai",
+  "engine": "ClickHouse",
+  "base_url": "http://103.140.248.114:32015/",
+  "params": {
+    "user": "scm_lam",
+    "password": "xukco1-roghaB-fuqfum",
+    "database": "kdb"
+  },
+  "note": "Extracted from hardcoded scripts (e.g. queries/vegetable_warehouse/scripts/krc_30days_basket_report.py) during Legacy Migration"
+}

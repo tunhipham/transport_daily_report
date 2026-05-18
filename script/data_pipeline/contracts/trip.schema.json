@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Trip Data",
+  "description": "Schema for trip data extracted from StarRocks or xlsx",
+  "type": "object",
+  "required": ["extractor", "date_tag", "rows", "row_count"],
+  "properties": {
+    "extractor": {"type": "string", "const": "trips"},
+    "date_tag": {"type": "string", "pattern": "^\\d{8}$"},
+    "row_count": {"type": "integer", "minimum": 0},
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["trip_id", "destination"],
+        "properties": {
+          "trip_id": {"type": "string"},
+          "trip_status": {"type": "string"},
+          "vehicle_number": {"type": "string"},
+          "driver_name": {"type": "string"},
+          "depart_date": {"type": "string"},
+          "noi_chuyen": {"type": "string"},
+          "destination": {"type": "string"},
+          "dest_status": {"type": "string"},
+          "container_type": {"type": "string"},
+          "arrival_time": {"type": ["string", "null"]},
+          "completion_time": {"type": ["string", "null"]},
+          "_incomplete": {"type": "boolean"}
+        }
+      }
+    }
+  }
+}

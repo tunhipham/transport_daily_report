@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Transfer Data",
+  "description": "Schema for transfer (phiếu chuyển) data extracted from StarRocks or xlsx",
+  "type": "object",
+  "required": ["extractor", "date_tag", "rows", "row_count"],
+  "properties": {
+    "extractor": {"type": "string", "const": "transfer"},
+    "date_tag": {"type": "string", "pattern": "^\\d{8}$"},
+    "row_count": {"type": "integer", "minimum": 0},
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ma_hang"],
+        "properties": {
+          "ngay": {"type": "string"},
+          "kho_xuat": {"type": "string"},
+          "kho_nhan": {"type": "string"},
+          "ma_hang": {"type": "string"},
+          "ten_hang": {"type": "string"},
+          "so_luong": {"type": "number"},
+          "trong_luong": {"type": "number"}
+        }
+      }
+    }
+  }
+}
