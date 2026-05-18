@@ -1,10 +1,10 @@
 {
-  "_updated": "13/05/2026 13:07",
+  "_updated": "18/05/2026 09:53",
   "stats": {
-    "total": 45,
-    "upcoming": 24,
-    "opening": 0,
-    "reschedule": 6
+    "total": 46,
+    "upcoming": 22,
+    "opening": 2,
+    "reschedule": 7
   },
   "stores": [
     {
@@ -124,8 +124,8 @@
       "code": "A175",
       "opening_date": "15/05/2026",
       "iso_date": "2026-05-15",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "status_type": "opening",
+      "status_text": "Đang khai trương"
     },
     {
       "name": "KFM_HCM_TPH - 91-93 Nguyễn Sơn",
@@ -164,8 +164,8 @@
       "code": "A184",
       "opening_date": "15/05/2026",
       "iso_date": "2026-05-15",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "status_type": "opening",
+      "status_text": "Đang khai trương"
     },
     {
       "name": "KFM_HCM_Q04 - TM.B.06 Millennium Bến Vân Đồn",
@@ -282,10 +282,10 @@
     {
       "name": "Lê Trọng Tấn - Dĩ An",
       "code": "",
-      "opening_date": "25/06/2026",
-      "iso_date": "2026-06-25",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "opening_date": "17/07/2026",
+      "iso_date": "2026-07-17",
+      "status_type": "reschedule",
+      "status_text": "Dời lịch: 25/06/2026 → 17/07/2026"
     },
     {
       "name": "KDC Thới An - Q12",
@@ -314,10 +314,10 @@
     {
       "name": "KFM_HCM_TDU - 305 Nguyễn Duy Trinh",
       "code": "NDT",
-      "opening_date": "27/06/2026",
-      "iso_date": "2026-06-27",
+      "opening_date": "23/10/2026",
+      "iso_date": "2026-10-23",
       "status_type": "reschedule",
-      "status_text": "Đôn lịch: 28/08/2026 → 27/06/2026"
+      "status_text": "Dời lịch: 28/08/2026 → 23/10/2026"
     },
     {
       "name": "DS1 An Hội Đông - GVA",
@@ -364,6 +364,14 @@
       "code": "NDT",
       "opening_date": "28/08/2026",
       "iso_date": "2026-08-28",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "Hồng Lạc - TBI",
+      "code": "",
+      "opening_date": "31/07/2026",
+      "iso_date": "2026-07-31",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
     }
@@ -457,7 +465,7 @@
       "date": "2026-05-15",
       "label": "A175 - Golden Mansion 119 Phổ Quang",
       "code": "A175",
-      "type": "upcoming"
+      "type": "opening"
     },
     {
       "date": "2026-05-07",
@@ -487,7 +495,7 @@
       "date": "2026-05-15",
       "label": "A184 - Saigon Mia - L1-08",
       "code": "A184",
-      "type": "upcoming"
+      "type": "opening"
     },
     {
       "date": "2026-05-28",
@@ -574,10 +582,10 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-06-25",
+      "date": "2026-07-17",
       "label": "None - Lê Trọng Tấn - Dĩ An",
       "code": "",
-      "type": "upcoming"
+      "type": "reschedule"
     },
     {
       "date": "2026-06-26",
@@ -598,7 +606,7 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-06-27",
+      "date": "2026-10-23",
       "label": "NDT - 1132 Nguyễn Duy Trinh (67 NDT) - TDU",
       "code": "NDT",
       "type": "reschedule"
@@ -638,57 +646,63 @@
       "label": "NDT - 902 Nguyễn Duy Trinh - TDU",
       "code": "NDT",
       "type": "upcoming"
+    },
+    {
+      "date": "2026-07-31",
+      "label": "None - Hồng Lạc - TBI",
+      "code": "",
+      "type": "upcoming"
     }
   ],
   "schedules": [
     {
-      "label": "KFM_HCM_TPH - H.38 Melody Residences Âu Cơ (A186)",
+      "label": "KFM_HCM_TDU - B6-D.TMDV.02 Masteri Center Point (A181)",
       "version": 1000,
       "days": [
         {
-          "date": "16/05/2026",
+          "date": "23/05/2026",
           "day_name": "Thứ 7",
           "label": "D",
           "ksl": 2500,
           "dm": 0
         },
         {
-          "date": "17/05/2026",
+          "date": "24/05/2026",
           "day_name": "CN",
           "label": "D+1",
           "ksl": 4000,
           "dm": 400
         },
         {
-          "date": "18/05/2026",
+          "date": "25/05/2026",
           "day_name": "Thứ 2",
           "label": "D+2",
           "ksl": 2500,
           "dm": 0
         },
         {
-          "date": "19/05/2026",
+          "date": "26/05/2026",
           "day_name": "Thứ 3",
           "label": "D+3",
           "ksl": 2100,
           "dm": 0
         },
         {
-          "date": "20/05/2026",
+          "date": "27/05/2026",
           "day_name": "Thứ 4",
           "label": "D+4",
           "ksl": "Daily",
           "dm": 0
         },
         {
-          "date": "21/05/2026",
+          "date": "28/05/2026",
           "day_name": "Thứ 5",
           "label": "D+5",
           "ksl": "Daily",
           "dm": 0
         },
         {
-          "date": "22/05/2026",
+          "date": "29/05/2026",
           "day_name": "Thứ 6",
           "label": "D+6",
           "ksl": "Daily",
@@ -699,54 +713,111 @@
       "total_dm": 400
     },
     {
-      "label": "KFM_BDU_DAN - 9 Đường M, Khu Phố Nhị Đồng 2 (A189)",
-      "version": 1500,
+      "label": "KFM_HCM_TPH - 52 Thoại Ngọc Hầu (A159)",
+      "version": 2000,
       "days": [
         {
-          "date": "15/05/2026",
+          "date": "22/05/2026",
           "day_name": "Thứ 6",
           "label": "D",
-          "ksl": 2800,
+          "ksl": 3500,
           "dm": 0
         },
         {
-          "date": "16/05/2026",
+          "date": "23/05/2026",
           "day_name": "Thứ 7",
           "label": "D+1",
-          "ksl": 4200,
+          "ksl": 5500,
           "dm": 400
         },
         {
-          "date": "17/05/2026",
+          "date": "24/05/2026",
           "day_name": "CN",
           "label": "D+2",
-          "ksl": 2800,
+          "ksl": 3500,
           "dm": 0
         },
         {
-          "date": "18/05/2026",
+          "date": "25/05/2026",
           "day_name": "Thứ 2",
           "label": "D+3",
-          "ksl": 2300,
+          "ksl": 3000,
           "dm": 0
         },
         {
-          "date": "19/05/2026",
+          "date": "26/05/2026",
           "day_name": "Thứ 3",
           "label": "D+4",
           "ksl": "Daily",
           "dm": 0
         },
         {
-          "date": "20/05/2026",
+          "date": "27/05/2026",
           "day_name": "Thứ 4",
           "label": "D+5",
           "ksl": "Daily",
           "dm": 0
         },
         {
-          "date": "21/05/2026",
+          "date": "28/05/2026",
           "day_name": "Thứ 5",
+          "label": "D+6",
+          "ksl": "Daily",
+          "dm": 0
+        }
+      ],
+      "total_ksl": 15500,
+      "total_dm": 400
+    },
+    {
+      "label": "KFM_HCM_TDU - SH5-SH6 Homyland Riverside (A193)",
+      "version": 1500,
+      "days": [
+        {
+          "date": "23/05/2026",
+          "day_name": "Thứ 7",
+          "label": "D",
+          "ksl": 2800,
+          "dm": 0
+        },
+        {
+          "date": "24/05/2026",
+          "day_name": "CN",
+          "label": "D+1",
+          "ksl": 4200,
+          "dm": 400
+        },
+        {
+          "date": "25/05/2026",
+          "day_name": "Thứ 2",
+          "label": "D+2",
+          "ksl": 2800,
+          "dm": 0
+        },
+        {
+          "date": "26/05/2026",
+          "day_name": "Thứ 3",
+          "label": "D+3",
+          "ksl": 2300,
+          "dm": 0
+        },
+        {
+          "date": "27/05/2026",
+          "day_name": "Thứ 4",
+          "label": "D+4",
+          "ksl": "Daily",
+          "dm": 0
+        },
+        {
+          "date": "28/05/2026",
+          "day_name": "Thứ 5",
+          "label": "D+5",
+          "ksl": "Daily",
+          "dm": 0
+        },
+        {
+          "date": "29/05/2026",
+          "day_name": "Thứ 6",
           "label": "D+6",
           "ksl": "Daily",
           "dm": 0
@@ -756,117 +827,60 @@
       "total_dm": 400
     },
     {
-      "label": "KFM_HCM_PNH - Golden Mansion 119 Phổ Quang (A175)",
-      "version": 700,
+      "label": "KFM_HCM_TBI - 76 Bàu Cát (A199)",
+      "version": 1500,
       "days": [
         {
-          "date": "15/05/2026",
+          "date": "22/05/2026",
           "day_name": "Thứ 6",
           "label": "D",
-          "ksl": 1800,
+          "ksl": 2800,
           "dm": 0
         },
         {
-          "date": "16/05/2026",
+          "date": "23/05/2026",
           "day_name": "Thứ 7",
           "label": "D+1",
-          "ksl": 3000,
+          "ksl": 4200,
           "dm": 400
         },
         {
-          "date": "17/05/2026",
+          "date": "24/05/2026",
           "day_name": "CN",
           "label": "D+2",
-          "ksl": 1800,
+          "ksl": 2800,
           "dm": 0
         },
         {
-          "date": "18/05/2026",
+          "date": "25/05/2026",
           "day_name": "Thứ 2",
           "label": "D+3",
-          "ksl": 1500,
+          "ksl": 2300,
           "dm": 0
         },
         {
-          "date": "19/05/2026",
+          "date": "26/05/2026",
           "day_name": "Thứ 3",
           "label": "D+4",
           "ksl": "Daily",
           "dm": 0
         },
         {
-          "date": "20/05/2026",
+          "date": "27/05/2026",
           "day_name": "Thứ 4",
           "label": "D+5",
           "ksl": "Daily",
           "dm": 0
         },
         {
-          "date": "21/05/2026",
+          "date": "28/05/2026",
           "day_name": "Thứ 5",
           "label": "D+6",
           "ksl": "Daily",
           "dm": 0
         }
       ],
-      "total_ksl": 8100,
-      "total_dm": 400
-    },
-    {
-      "label": "KFM_HCM_BCH - Saigon Mia - L1-08 (A184)",
-      "version": 1000,
-      "days": [
-        {
-          "date": "15/05/2026",
-          "day_name": "Thứ 6",
-          "label": "D",
-          "ksl": 2500,
-          "dm": 0
-        },
-        {
-          "date": "16/05/2026",
-          "day_name": "Thứ 7",
-          "label": "D+1",
-          "ksl": 4000,
-          "dm": 400
-        },
-        {
-          "date": "17/05/2026",
-          "day_name": "CN",
-          "label": "D+2",
-          "ksl": 2500,
-          "dm": 0
-        },
-        {
-          "date": "18/05/2026",
-          "day_name": "Thứ 2",
-          "label": "D+3",
-          "ksl": 2100,
-          "dm": 0
-        },
-        {
-          "date": "19/05/2026",
-          "day_name": "Thứ 3",
-          "label": "D+4",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "20/05/2026",
-          "day_name": "Thứ 4",
-          "label": "D+5",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "21/05/2026",
-          "day_name": "Thứ 5",
-          "label": "D+6",
-          "ksl": "Daily",
-          "dm": 0
-        }
-      ],
-      "total_ksl": 11100,
+      "total_ksl": 12100,
       "total_dm": 400
     }
   ],
@@ -900,5 +914,5 @@
       "total": 8100
     }
   },
-  "week_range": "11/05/2026 → 17/05/2026"
+  "week_range": "18/05/2026 → 24/05/2026"
 }
