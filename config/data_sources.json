@@ -1,0 +1,128 @@
+{
+  "_doc": "Pipeline V2 — Data source registry. Machine-readable config.",
+  "_updated": "2026-05-19",
+  "_ref": "agents/reference/data-sources.md",
+
+  "sources": {
+    "transfer": {
+      "db": "clickhouse",
+      "table": "kf_transfer_mart",
+      "description": "Phiếu chuyển hàng thực tế",
+      "date_column": "transfer_date",
+      "date_filter": "toDate(transfer_date) = '{DATE}'",
+      "mandatory_filters": [
+        "deleted = 0",
+        "status != 6"
+      ],
+      "select_columns": [
+        "code", "product_id", "from_branch_id", "to_branch_id",
+        "transfer_quantity", "transfer_date"
+      ],
+      "quantity_column": "transfer_quantity",
+      "branch_map": {
+        "5fdc170ebd89c10006f15b7c": {"name": "KHO RAU CỦ",       "alias": "KRC"},
+        "61d4ffa72997ae0007f5ad19": {"name": "KHO ABA QUÁ CẢNH", "alias": "DONG_MAT"},
+        "639d80531a37c70007cbb7bf": {"name": "KHO ABA MIỀN ĐÔNG","alias": "THIT_CA"},
+        "6234219eb35d1d00073793ab": {"name": "KHO DRY",           "alias": "DRY"}
+      },
+      "ignore_other_branches": true,
+      "product_join": {
+        "table": "kf_product_static",
+        "join_key": "product_id = id",
+        "fields": ["name", "base_barcode", "barcodes", "unit_name", "base_net_weight"]
+      }
+    },
+
+    "schedule": {
+      "db": "starrocks",
+      "table": "krc_dashboard_delivery_schedule",
+      "description": "Lịch giao hàng KRC/DRY/THIT_CA/DONG_MAT/DONG_LANH",
+      "date_column": "ngay",
+      "date_format": "DD/MM/YYYY",
+      "date_filter": "ngay = '{DD/MM/YYYY}'",
+      "select_columns": [
+        "source", "ngay", "diem_den", "gio_den_dk", "tuyen",
+        "diem_di", "gio_di", "tg_di_chuyen", "nvt"
+      ],
+      "source_map": {
+        "KRC":       {"meaning": "Kho rau củ"},
+        "DRY":       {"meaning": "Kho dry"},
+        "THIT_CA":   {"meaning": "Thịt cá (ABA Miền Đông)"},
+        "DONG_MAT":  {"meaning": "Hàng mát (ABA Quá Cảnh)"},
+        "DONG_LANH": {"meaning": "Hàng đông (ABA Quá Cảnh)"}
+      }
+    },
+
+    "trips": {
+      "db": "clickhouse",
+      "table": "kf_trip_locations_items",
+      "description": "Chuyến xe — performance report + Monday reminder",
+      "date_column": "t_departure",
+      "date_filter": "toDate(t_departure) BETWEEN '{START}' AND '{END}'",
+      "mandatory_filters": [
+        "toYear(t_departure) BETWEEN 2023 AND 2027"
+      ],
+      "completed_status": 3,
+      "incomplete_statuses": [1, 2],
+      "select_columns": [
+        "t_code", "t_status", "t_license_number", "t_driver_name",
+        "t_departure", "t_from_location_name_abbreviates",
+        "tl_branch_id", "tl_arrival"
+      ],
+      "actual_time_rule": {
+        "column": "tl_arrival",
+        "use": "time_only",
+        "date_from": "t_departure"
+      },
+      "reminder": {
+        "enabled": true,
+        "schedule": "monday_0800",
+        "channel": "telegram_personal",
+        "query_scope": "last_week",
+        "filter_status": [1, 2],
+        "fields": ["t_code", "tl_branch_id", "t_departure"]
+      }
+    },
+
+    "yeu_cau_chuyen": {
+      "db": "file_local",
+      "path": "G:\\My Drive\\DOCS\\DAILY\\yeu_cau_chuyen_hang_thuong",
+      "filename_pattern": "yeu_cau_chuyen_hang_thuong_{DDMMYYYY}.xlsx",
+      "description": "KSL (Dry) — yêu cầu chuyển hàng. Giữ file local, KHÔNG dùng DB.",
+      "db_equivalent": {
+        "table": "kf_req_transfer_items",
+        "note": "DB timing không kịp cutoff 8:00"
+      }
+    },
+
+    "product_master": {
+      "db": "clickhouse",
+      "table": "kf_product_static",
+      "description": "Master sản phẩm — barcode, tên, trọng lượng",
+      "rows": 28978,
+      "key_fields": {
+        "id": "Product ObjectId (join key)",
+        "name": "Tên sản phẩm",
+        "base_barcode": "Barcode chính",
+        "barcodes": "Tất cả barcodes (comma-separated)",
+        "unit_name": "Đơn vị (KG, HỘP, TÚI...)",
+        "base_net_weight": "Trọng lượng (grams)"
+      }
+    }
+  },
+
+  "db_connections": {
+    "starrocks": {
+      "config_file": "config/mcp_starrocks.json",
+      "host": "103.147.122.56",
+      "port": 9030,
+      "database": "kfm_scm"
+    },
+    "clickhouse": {
+      "config_file": "config/mcp_clickhouse.json",
+      "host": "103.140.248.114",
+      "port": 32015,
+      "database": "kdb"
+    }
+  }
+}
