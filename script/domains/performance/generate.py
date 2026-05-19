@@ -155,26 +155,58 @@ def _deserialize_row(r):
 
 
 def _load_single_file(fpath):
-    """Parse one xlsx file into deduped rows dict {(trip,dest,sub_kho): row}."""
+    """Parse one xlsx file into deduped rows dict {(trip,dest,sub_kho): row}.
+    
+    Uses header-based column lookup to handle varying xlsx formats
+    (e.g. 35 vs 37 columns when new columns are added).
+    """
     import openpyxl
     seen = {}
     total_raw = 0
     wb = openpyxl.load_workbook(fpath, read_only=True)
     ws = wb['Sheet 1']
+    
+    # ── Read header row to build column index map ──
+    header_map = {}  # column_name -> index
+    for row in ws.iter_rows(min_row=1, max_row=1, values_only=True):
+        for i, val in enumerate(row):
+            if val:
+                header_map[str(val).strip()] = i
+    
+    # ── Resolve column indices from headers (with fallback to legacy positions) ──
+    COL_TRIP_ID       = header_map.get("Mã chuyến xe", 0)
+    COL_TRIP_STATUS   = header_map.get("Trạng thái chuyến xe", 1)
+    COL_VEHICLE       = header_map.get("Số xe", 2)
+    COL_DRIVER        = header_map.get("Tên tài xế", 3)
+    COL_PHONE         = header_map.get("Số điện thoại", 4)
+    COL_DEPART_DATE   = header_map.get("Ngày xuất phát", 5)
+    COL_DEPART_TIME   = header_map.get("Giờ xuất phát", 6)
+    COL_NOI_CHUYEN    = header_map.get("Nơi chuyển", 8)
+    COL_DEST          = header_map.get("Nơi nhận (Tên viết tắt)", 9)
+    COL_DEST_STATUS   = header_map.get("Trạng thái nơi nhận", 11)
+    COL_CONTAINER     = header_map.get("Tên thùng, rổ", 18)
+    COL_ARRIVAL       = header_map.get("Thời gian đến cửa hàng", 26)
+    
+    def _cell(row, idx):
+        """Safe cell access."""
+        if idx < len(row) and row[idx] is not None:
+            return str(row[idx]).strip()
+        return ""
+    
     for row in ws.iter_rows(min_row=2, values_only=True):
         total_raw += 1
-        trip_id = str(row[0] or "").strip()
-        trip_status = str(row[1] or "").strip()
-        vehicle_number = str(row[2] or "").strip() if len(row) > 2 else ""
-        driver = str(row[3] or "").strip()
-        phone = str(row[4] or "").strip() if len(row) > 4 else ""
-        depart_date = str(row[5] or "").strip()
-        depart_time_raw = str(row[6] or "").strip() if row[6] else ""
-        noi_chuyen = str(row[8] or "").strip()
-        dest = str(row[9] or "").strip()
-        dest_status = str(row[11] or "").strip()
-        container_type = str(row[18] or "").strip() if len(row) > 18 else ""
-        arrival_raw = str(row[26] or "").strip() if row[26] else ""
+        trip_id = _cell(row, COL_TRIP_ID)
+        trip_status = _cell(row, COL_TRIP_STATUS)
+        vehicle_number = _cell(row, COL_VEHICLE)
+        driver = _cell(row, COL_DRIVER)
+        phone = _cell(row, COL_PHONE)
+        depart_date = _cell(row, COL_DEPART_DATE)
+        depart_time_raw = _cell(row, COL_DEPART_TIME)
+        noi_chuyen = _cell(row, COL_NOI_CHUYEN)
+        dest = _cell(row, COL_DEST)
+        dest_status = _cell(row, COL_DEST_STATUS)
+        container_type = _cell(row, COL_CONTAINER)
+        arrival_raw = _cell(row, COL_ARRIVAL)
         
         if not trip_id or not dest:
             continue
