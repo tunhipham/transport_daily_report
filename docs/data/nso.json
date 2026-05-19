@@ -1,10 +1,10 @@
 {
-  "_updated": "18/05/2026 10:10",
+  "_updated": "19/05/2026 09:00",
   "stats": {
     "total": 46,
     "upcoming": 22,
-    "opening": 2,
-    "reschedule": 7
+    "opening": 0,
+    "reschedule": 6
   },
   "stores": [
     {
@@ -116,16 +116,16 @@
       "code": "A189",
       "opening_date": "15/05/2026",
       "iso_date": "2026-05-15",
-      "status_type": "reschedule",
-      "status_text": "Dời lịch: 30/04/2026 → 15/05/2026"
+      "status_type": "completed",
+      "status_text": "Đã khai trương (15/05/2026)"
     },
     {
       "name": "KFM_HCM_PNH - Golden Mansion 119 Phổ Quang",
       "code": "A175",
       "opening_date": "15/05/2026",
       "iso_date": "2026-05-15",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
+      "status_type": "completed",
+      "status_text": "Đã khai trương (15/05/2026)"
     },
     {
       "name": "KFM_HCM_TPH - 91-93 Nguyễn Sơn",
@@ -164,16 +164,16 @@
       "code": "A184",
       "opening_date": "15/05/2026",
       "iso_date": "2026-05-15",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
+      "status_type": "completed",
+      "status_text": "Đã khai trương (15/05/2026)"
     },
     {
       "name": "KFM_HCM_Q04 - TM.B.06 Millennium Bến Vân Đồn",
       "code": "A194",
-      "opening_date": "06/06/2026",
-      "iso_date": "2026-06-06",
+      "opening_date": "28/05/2026",
+      "iso_date": "2026-05-28",
       "status_type": "reschedule",
-      "status_text": "Dời lịch: 28/05/2026 → 06/06/2026"
+      "status_text": "Dời lịch: 08/05/2026 → 28/05/2026"
     },
     {
       "name": "KFM_HCM_TPH - 52 Thoại Ngọc Hầu",
@@ -256,8 +256,8 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "DS10 Bình Hưng",
-      "code": "",
+      "name": "KFM_HCM_BCH - 32A Đường Số 10 Bình Hưng",
+      "code": "A202",
       "opening_date": "05/06/2026",
       "iso_date": "2026-06-05",
       "status_type": "upcoming",
@@ -459,13 +459,13 @@
       "date": "2026-05-15",
       "label": "A189 - Đường M-KP Nhị Đồng -Dĩ An",
       "code": "A189",
-      "type": "reschedule"
+      "type": "completed"
     },
     {
       "date": "2026-05-15",
       "label": "A175 - Golden Mansion 119 Phổ Quang",
       "code": "A175",
-      "type": "opening"
+      "type": "completed"
     },
     {
       "date": "2026-05-07",
@@ -495,10 +495,10 @@
       "date": "2026-05-15",
       "label": "A184 - Saigon Mia - L1-08",
       "code": "A184",
-      "type": "opening"
+      "type": "completed"
     },
     {
-      "date": "2026-06-06",
+      "date": "2026-05-28",
       "label": "A194 - Millennium - Q4 - mới bổ sung",
       "code": "A194",
       "type": "reschedule"
@@ -565,8 +565,8 @@
     },
     {
       "date": "2026-06-05",
-      "label": "None - DS10 Bình Hưng",
-      "code": "",
+      "label": "A202 - DS10 Bình Hưng",
+      "code": "A202",
       "type": "upcoming"
     },
     {
