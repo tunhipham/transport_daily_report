@@ -1,5 +1,5 @@
 {
-  "_updated": "19/05/2026 09:00",
+  "_updated": "19/05/2026 09:09",
   "stats": {
     "total": 46,
     "upcoming": 22,
@@ -170,10 +170,10 @@
     {
       "name": "KFM_HCM_Q04 - TM.B.06 Millennium Bến Vân Đồn",
       "code": "A194",
-      "opening_date": "28/05/2026",
-      "iso_date": "2026-05-28",
+      "opening_date": "06/06/2026",
+      "iso_date": "2026-06-06",
       "status_type": "reschedule",
-      "status_text": "Dời lịch: 08/05/2026 → 28/05/2026"
+      "status_text": "Dời lịch: 28/05/2026 → 06/06/2026"
     },
     {
       "name": "KFM_HCM_TPH - 52 Thoại Ngọc Hầu",
@@ -498,7 +498,7 @@
       "type": "completed"
     },
     {
-      "date": "2026-05-28",
+      "date": "2026-06-06",
       "label": "A194 - Millennium - Q4 - mới bổ sung",
       "code": "A194",
       "type": "reschedule"
