@@ -154,11 +154,14 @@ def compute_history_hash():
     return hashlib.md5(raw.encode()).hexdigest()
 
 
-def run_generate(date_str):
+def run_generate(date_str, send_telegram=False):
     script = os.path.join(BASE, "script", "domains", "daily", "generate.py")
     cmd = [sys.executable, script, "--date", date_str, "--source", "auto"]
-    print(f"  🏃 generate.py --date {date_str} --source auto")
-    result = subprocess.run(cmd, cwd=BASE, capture_output=True, text=True, timeout=300)
+    if send_telegram:
+        cmd.append("--send")
+    flag_str = " --send" if send_telegram else ""
+    print(f"  🏃 generate.py --date {date_str} --source auto{flag_str}")
+    result = subprocess.run(cmd, cwd=BASE, capture_output=True, text=True, timeout=900)
     if result.returncode != 0:
         print(f"  ❌ generate.py failed (exit {result.returncode})")
         if result.stderr:
@@ -293,9 +296,10 @@ def _run_sync(args, today, today_iso, hour):
         log_sync("DRY", f"changed")
         return
 
-    # ── Step 2: Full generate ──
+    # ── Step 2: Full generate (send Telegram at cutoff 8AM+) ──
+    is_cutoff = hour >= 8
     t1 = time.time()
-    ok = run_generate(today)
+    ok = run_generate(today, send_telegram=is_cutoff)
     gen_time = time.time() - t1
 
     if not ok:
