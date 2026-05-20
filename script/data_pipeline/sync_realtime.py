@@ -79,7 +79,9 @@ def check_transfer_fingerprint(date_iso):
 
 
 def check_schedule_fingerprint(date_iso):
-    """Quick fingerprint from StarRocks: COUNT + MAX(updated_at)."""
+    """Quick fingerprint from StarRocks: COUNT + MAX(updated_at).
+    Note: ngay column stores VN format (DD/MM/YYYY), not ISO.
+    """
     try:
         from data_pipeline.config import load_starrocks_config
         import pymysql
@@ -90,17 +92,21 @@ def check_schedule_fingerprint(date_iso):
             password=sr["password"], database=sr["database"],
             charset="utf8mb4", connect_timeout=10, read_timeout=10,
         )
+        # Convert ISO (YYYY-MM-DD) → VN (DD/MM/YYYY) to match ngay column
+        parts = date_iso.split("-")  # ['2026', '05', '20']
+        date_vn = f"{parts[2]}/{parts[1]}/{parts[0]}"  # '20/05/2026'
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT COUNT(*), MAX(updated_at) FROM krc_dashboard_delivery_schedule WHERE ngay = %s",
-                (date_iso,)
+                (date_vn,)
             )
             row = cur.fetchone()
         conn.close()
-        return f"{row[0]}|{row[1]}"  # e.g. "753|2026-05-19 08:30:00"
+        return f"{row[0]}|{row[1]}"  # e.g. "742|2026-05-20 08:30:00"
     except Exception as e:
         print(f"    ⚠ Schedule check failed: {e}")
         return "ERR"
+
 
 
 # ── Lock ──
