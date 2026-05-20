@@ -1,28 +1,20 @@
 <?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
-    <Description>Trip Reminder — T2 08:00 (lần 1) + T3 08:00 (lần 2 + cutoff warning)</Description>
+    <Description>Sync Realtime — Auto generate + deploy dashboard mỗi 15 phút (06:00-22:00)</Description>
   </RegistrationInfo>
   <Triggers>
     <CalendarTrigger>
-      <StartBoundary>2026-05-20T08:00:00</StartBoundary>
+      <StartBoundary>2026-05-20T06:00:00</StartBoundary>
       <Enabled>true</Enabled>
-      <ScheduleByWeek>
-        <WeeksInterval>1</WeeksInterval>
-        <DaysOfWeek>
-          <Monday />
-        </DaysOfWeek>
-      </ScheduleByWeek>
-    </CalendarTrigger>
-    <CalendarTrigger>
-      <StartBoundary>2026-05-20T08:00:00</StartBoundary>
-      <Enabled>true</Enabled>
-      <ScheduleByWeek>
-        <WeeksInterval>1</WeeksInterval>
-        <DaysOfWeek>
-          <Tuesday />
-        </DaysOfWeek>
-      </ScheduleByWeek>
+      <Repetition>
+        <Interval>PT15M</Interval>
+        <Duration>PT16H</Duration>
+        <StopAtDurationEnd>true</StopAtDurationEnd>
+      </Repetition>
+      <ScheduleByDay>
+        <DaysInterval>1</DaysInterval>
+      </ScheduleByDay>
     </CalendarTrigger>
   </Triggers>
   <Principals>
@@ -40,12 +32,12 @@
     <RunOnlyIfNetworkAvailable>true</RunOnlyIfNetworkAvailable>
     <AllowStartOnDemand>true</AllowStartOnDemand>
     <Enabled>true</Enabled>
-    <ExecutionTimeLimit>PT5M</ExecutionTimeLimit>
+    <ExecutionTimeLimit>PT10M</ExecutionTimeLimit>
   </Settings>
   <Actions Context="Author">
     <Exec>
       <Command>python</Command>
-      <Arguments>script\telegram\trip_reminder.py</Arguments>
+      <Arguments>script\data_pipeline\sync_realtime.py</Arguments>
       <WorkingDirectory>G:\My Drive\DOCS\transport_daily_report</WorkingDirectory>
     </Exec>
   </Actions>

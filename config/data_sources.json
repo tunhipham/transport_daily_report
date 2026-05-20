@@ -22,8 +22,11 @@
       "branch_map": {
         "5fdc170ebd89c10006f15b7c": {"name": "KHO RAU CỦ",       "alias": "KRC"},
         "61d4ffa72997ae0007f5ad19": {"name": "KHO ABA QUÁ CẢNH", "alias": "DONG_MAT"},
-        "639d80531a37c70007cbb7bf": {"name": "KHO ABA MIỀN ĐÔNG","alias": "THIT_CA"},
-        "6234219eb35d1d00073793ab": {"name": "KHO DRY",           "alias": "DRY"}
+        "639d80531a37c70007cbb7bf": {"name": "KHO ABA MIỀN ĐÔNG","alias": "THIT_CA"}
+      },
+      "branch_map_reserved": {
+        "_note": "KHO DRY excluded — KSL reads from yeu_cau file, not transfer",
+        "6234219eb35d1d00073793ab": {"name": "KHO DRY", "alias": "DRY"}
       },
       "ignore_other_branches": true,
       "product_join": {

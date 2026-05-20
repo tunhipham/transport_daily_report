@@ -4414,6 +4414,41 @@
     // INIT
     // ═══════════════════════════════════════════════
     loadTab('daily');
+
+    // ── Auto-refresh: check for data changes every 5 min ──
+    (function() {
+      let lastDataHash = null;
+      const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+      
+      async function checkForUpdates() {
+        try {
+          const resp = await fetch('data/daily.json?t=' + Date.now());
+          if (!resp.ok) return;
+          const text = await resp.text();
+          const hash = text.length + '_' + text.slice(-100);
+          if (lastDataHash && hash !== lastDataHash) {
+            console.log('[auto-refresh] Data changed, reloading...');
+            // Reload current tab data without full page refresh
+            const activeTab = document.querySelector('.tab-btn.active');
+            if (activeTab) {
+              const tabId = activeTab.getAttribute('onclick')?.match(/loadTab\('(.+?)'\)/)?.[1];
+              if (tabId) loadTab(tabId);
+            } else {
+              location.reload();
+            }
+          }
+          lastDataHash = hash;
+        } catch(e) {
+          console.log('[auto-refresh] Check failed:', e.message);
+        }
+      }
+      
+      // Initial hash capture
+      checkForUpdates();
+      // Periodic check
+      setInterval(checkForUpdates, REFRESH_INTERVAL);
+      console.log('[auto-refresh] Enabled — checking every 5 min');
+    })();
   </script>
 </body>
 

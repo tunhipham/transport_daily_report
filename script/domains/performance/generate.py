@@ -1804,6 +1804,43 @@ def main():
     # Combine trip data + THỊT CÁ
     all_rows = trip_rows + thitca_rows
     print(f"\n  📊 Total: {len(all_rows)} rows")
+
+    # ── Apply trip decisions (cutoff overrides) ──
+    decisions_dir = os.path.join(OUTPUT, "state", "trip_decisions")
+    if os.path.isdir(decisions_dir):
+        # Find the latest decision file for the relevant week
+        decision_files = sorted(
+            [f for f in os.listdir(decisions_dir) if f.endswith('.json') and not f.startswith('_')],
+            reverse=True,
+        )
+        for df in decision_files:
+            try:
+                with open(os.path.join(decisions_dir, df), encoding="utf-8") as f:
+                    decision = json.load(f)
+                keep_codes = {t["code"] for t in decision.get("keep_as_ontime", [])}
+                exclude_codes = {t["code"] for t in decision.get("excluded", [])}
+
+                if keep_codes or exclude_codes:
+                    # Override trip_status and dest_status
+                    kept = 0
+                    excluded = 0
+                    for r in all_rows:
+                        tid = r.get("trip_id", "")
+                        if tid in keep_codes:
+                            r["trip_status"] = "Hoàn thành"
+                            r["dest_status"] = "Hoàn thành"
+                            kept += 1
+                        elif tid in exclude_codes:
+                            r["_excluded"] = True
+                            excluded += 1
+
+                    all_rows = [r for r in all_rows if not r.get("_excluded")]
+
+                    if kept or excluded:
+                        print(f"  ✂️ Trip decisions ({df}): {kept} kept (→Hoàn thành), {excluded} excluded")
+                    break  # Only apply latest decision file
+            except Exception as e:
+                print(f"  ⚠ Error reading decision {df}: {e}")
     
     # 2. Calculate metrics
     print("\n📈 Calculating metrics...")

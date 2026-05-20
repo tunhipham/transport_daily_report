@@ -1,21 +1,11 @@
 <?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
-    <Description>Trip Reminder — T2 08:00 (lần 1) + T3 08:00 (lần 2 + cutoff warning)</Description>
+    <Description>Trip Cutoff — T3 09:00: gửi Telegram nhắc chạy run-trip-cutoff.bat thủ công</Description>
   </RegistrationInfo>
   <Triggers>
     <CalendarTrigger>
-      <StartBoundary>2026-05-20T08:00:00</StartBoundary>
-      <Enabled>true</Enabled>
-      <ScheduleByWeek>
-        <WeeksInterval>1</WeeksInterval>
-        <DaysOfWeek>
-          <Monday />
-        </DaysOfWeek>
-      </ScheduleByWeek>
-    </CalendarTrigger>
-    <CalendarTrigger>
-      <StartBoundary>2026-05-20T08:00:00</StartBoundary>
+      <StartBoundary>2026-05-26T09:00:00</StartBoundary>
       <Enabled>true</Enabled>
       <ScheduleByWeek>
         <WeeksInterval>1</WeeksInterval>
@@ -45,7 +35,7 @@
   <Actions Context="Author">
     <Exec>
       <Command>python</Command>
-      <Arguments>script\telegram\trip_reminder.py</Arguments>
+      <Arguments>script\data_pipeline\trip_cutoff.py --notify-only</Arguments>
       <WorkingDirectory>G:\My Drive\DOCS\transport_daily_report</WorkingDirectory>
     </Exec>
   </Actions>

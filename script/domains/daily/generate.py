@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.join(BASE, "script"))
 BACKUP_DIR = os.path.join(BASE, "data", "raw", "daily")
 
 # ── Data source mode (set by --source flag) ──
-_DATA_SOURCE = "file"  # file | db | auto
+_DATA_SOURCE = "auto"  # file | db | auto (auto = DB-first, fallback to file)
 
 
 def _read_krc_from_silver(date_tag):
@@ -345,9 +345,113 @@ def load_barcode_classification():
 #  Read STHI + XE data
 # ──────────────────────────────────────────
 
+# DB source → report kho mapping (for non-DRY sources)
+_DB_SOURCE_KHO = {
+    "KRC": "KRC",
+    "DONG_MAT": "MÁT",
+    "DONG_LANH": "ĐÔNG",
+    "THIT_CA": "THỊT CÁ",
+}
+
+
+def _read_schedule_from_db(date_str):
+    """Read ALL schedule sources from StarRocks DB.
+    Returns (rows, warnings) in same format as read_sthi_data.
+    DRY source uses same Sáng/Tối logic as KFM Google Sheet.
+    """
+    rows = []
+    warnings = []
+    try:
+        from data_pipeline.config import load_starrocks_config
+        import pymysql
+
+        sr_cfg = load_starrocks_config()
+        conn = pymysql.connect(
+            host=sr_cfg["host"], port=sr_cfg["port"], user=sr_cfg["user"],
+            password=sr_cfg["password"], database=sr_cfg["database"],
+            charset="utf8mb4", connect_timeout=30, read_timeout=60,
+        )
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT source, diem_den, gio_den_dk, tuyen, gio_di
+                FROM krc_dashboard_delivery_schedule
+                WHERE ngay = %s
+                ORDER BY source, tuyen, diem_den
+            """, (date_str,))
+            db_rows = cur.fetchall()
+        conn.close()
+
+        counts = {}
+        sang_count = toi_count = 0
+
+        for source, diem_den, gio_den_dk, tuyen, gio_di in db_rows:
+            diem_den = str(diem_den or "").strip()
+            tuyen = str(tuyen or "").strip()
+            if not diem_den:
+                continue
+
+            if source == "DRY":
+                # Same Sáng/Tối logic as KFM Google Sheet
+                gio_den = str(gio_den_dk or "").strip()
+                gio_di_str = str(gio_di or "").strip()
+                gio = gio_den or gio_di_str
+                if gio:
+                    hour = parse_time_hour(gio)
+                    if hour < 0:
+                        continue
+                    using_gio_di = not gio_den and bool(gio_di_str)
+                    sang_cutoff = 15 if using_gio_di else 18
+                    if 6 <= hour < sang_cutoff:
+                        kho = "KSL-Sáng"
+                        sang_count += 1
+                    else:
+                        kho = "KSL-Tối"
+                        toi_count += 1
+                else:
+                    continue
+            else:
+                kho = _DB_SOURCE_KHO.get(source)
+                if not kho:
+                    continue
+
+            rows.append({"kho": kho, "diem_den": diem_den, "tuyen": tuyen})
+            counts[kho] = counts.get(kho, 0) + 1
+
+        print(f"  → Schedule (DB StarRocks)...")
+        for k in ["KRC", "ĐÔNG", "MÁT", "THỊT CÁ"]:
+            if k in counts:
+                print(f"    {k}: {counts[k]}")
+        if sang_count or toi_count:
+            print(f"    KSL-Sáng: {sang_count}, KSL-Tối: {toi_count}")
+
+        if not rows:
+            warnings.append("Schedule DB: 0 rows — DB chưa có data?")
+
+    except Exception as e:
+        warnings.append(f"Schedule DB: lỗi — {e}")
+
+    return rows, warnings
+
+
 def read_sthi_data(date_str, date_for_file, date_tag=None):
     rows = []
     warnings = []
+
+    # ── DB-first: read ALL schedule from StarRocks ──
+    if _DATA_SOURCE in ("db", "auto"):
+        db_rows, db_warnings = _read_schedule_from_db(date_str)
+        if db_rows:
+            return db_rows, db_warnings
+        elif _DATA_SOURCE == "db":
+            warnings.extend(db_warnings)
+            return rows, warnings
+        # auto mode: fallback to file/sheet below
+        if db_warnings:
+            for w in db_warnings:
+                print(f"    ⚠ {w}")
+            print(f"    → Fallback to Google Sheets + local files")
+
+    # ── Original file-based flow (fallback) ──
 
     # 1. KRC — silver-first if data source mode allows
     krc_count = 0
@@ -498,6 +602,136 @@ def read_sthi_data(date_str, date_for_file, date_tag=None):
 #  Read PT data (ONLINE from Google Drive)
 # ──────────────────────────────────────────
 
+def _read_transfer_from_db(date_str, master_tl, barcode_type=None):
+    """Read transfer data from ClickHouse DB.
+    Returns (rows, transfer_tl, warnings) — same format as file-based logic.
+    """
+    rows = []
+    transfer_tl = {}
+    warnings = []
+
+    try:
+        from data_pipeline.config import load_clickhouse_config
+        import requests as _req
+        import json as _json
+
+        cfg = load_clickhouse_config()
+        params = {"user": cfg["user"], "password": cfg["password"], "database": cfg["database"]}
+
+        # Load branch_map from registry
+        registry_path = os.path.join(BASE, "config", "data_sources.json")
+        with open(registry_path, encoding="utf-8") as f:
+            registry = _json.load(f)
+        branch_map = registry["sources"]["transfer"]["branch_map"]
+        branch_ids = "','".join(branch_map.keys())
+
+        # Parse date
+        parts = date_str.split("/")
+        date_iso = f"{parts[2]}-{parts[1]}-{parts[0]}"
+
+        sql = f"""
+            SELECT
+                t.from_branch_id,
+                p.base_barcode,
+                p.name AS product_name,
+                t.transfer_quantity,
+                p.base_net_weight,
+                formatDateTime(t.transfer_date, '%d/%m/%Y') AS transfer_date_vn
+            FROM kf_transfer_mart t
+            LEFT JOIN kf_product_static p ON t.product_id = p.id
+            WHERE toDate(t.transfer_date) = '{date_iso}'
+              AND t.deleted = 0
+              AND t.status != 6
+              AND t.from_branch_id IN ('{branch_ids}')
+        """
+
+        print(f"  → Transfer (DB ClickHouse)...")
+        r = _req.get(cfg["base_url"], params={**params, "query": f"{sql} FORMAT JSONEachRow"}, timeout=120)
+        r.raise_for_status()
+
+        raw_count = 0
+        for line in r.text.strip().split("\n"):
+            if not line.strip():
+                continue
+            obj = _json.loads(line)
+            raw_count += 1
+
+            code = str(obj.get("base_barcode") or "").strip()
+            tl_val = obj.get("base_net_weight")
+            if code and tl_val:
+                try:
+                    w = float(tl_val)
+                    if w > 0:
+                        transfer_tl[code] = w
+                except (ValueError, TypeError):
+                    pass
+
+            # Only process rows for the requested date
+            row_date = str(obj.get("transfer_date_vn") or "").strip()
+            if row_date != date_str:
+                continue
+
+            branch_id = obj["from_branch_id"]
+            branch_info = branch_map.get(branch_id, {})
+            raw_kho = branch_info.get("name", "")
+
+            # Same classification logic as file-based
+            if raw_kho == "KHO ABA QUÁ CẢNH" and barcode_type:
+                classification = barcode_type.get(code)
+                if classification in ('ĐÔNG', 'MÁT'):
+                    report_kho = classification
+                else:
+                    if not hasattr(_read_transfer_from_db, '_unclassified'):
+                        _read_transfer_from_db._unclassified = {}
+                    if code not in _read_transfer_from_db._unclassified:
+                        product_name = str(obj.get("product_name") or "").strip()
+                        _read_transfer_from_db._unclassified[code] = {"name": product_name, "sl": 0}
+                    try:
+                        _sl = float(obj.get("transfer_quantity") or 0)
+                    except (ValueError, TypeError):
+                        _sl = 0
+                    _read_transfer_from_db._unclassified[code]["sl"] += _sl
+                    continue
+            elif raw_kho == "KHO ABA QUÁ CẢNH":
+                continue
+            else:
+                report_kho = KHO_MAP.get(raw_kho)
+
+            if not report_kho:
+                continue
+
+            try:
+                sl = float(obj.get("transfer_quantity") or 0)
+            except (ValueError, TypeError):
+                sl = 0
+            try:
+                tl = float(tl_val) if tl_val else 0
+            except (ValueError, TypeError):
+                tl = 0
+            if tl == 0 and code:
+                tl = master_tl.get(code, 0)
+            if tl == 0:
+                continue
+
+            rows.append({"kho": report_kho, "sl": sl, "tl_grams": tl})
+
+        print(f"    {len(rows)} PT rows from DB ({raw_count:,} raw)")
+
+        # Propagate unclassified to read_pt_data for consistency
+        if hasattr(_read_transfer_from_db, '_unclassified'):
+            if not hasattr(read_pt_data, '_unclassified'):
+                read_pt_data._unclassified = {}
+            read_pt_data._unclassified.update(_read_transfer_from_db._unclassified)
+
+        if not rows:
+            warnings.append("Transfer DB: 0 classified rows")
+
+    except Exception as e:
+        warnings.append(f"Transfer DB: lỗi — {e}")
+
+    return rows, transfer_tl, warnings
+
+
 def read_pt_data(date_str, master_tl, barcode_type=None):
     """Read transfer + yeu_cau from Google Drive folders (online)."""
     rows = []
@@ -510,122 +744,142 @@ def read_pt_data(date_str, master_tl, barcode_type=None):
     # Build barcode → TL lookup from transfer
     transfer_tl = {}
 
-    # 1. Transfer — from Google Drive folder
-    # Check local sync paths first (Google Drive desktop sync), then online
-    TRANSFER_LOCAL_PATHS = [
-        os.path.join(BACKUP_DIR, f"transfer_{date_tag}.xlsx"),
-        os.path.join(TRANSFER_LOCAL, f"transfer_{date_tag}.xlsx"),
-    ]
-    transfer_wb = None
-    transfer_source = None
+    # ── DB-first: read transfer from ClickHouse ──
+    _transfer_from_db = False
+    if _DATA_SOURCE in ("db", "auto"):
+        db_rows, db_tl, db_warnings = _read_transfer_from_db(date_str, master_tl, barcode_type)
+        if db_rows:
+            rows.extend(db_rows)
+            transfer_tl.update(db_tl)
+            _transfer_from_db = True
+        elif _DATA_SOURCE == "db":
+            warnings.extend(db_warnings)
+            # Still need to read yeu_cau (always file-based)
+        else:
+            # auto mode: fallback to file
+            if db_warnings:
+                for w in db_warnings:
+                    print(f"    ⚠ {w}")
+                print(f"    → Fallback to file-based transfer")
 
-    # Try local files first (prefer largest file)
-    for local_path in TRANSFER_LOCAL_PATHS:
-        if os.path.exists(local_path) and os.path.getsize(local_path) > 10000:
-            try:
-                candidate = load_workbook(local_path, read_only=True, data_only=True)
-                if transfer_wb is None:
-                    transfer_wb = candidate
-                    transfer_source = local_path
-                else:
-                    # Keep the larger file (more complete data)
-                    if os.path.getsize(local_path) > os.path.getsize(transfer_source):
-                        transfer_wb.close()
+    # ── Original file-based transfer (fallback) ──
+    if not _transfer_from_db:
+        # 1. Transfer — from Google Drive folder
+        # Check local sync paths first (Google Drive desktop sync), then online
+        TRANSFER_LOCAL_PATHS = [
+            os.path.join(BACKUP_DIR, f"transfer_{date_tag}.xlsx"),
+            os.path.join(TRANSFER_LOCAL, f"transfer_{date_tag}.xlsx"),
+        ]
+        transfer_wb = None
+        transfer_source = None
+
+        # Try local files first (prefer largest file)
+        for local_path in TRANSFER_LOCAL_PATHS:
+            if os.path.exists(local_path) and os.path.getsize(local_path) > 10000:
+                try:
+                    candidate = load_workbook(local_path, read_only=True, data_only=True)
+                    if transfer_wb is None:
                         transfer_wb = candidate
                         transfer_source = local_path
                     else:
-                        candidate.close()
-            except Exception:
-                pass
-
-    print(f"  → Transfer (tag={date_tag})...")
-    if transfer_wb is None:
-        # Fallback: download from Google Drive
-        try:
-            tf_files = _list_drive_folder(TRANSFER_FOLDER_URL)
-            target = None
-            for fid, fname in tf_files:
-                if date_tag in fname and fname.startswith("transfer"):
-                    target = (fid, fname)
-                    break
-            if target:
-                print(f"    ↳ Online: {target[1]}")
-                transfer_wb = _download_drive_file(target[0], backup_name=f"transfer_{date_tag}.xlsx")
-                transfer_source = "online"
-            else:
-                warnings.append(f"Transfer: file transfer_{date_tag} not found")
-        except Exception as e:
-            warnings.append(f"Transfer: error — {e}")
-    else:
-        print(f"    ↳ Local: {os.path.basename(transfer_source)} ({os.path.getsize(transfer_source):,} bytes)")
-        # Also save to backup dir if source is not already there
-        bk_path = os.path.join(BACKUP_DIR, f"transfer_{date_tag}.xlsx")
-        if transfer_source != bk_path:
-            import shutil
-            shutil.copy2(transfer_source, bk_path)
-            print(f"    💾 Backup: transfer_{date_tag}.xlsx")
-
-    if transfer_wb:
-        try:
-            ws = transfer_wb.worksheets[0]
-            for row in ws.iter_rows(min_row=2, values_only=False):
-                code = safe_val(row, 7)  # Mã hàng
-                tl_raw = row[14].value    # TL
-                if code and tl_raw:
-                    try:
-                        tl_val = float(tl_raw)
-                        if tl_val > 0:
-                            transfer_tl[code] = tl_val
-                    except (ValueError, TypeError):
-                        pass
-
-                ngay = str(row[0].value or "").strip()
-                if ngay == date_str:
-                    raw_kho = str(row[2].value or "").strip()
-                    # Split KHO ABA QUÁ CẢNH into ĐÔNG/MÁT by barcode classification
-                    if raw_kho == "KHO ABA QUÁ CẢNH" and barcode_type:
-                        classification = barcode_type.get(code)
-                        if classification in ('ĐÔNG', 'MÁT'):
-                            report_kho = classification
+                        # Keep the larger file (more complete data)
+                        if os.path.getsize(local_path) > os.path.getsize(transfer_source):
+                            transfer_wb.close()
+                            transfer_wb = candidate
+                            transfer_source = local_path
                         else:
-                            # Unclassified barcode — track for warning
-                            if not hasattr(read_pt_data, '_unclassified'):
-                                read_pt_data._unclassified = {}
-                            if code not in read_pt_data._unclassified:
-                                product_name = str(row[8].value or "").strip()
-                                read_pt_data._unclassified[code] = {"name": product_name, "sl": 0}
-                            try:
-                                _sl = float(row[10].value or 0)
-                            except (ValueError, TypeError):
-                                _sl = 0
-                            read_pt_data._unclassified[code]["sl"] += _sl
+                            candidate.close()
+                except Exception:
+                    pass
+
+        print(f"  → Transfer (tag={date_tag})...")
+        if transfer_wb is None:
+            # Fallback: download from Google Drive
+            try:
+                tf_files = _list_drive_folder(TRANSFER_FOLDER_URL)
+                target = None
+                for fid, fname in tf_files:
+                    if date_tag in fname and fname.startswith("transfer"):
+                        target = (fid, fname)
+                        break
+                if target:
+                    print(f"    ↳ Online: {target[1]}")
+                    transfer_wb = _download_drive_file(target[0], backup_name=f"transfer_{date_tag}.xlsx")
+                    transfer_source = "online"
+                else:
+                    warnings.append(f"Transfer: file transfer_{date_tag} not found")
+            except Exception as e:
+                warnings.append(f"Transfer: error — {e}")
+        else:
+            print(f"    ↳ Local: {os.path.basename(transfer_source)} ({os.path.getsize(transfer_source):,} bytes)")
+            # Also save to backup dir if source is not already there
+            bk_path = os.path.join(BACKUP_DIR, f"transfer_{date_tag}.xlsx")
+            if transfer_source != bk_path:
+                import shutil
+                shutil.copy2(transfer_source, bk_path)
+                print(f"    💾 Backup: transfer_{date_tag}.xlsx")
+
+        if transfer_wb:
+            try:
+                ws = transfer_wb.worksheets[0]
+                for row in ws.iter_rows(min_row=2, values_only=False):
+                    code = safe_val(row, 7)  # Mã hàng
+                    tl_raw = row[14].value    # TL
+                    if code and tl_raw:
+                        try:
+                            tl_val = float(tl_raw)
+                            if tl_val > 0:
+                                transfer_tl[code] = tl_val
+                        except (ValueError, TypeError):
+                            pass
+
+                    ngay = str(row[0].value or "").strip()
+                    if ngay == date_str:
+                        raw_kho = str(row[2].value or "").strip()
+                        # Split KHO ABA QUÁ CẢNH into ĐÔNG/MÁT by barcode classification
+                        if raw_kho == "KHO ABA QUÁ CẢNH" and barcode_type:
+                            classification = barcode_type.get(code)
+                            if classification in ('ĐÔNG', 'MÁT'):
+                                report_kho = classification
+                            else:
+                                # Unclassified barcode — track for warning
+                                if not hasattr(read_pt_data, '_unclassified'):
+                                    read_pt_data._unclassified = {}
+                                if code not in read_pt_data._unclassified:
+                                    product_name = str(row[8].value or "").strip()
+                                    read_pt_data._unclassified[code] = {"name": product_name, "sl": 0}
+                                try:
+                                    _sl = float(row[10].value or 0)
+                                except (ValueError, TypeError):
+                                    _sl = 0
+                                read_pt_data._unclassified[code]["sl"] += _sl
+                                continue
+                        elif raw_kho == "KHO ABA QUÁ CẢNH":
+                            continue  # No classification available, skip
+                        else:
+                            report_kho = KHO_MAP.get(raw_kho)
+                        if not report_kho:
                             continue
-                    elif raw_kho == "KHO ABA QUÁ CẢNH":
-                        continue  # No classification available, skip
-                    else:
-                        report_kho = KHO_MAP.get(raw_kho)
-                    if not report_kho:
-                        continue
-                    sl_raw = row[10].value
-                    try:
-                        sl = float(sl_raw) if sl_raw else 0
-                    except (ValueError, TypeError):
-                        sl = 0
-                    try:
-                        tl = float(tl_raw) if tl_raw else 0
-                    except (ValueError, TypeError):
-                        tl = 0
-                    if tl == 0 and code:
-                        tl = master_tl.get(code, 0)
-                    if tl == 0:
-                        continue
-                    rows.append({"kho": report_kho, "sl": sl, "tl_grams": tl})
-            transfer_wb.close()
-            print(f"    {len(rows)} PT rows from transfer")
-        except Exception as e:
-            warnings.append(f"Transfer: error reading — {e}")
-    else:
-        warnings.append(f"Transfer: no file available for {date_tag}")
+                        sl_raw = row[10].value
+                        try:
+                            sl = float(sl_raw) if sl_raw else 0
+                        except (ValueError, TypeError):
+                            sl = 0
+                        try:
+                            tl = float(tl_raw) if tl_raw else 0
+                        except (ValueError, TypeError):
+                            tl = 0
+                        if tl == 0 and code:
+                            tl = master_tl.get(code, 0)
+                        if tl == 0:
+                            continue
+                        rows.append({"kho": report_kho, "sl": sl, "tl_grams": tl})
+                transfer_wb.close()
+                print(f"    {len(rows)} PT rows from transfer")
+            except Exception as e:
+                warnings.append(f"Transfer: error reading — {e}")
+        else:
+            warnings.append(f"Transfer: no file available for {date_tag}")
 
     # 2. Yeu cau — try local Google Drive sync first, then online
     print(f"  → Yeu cau (tag={date_tag})...")
