@@ -1,5 +1,5 @@
 {
-  "_updated": "21/05/2026 14:58",
+  "_updated": "21/05/2026 15:12",
   "krc": {
     "benchmark_tons": 65,
     "alert_threshold_pct": 5,
@@ -133,29 +133,36 @@
       {
         "date": "19/05/2026",
         "iso": "2026-05-19",
-        "tons": 30.68,
+        "tons": 30.71,
         "pct_capacity": 47.2,
         "exceeds_alert": false
       },
       {
         "date": "20/05/2026",
         "iso": "2026-05-20",
-        "tons": 24.7,
-        "pct_capacity": 38.0,
+        "tons": 24.96,
+        "pct_capacity": 38.4,
         "exceeds_alert": false
       },
       {
         "date": "21/05/2026",
         "iso": "2026-05-21",
-        "tons": 27.84,
-        "pct_capacity": 42.8,
+        "tons": 28.26,
+        "pct_capacity": 43.5,
         "exceeds_alert": false
       },
       {
         "date": "22/05/2026",
         "iso": "2026-05-22",
-        "tons": 10.1,
-        "pct_capacity": 15.5,
+        "tons": 10.01,
+        "pct_capacity": 15.4,
+        "exceeds_alert": false
+      },
+      {
+        "date": "23/05/2026",
+        "iso": "2026-05-23",
+        "tons": 0.0,
+        "pct_capacity": 0.0,
         "exceeds_alert": false
       }
     ]
