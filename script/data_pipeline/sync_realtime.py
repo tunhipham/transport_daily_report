@@ -167,7 +167,7 @@ def run_generate(date_str, send_telegram=False):
         cmd.append("--send")
     flag_str = " --send" if send_telegram else ""
     print(f"  🏃 generate.py --date {date_str} --source auto{flag_str}")
-    result = subprocess.run(cmd, cwd=BASE, capture_output=True, text=True, timeout=900)
+    result = subprocess.run(cmd, cwd=BASE, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=1800)
     if result.returncode != 0:
         print(f"  ❌ generate.py failed (exit {result.returncode})")
         if result.stderr:
@@ -181,7 +181,7 @@ def run_deploy(domain="daily"):
     script = os.path.join(BASE, "script", "dashboard", "deploy.py")
     cmd = [sys.executable, script, "--domain", domain]
     print(f"  🚀 deploy.py --domain {domain}")
-    result = subprocess.run(cmd, cwd=BASE, capture_output=True, text=True, timeout=120)
+    result = subprocess.run(cmd, cwd=BASE, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
     if result.returncode != 0:
         print(f"  ❌ deploy.py failed")
         return False

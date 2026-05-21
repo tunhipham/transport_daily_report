@@ -3314,12 +3314,15 @@ def main():
         cap_script = os.path.join(BASE, "script", "domains", "daily", "capacity_forecast.py")
         cap_result = subprocess.run(
             [sys.executable, cap_script], cwd=BASE,
-            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=900
         )
         if cap_result.returncode == 0:
             print(f"  ✅ capacity_forecast.json generated")
         else:
             print(f"  ⚠ capacity_forecast.py exit {cap_result.returncode}")
+            if cap_result.stderr:
+                for line in cap_result.stderr.strip().split("\n")[-5:]:
+                    print(f"    {line}")
 
         # Generate PNGs from capacity_forecast.json
         cap_json_path = os.path.join(BASE, "docs", "data", "capacity_forecast.json")

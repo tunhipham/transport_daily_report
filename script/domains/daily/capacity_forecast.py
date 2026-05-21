@@ -430,27 +430,131 @@ def read_ksl_items():
 # ══════════════════════════════════════════════════════════════
 # EXPORT
 # ══════════════════════════════════════════════════════════════
+def _load_existing_forecast():
+    """Load existing capacity_forecast.json to use as cache."""
+    out_path = os.path.join(DOCS_DATA, "capacity_forecast.json")
+    if not os.path.exists(out_path):
+        return None
+    try:
+        with open(out_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def read_ksl_items_incremental(existing_dates=None):
+    """Read only NEW yeu_cau files (dates not in existing_dates).
+    
+    existing_dates: set of date strings already in cache (e.g. {'09/03/2026', ...})
+    If None, reads ALL files (full rebuild).
+    """
+    daily_items = defaultdict(float)
+    
+    if not os.path.isdir(YECAU_LOCAL):
+        print(f"  ⚠ Yeu cau directory not found: {YECAU_LOCAL}")
+        return daily_items
+    
+    yc_files = [f for f in os.listdir(YECAU_LOCAL)
+                if f.endswith('.xlsx') and not f.startswith('~') and 'yeu_cau_chuyen_hang_thuong' in f]
+    
+    if not yc_files:
+        print("  ⚠ No yeu_cau files found")
+        return daily_items
+    
+    # Filter to only new files
+    new_files = []
+    skipped = 0
+    for fname in yc_files:
+        date_match = re.search(r'(\d{8})', fname)
+        if not date_match:
+            continue
+        date_tag = date_match.group(1)
+        try:
+            dt = datetime.strptime(date_tag, "%d%m%Y")
+            date_str = dt.strftime("%d/%m/%Y")
+        except ValueError:
+            continue
+        
+        if existing_dates and date_str in existing_dates:
+            skipped += 1
+            continue
+        new_files.append((fname, date_str))
+    
+    if skipped > 0:
+        print(f"  ⏭ Skipped {skipped} cached dates")
+    
+    if not new_files:
+        print(f"  ✅ No new yeu_cau files to process")
+        return daily_items
+    
+    print(f"  → Reading {len(new_files)} NEW yeu_cau file(s)...")
+    
+    for fname, date_str in new_files:
+        filepath = os.path.join(YECAU_LOCAL, fname)
+        try:
+            wb = load_workbook(filepath, read_only=True, data_only=True)
+            
+            ws = None
+            for name in wb.sheetnames:
+                if name == 'KF':
+                    ws = wb[name]
+                    break
+            if not ws:
+                ws = wb.worksheets[0]
+            
+            col_idx = {}
+            for row in ws.iter_rows(min_row=1, max_row=1, values_only=False):
+                for i, cell in enumerate(row):
+                    if cell.value:
+                        col_idx[str(cell.value).strip()] = i
+            
+            i_sl = col_idx.get('Số lượng cần chuyển', 17)
+            
+            file_total = 0
+            for row in ws.iter_rows(min_row=2, values_only=False):
+                try:
+                    sl_val = row[i_sl].value if i_sl < len(row) else None
+                    if sl_val is not None:
+                        sl = float(sl_val)
+                        if sl > 0:
+                            file_total += sl
+                except (ValueError, TypeError, IndexError):
+                    pass
+            
+            daily_items[date_str] += file_total
+            wb.close()
+            print(f"    ↳ {fname}: {file_total:,.0f} items → {date_str}")
+        except Exception as e:
+            print(f"    ⚠ Error reading {fname}: {e}")
+    
+    return daily_items
+
+
 def export_capacity_forecast():
-    """Generate and export capacity_forecast.json."""
+    """Generate and export capacity_forecast.json (incremental mode).
+    
+    - KRC: always re-queries DB (fast ~1s), filter to current month
+    - KSL: loads cached data from existing JSON, only reads NEW yeu_cau files
+    """
     print(f"\n{'='*60}")
     print(f"  📊 Capacity Forecast Export — {NOW_STR}")
     print(f"{'='*60}\n")
     
-    # Load master weights
-    master_weights = load_master_weights()
+    # Load existing cache
+    existing = _load_existing_forecast()
     
-    # Read data
+    # ── KRC: always re-query DB (fast) ──
     print("\n📦 KRC — PO Data:")
+    master_weights = load_master_weights()
     krc_data = read_po_krc(master_weights)
     
-    print("\n📦 KSL — Yeu Cau Data:")
-    ksl_data = read_ksl_items()
+    # KRC: filter to current month onwards
+    krc_cutoff = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    all_dates_krc = sorted(
+        [d for d in krc_data.keys() if datetime.strptime(d, "%d/%m/%Y") >= krc_cutoff],
+        key=lambda d: datetime.strptime(d, "%d/%m/%Y")
+    )
     
-    # Build sorted date lists
-    all_dates_krc = sorted(krc_data.keys(), key=lambda d: datetime.strptime(d, "%d/%m/%Y"))
-    all_dates_ksl = sorted(ksl_data.keys(), key=lambda d: datetime.strptime(d, "%d/%m/%Y"))
-    
-    # Build output arrays
     krc_forecast = []
     for d in all_dates_krc:
         tons = round(krc_data[d], 2)
@@ -465,9 +569,29 @@ def export_capacity_forecast():
             "exceeds_alert": exceeds,
         })
     
+    # ── KSL: incremental — only read new files ──
+    print("\n📦 KSL — Yeu Cau Data:")
+    
+    # Build set of dates already in cache
+    cached_ksl = {}
+    if existing and "ksl" in existing and existing["ksl"].get("data"):
+        for entry in existing["ksl"]["data"]:
+            cached_ksl[entry["date"]] = entry["items"]
+        print(f"  📎 Cache: {len(cached_ksl)} dates loaded from existing JSON")
+    
+    # Read only new files
+    new_ksl = read_ksl_items_incremental(existing_dates=set(cached_ksl.keys()) if cached_ksl else None)
+    
+    # Merge: cached + new (new overwrites if same date)
+    merged_ksl = dict(cached_ksl)
+    for d, items in new_ksl.items():
+        merged_ksl[d] = items
+    
+    all_dates_ksl = sorted(merged_ksl.keys(), key=lambda d: datetime.strptime(d, "%d/%m/%Y"))
+    
     ksl_forecast = []
     for d in all_dates_ksl:
-        items = round(ksl_data[d])
+        items = round(merged_ksl[d])
         exceeds = items > KSL_BENCHMARK_ITEMS * (1 + ALERT_THRESHOLD_PCT / 100)
         pct_of_cap = round(items / KSL_BENCHMARK_ITEMS * 100, 1) if KSL_BENCHMARK_ITEMS > 0 else 0
         dt = datetime.strptime(d, "%d/%m/%Y")
@@ -498,12 +622,13 @@ def export_capacity_forecast():
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     
+    new_count = len(new_ksl)
+    cached_count = len(cached_ksl)
     print(f"\n{'='*60}")
     print(f"  ✅ Output: {out_path}")
     print(f"     KRC: {len(krc_forecast)} days, benchmark {KRC_BENCHMARK_TONS}T")
-    print(f"     KSL: {len(ksl_forecast)} days, benchmark {KSL_BENCHMARK_ITEMS:,} items")
+    print(f"     KSL: {len(ksl_forecast)} days ({cached_count} cached + {new_count} new), benchmark {KSL_BENCHMARK_ITEMS:,} items")
     
-    # Alert summary
     krc_alerts = sum(1 for d in krc_forecast if d["exceeds_alert"])
     ksl_alerts = sum(1 for d in ksl_forecast if d["exceeds_alert"])
     if krc_alerts or ksl_alerts:
@@ -515,3 +640,4 @@ def export_capacity_forecast():
 
 if __name__ == "__main__":
     export_capacity_forecast()
+
