@@ -61,6 +61,12 @@ config/telegram.json → "weekly_plan"    # chat_id + group_chat_id
 - Kiểm kê ngày D → ghi "Kiểm kê" vào **D** và **D-1** unconditionally
 - Không cần check shift/schedule/delivery day
 
+### NSO Store Naming
+- `name_full` **PHẢI** có prefix `KFM_HCM_*** - ` (hoặc `KFM_BDU_*** - `) trước địa chỉ
+- Format chuẩn: `{name_system} - {địa chỉ}` (VD: `KFM_HCM_TDU - 299 Liên Phường`)
+- `name_system` lấy từ field `name_system` cùng entry
+- Áp dụng cho cả `nso_stores.json` và `master_schedule.json`
+
 ### NSO Châm Hàng
 - D→D+3: 4 ngày châm hàng liên tiếp
 - D+4: skip nếu trùng delivery day (giảm tải), không skip nếu đã có gap tự nhiên
