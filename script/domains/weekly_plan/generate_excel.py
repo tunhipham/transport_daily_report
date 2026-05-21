@@ -266,11 +266,21 @@ def apply_nso(stores, week_dates):
         delivery_weekdays = parse_schedule_days(schedule_ve)
 
         # Find or inject store
+        # ⚠ CRITICAL: existing stores are LOCKED. Only match if code AND name match.
+        # NSO with wrong code must NOT override existing store data.
         matched = None
         if code:  # Only match by code if code exists — None must not match None
             for s in stores:
                 if s["code"] == code:
-                    matched = s
+                    # Verify name similarity before matching
+                    nso_name = nso.get("name_full", "") or nso.get("name_mail", "")
+                    existing_name = s.get("name", "")
+                    # Quick word overlap check — at least 50% words must match
+                    nso_words = set(nso_name.lower().split())
+                    exist_words = set(existing_name.lower().split())
+                    common = nso_words & exist_words
+                    if len(common) >= max(1, min(len(nso_words), len(exist_words)) * 0.5):
+                        matched = s
                     break
 
         is_injected = False
