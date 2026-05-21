@@ -190,7 +190,12 @@ def generate_and_send():
     # Step 1: Generate Excel
     try:
         from script.domains.weekly_plan.generate_excel import main as gen_main
-        gen_main(week_num)
+        old_argv = sys.argv
+        sys.argv = [sys.argv[0], "--week", str(week_num)]
+        try:
+            gen_main()
+        finally:
+            sys.argv = old_argv
     except Exception as e:
         error_msg = f"❌ <b>Weekly Plan W{week_num} — Generate Failed</b>\n\nError: {e}"
         send_telegram_text(error_msg, bot_token, chat_id)
