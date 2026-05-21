@@ -78,9 +78,10 @@ def fetch_dsst_from_sheet():
         print(f"  ⚠ 'DSST' sheet not found, using '{ws.title}'")
 
     # Fixed column mapping:
-    # A(0)=STT, B(1)=branch_name, C(2)=branch_id(code), H(7)=Version_ST_FMCG
+    # A(0)=STT, B(1)=branch_name, C(2)=branch_id(code), F(5)=NKT, H(7)=Version_ST_FMCG
     COL_BRANCH = 1   # branch_name
     COL_CODE = 2      # branch_id = store code
+    COL_NKT = 5       # NKT = Ngày Khai Trương
     COL_VERSION = 7   # Version_ST_FMCG
 
     lookup = {}
@@ -90,6 +91,7 @@ def fetch_dsst_from_sheet():
         
         code_val = row[COL_CODE] if COL_CODE < len(row) else None
         branch_val = row[COL_BRANCH] if COL_BRANCH < len(row) else None
+        nkt_val = row[COL_NKT] if COL_NKT < len(row) else None
         version_val = row[COL_VERSION] if COL_VERSION < len(row) else None
 
         if not code_val or not branch_val:
@@ -112,10 +114,19 @@ def fetch_dsst_from_sheet():
         except (ValueError, TypeError):
             version = None
 
+        # NKT (opening date)
+        nkt = ""
+        if nkt_val:
+            if isinstance(nkt_val, datetime):
+                nkt = nkt_val.strftime("%d/%m/%Y")
+            elif isinstance(nkt_val, str):
+                nkt = nkt_val.strip()
+
         lookup[code] = {
             "name_system": name_system,
             "name_full": name_full,
             "branch_name": branch_name,
+            "nkt": nkt,
             "version": version,
         }
 

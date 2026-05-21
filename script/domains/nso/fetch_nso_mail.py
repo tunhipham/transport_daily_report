@@ -613,6 +613,8 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
             added.append(ms["name_mail"][:25])
 
     # Enrich with DSST data — match against name_full (NOT branch_name prefix)
+    # ⚠ CRITICAL: Check NKT (ngày khai trương) when matching — same code/name
+    # but different NKT means different store. Must NOT map wrong code.
     for store in current_stores:
         code = store.get("code")
 
@@ -630,6 +632,8 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
         if not mail_name:
             continue
 
+        store_opening = store.get("opening_date", "")
+
         best_match = None
         best_lcs = 0
 
@@ -640,6 +644,12 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
                 continue
             if not _is_name_match(mail_name, dsst_name):
                 continue
+
+            # ⚠ NKT cross-check: if DSST has NKT, it must match store opening_date
+            dsst_nkt = dsst_info.get("nkt", "")
+            if dsst_nkt and store_opening and dsst_nkt != store_opening:
+                continue  # Different opening date → different store, skip
+
             lcs = _lcs_length(mail_name, dsst_name)
             if lcs > best_lcs:
                 best_lcs = lcs

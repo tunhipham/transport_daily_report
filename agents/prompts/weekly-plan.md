@@ -67,6 +67,24 @@ config/telegram.json → "weekly_plan"    # chat_id + group_chat_id
 - `name_system` lấy từ field `name_system` cùng entry
 - Áp dụng cho cả `nso_stores.json` và `master_schedule.json`
 
+### NSO Code Mapping (DSST)
+- Khi map code từ DSST: **PHẢI check NKT** (ngày khai trương) khớp → mới được map
+- Store cũ đã có trong `master_schedule.json` → **LOCKED**, NSO không được ghi đè
+- NSO store mới trùng code với store cũ → phải tạo entry riêng, KHÔNG fallback lên store cũ
+- Wrong-code protection: `fetch_nso_mail.py` NKT cross-check (upstream)
+
+### NSO Store Lifecycle
+```
+nso_stores.json → [2 tuần châm hàng] → master_schedule.json (LOCK)
+```
+1. **Khai trương** (D): Store vào `nso_stores.json` + `nso_schedule.json`
+2. **D→D+3**: Châm hàng (4 ngày liên tiếp)
+3. **D+4→D+13**: NSO window — giao hàng theo `nso_schedule.json`, skip D+4 nếu trùng delivery day
+4. **Sau 2 tuần (D+14)**: Move store sang `master_schedule.json` → **DATA LOCKED**
+   - Tên, shift, lịch về: **không được chỉnh** trừ khi user input
+   - Chỉ kiểm kê mới được ghi đè lịch (D và D-1)
+   - `master_schedule.json` = ONE SOURCE OF TRUTH
+
 ### NSO Châm Hàng
 - D→D+3: 4 ngày châm hàng liên tiếp
 - D+4: skip nếu trùng delivery day (giảm tải), không skip nếu đã có gap tự nhiên
