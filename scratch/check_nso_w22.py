@@ -1,28 +1,19 @@
-import json
-from datetime import datetime, date
+import openpyxl, sys, io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-with open("data/nso/nso_stores.json", encoding="utf-8") as f:
-    stores = json.load(f)
+wb = openpyxl.load_workbook(r"output\artifacts\weekly transport plan\Lịch đi hàng ST W22.xlsx", data_only=True)
+ws = wb.active
 
-with open("data/nso/nso_schedule.json", encoding="utf-8") as f:
-    sched = json.load(f)
+nso_check = ["A159", "A199", "A181", "A193", "A154", "A196", "A203", "A107"]
+print("=== Excel W22 - NSO stores ===")
+found = []
+for row in ws.iter_rows(min_row=2, values_only=False):
+    code = row[0].value  # col A = code
+    if code and str(code).strip() in nso_check:
+        vals = [str(c.value or "").strip() for c in row[:10]]
+        found.append(str(code).strip())
+        print(f"  {vals}")
 
-with open("data/master_schedule.json", encoding="utf-8") as f:
-    ms = json.load(f)
-ms_codes = {s["code"] for s in ms["stores"]}
-
-print("=== All NSO opening May-Jun 2026 ===")
-for s in stores:
-    od = s.get("opening_date", "")
-    code = s.get("code", "?")
-    if not od:
-        continue
-    try:
-        d = datetime.strptime(od, "%d/%m/%Y").date()
-        if date(2026, 5, 20) <= d <= date(2026, 6, 10):
-            w = d.isocalendar()[1]
-            in_sched = "sched:YES" if code in sched else "sched:NO"
-            in_ms = "ms:YES" if code in ms_codes else "ms:NO"
-            print(f"  {code:6s} | W{w} | {od} | {in_sched} | {in_ms} | {s['name_full']}")
-    except:
-        pass
+print(f"\nFound: {found}")
+missing = [c for c in nso_check if c not in found]
+print(f"Missing: {missing}")
