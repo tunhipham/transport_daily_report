@@ -213,11 +213,8 @@ def main():
         log_sync("SKIP", "outside window")
         return
 
-    # Lock check
-    if is_locked(today) and not args.force:
-        print(f"  🔒 Today is LOCKED. Use --force to override.")
-        log_sync("SKIP", "locked")
-        return
+    # Lock = Telegram already sent (does NOT block dashboard updates)
+    locked = is_locked(today)
 
     # ── Process lock (prevent concurrent writes) ──
     lock_file = os.path.join(BASE, "output", "state", ".sync.lock")
@@ -246,6 +243,7 @@ def main():
 
 def _run_sync(args, today, today_iso, hour):
     now = datetime.now()
+    locked = is_locked(today)
 
     # ── Step 1: Lightweight DB fingerprint check (~1s total) ──
     state = load_state()
@@ -302,10 +300,11 @@ def _run_sync(args, today, today_iso, hour):
         log_sync("DRY", f"changed")
         return
 
-    # ── Step 2: Full generate (send Telegram at cutoff 8AM+) ──
-    is_cutoff = hour >= 8
+    # ── Step 2: Full generate ──
+    # Send Telegram only at cutoff (8AM+) and only ONCE (not locked yet)
+    send_tg = hour >= 8 and not locked and not args.dry_run
     t1 = time.time()
-    ok = run_generate(today, send_telegram=is_cutoff)
+    ok = run_generate(today, send_telegram=send_tg)
     gen_time = time.time() - t1
 
     if not ok:
@@ -351,11 +350,11 @@ def _run_sync(args, today, today_iso, hour):
         log_sync("FAIL", f"deploy failed")
         sys.exit(1)
 
-    # Lock at 8AM cutoff
-    if args.lock or (hour >= 8 and not is_locked(today)):
+    # Lock Telegram at 8AM cutoff (dashboard keeps updating)
+    if args.lock or (send_tg and not locked):
         lock_path = create_lock(today, new_hash)
-        print(f"  🔒 Locked: {lock_path}")
-        log_sync("LOCK", today)
+        print(f"  🔒 Telegram locked (dashboard still updates)")
+        log_sync("LOCK", f"{today} (telegram only)")
 
     print(f"\n{'='*60}")
     print(f"  ✅ Done — {datetime.now().strftime('%H:%M:%S')}")

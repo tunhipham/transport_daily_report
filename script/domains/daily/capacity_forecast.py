@@ -132,49 +132,126 @@ def extract_weight_from_name(product_name):
 
 
 # ══════════════════════════════════════════════════════════════
-# KRC — Read PO files → total tons/day
+# KRC — Read PO from ClickHouse DB (primary source)
 # ══════════════════════════════════════════════════════════════
-def read_po_krc(master_weights):
-    """Read all PO KRC files and aggregate total weight (tons) per delivery date.
-    
+def read_po_krc_from_db():
+    """Read PO KRC capacity from ClickHouse: kf_purchase_order + kf_receipt_items.
+
+    Query joins PO headers (for delivery_date + branch filter) with
+    receipt line items (for qty * net_weight).
+
+    delivery_date is stored as epoch seconds in kf_purchase_order.
+
+    Returns: dict of {date_str: total_tons}, or None on failure.
+    """
+    KRC_BRANCH_ID = '5fdc170ebd89c10006f15b7c'
+
+    try:
+        from data_pipeline.config import load_clickhouse_config
+        import requests
+
+        cfg = load_clickhouse_config()
+        params = {
+            'user': cfg['user'],
+            'password': cfg['password'],
+            'database': cfg['database'],
+        }
+
+        # Query: aggregate tons per delivery_date for KRC branch
+        sql = f"""
+        SELECT
+            formatDateTime(fromUnixTimestamp(toUInt32(po.delivery_date)), '%d/%m/%Y') AS del_date,
+            SUM(ri.qty * ri.net_weight / 1000) / 1000 AS tons
+        FROM kf_receipt_items ri
+        INNER JOIN kf_purchase_order po
+            ON ri.purchase_code = po.code
+            AND po.branch_id = '{KRC_BRANCH_ID}'
+            AND po.deleted = 0
+        WHERE ri.branch_id = '{KRC_BRANCH_ID}'
+        GROUP BY del_date
+        HAVING tons > 0
+        ORDER BY del_date
+        FORMAT JSONEachRow
+        """
+
+        print("  → Querying PO KRC from ClickHouse DB...")
+        r = requests.get(
+            cfg['base_url'],
+            params={**params, 'query': sql},
+            timeout=60,
+        )
+        r.raise_for_status()
+
+        daily_tons = defaultdict(float)
+        row_count = 0
+        for line in r.text.strip().split('\n'):
+            if not line.strip():
+                continue
+            obj = json.loads(line)
+            date_str = obj.get('del_date', '')
+            tons = float(obj.get('tons', 0))
+            if date_str and tons > 0:
+                daily_tons[date_str] = round(tons, 4)
+                row_count += 1
+
+        print(f"    ✅ DB: {row_count} dates with data")
+        if row_count > 0:
+            # Show latest 5
+            sorted_dates = sorted(daily_tons.keys(),
+                                  key=lambda d: datetime.strptime(d, "%d/%m/%Y"))
+            for d in sorted_dates[-5:]:
+                print(f"       {d}: {daily_tons[d]:.2f} tấn")
+        return daily_tons
+
+    except Exception as e:
+        print(f"    ⚠ DB query failed: {e}")
+        return None
+
+
+# ══════════════════════════════════════════════════════════════
+# KRC — Read PO files (fallback) → total tons/day
+# ══════════════════════════════════════════════════════════════
+def read_po_krc_local(master_weights):
+    """Read all PO KRC local Excel files and aggregate total weight (tons) per delivery date.
+
     Columns:
       Col P (15): Ngày giao hàng dự kiến (delivery date)
       Col S (18): Barcode
       Col T (19): Tên sản phẩm (product name)
       Col V (21): Số lượng (quantity)
       Col W (22): Khối lượng (kg)
-    
+
     Returns: dict of {date_str: total_tons}
     """
     daily_tons = defaultdict(float)
     missing_barcodes = {}
-    
+
     if not os.path.isdir(PO_KRC_DIR):
         print(f"  ⚠ PO KRC directory not found: {PO_KRC_DIR}")
         return daily_tons
-    
-    po_files = [f for f in os.listdir(PO_KRC_DIR) 
+
+    po_files = [f for f in os.listdir(PO_KRC_DIR)
                 if f.endswith('.xlsx') and not f.startswith('~') and f != 'desktop.ini']
-    
+
     if not po_files:
         print("  ⚠ No PO KRC files found")
         return daily_tons
-    
-    print(f"  → Reading {len(po_files)} PO KRC file(s)...")
-    
+
+    print(f"  → Reading {len(po_files)} PO KRC file(s) [local fallback]...")
+
     for fname in po_files:
         filepath = os.path.join(PO_KRC_DIR, fname)
         try:
             wb = load_workbook(filepath, read_only=True, data_only=True)
             ws = wb.worksheets[0]
             file_count = 0
-            
+
             for row in ws.iter_rows(min_row=2, values_only=False):
                 # Col P (15): delivery date
                 date_val = row[15].value
                 if not date_val:
                     continue
-                
+
                 # Parse date
                 if isinstance(date_val, datetime):
                     delivery_date = date_val.strftime("%d/%m/%Y")
@@ -190,7 +267,7 @@ def read_po_krc(master_weights):
                             continue
                 else:
                     continue
-                
+
                 barcode = str(row[18].value or "").strip()  # Col S
                 product_name = str(row[19].value or "").strip()  # Col T
                 quantity = 0
@@ -198,13 +275,13 @@ def read_po_krc(master_weights):
                     quantity = float(row[21].value or 0)  # Col V
                 except (ValueError, TypeError):
                     pass
-                
+
                 weight_kg = 0
                 try:
                     weight_kg = float(row[22].value or 0)  # Col W
                 except (ValueError, TypeError):
                     pass
-                
+
                 if weight_kg > 0:
                     # Weight already in KG, convert to tons
                     daily_tons[delivery_date] += weight_kg / 1000
@@ -225,18 +302,48 @@ def read_po_krc(master_weights):
                     elif barcode:
                         if barcode not in missing_barcodes:
                             missing_barcodes[barcode] = product_name
-            
+
             wb.close()
             print(f"    ↳ {fname}: {file_count} rows processed")
         except Exception as e:
             print(f"    ⚠ Error reading {fname}: {e}")
-    
+
     if missing_barcodes:
         print(f"    ⚠ {len(missing_barcodes)} barcodes missing weight data (top 5):")
         for i, (bc, name) in enumerate(list(missing_barcodes.items())[:5]):
             print(f"      {bc}: {name[:40]}")
-    
+
     return daily_tons
+
+
+def read_po_krc(master_weights):
+    """Read PO KRC data: DB first, fallback to local files, merge results.
+
+    Priority: DB dates override local file dates.
+    Local file dates fill gaps where DB has no data.
+    """
+    db_data = read_po_krc_from_db()
+    local_data = read_po_krc_local(master_weights)
+
+    if db_data is not None and len(db_data) > 0:
+        # Merge: DB takes priority, local fills gaps
+        merged = dict(db_data)
+        local_only = 0
+        for d, tons in local_data.items():
+            if d not in merged:
+                merged[d] = tons
+                local_only += 1
+        if local_only > 0:
+            print(f"    📎 Merged: {len(db_data)} DB dates + {local_only} local-only dates = {len(merged)} total")
+        else:
+            print(f"    📎 Using DB data ({len(db_data)} dates), local had no extra dates")
+        return merged
+    elif local_data:
+        print(f"    📎 Using local files only ({len(local_data)} dates)")
+        return local_data
+    else:
+        print(f"    ⚠ No KRC data from DB or local files")
+        return defaultdict(float)
 
 
 # ══════════════════════════════════════════════════════════════
