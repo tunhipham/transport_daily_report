@@ -137,12 +137,15 @@ def extract_weight_from_name(product_name):
 def read_po_krc_from_db(master_weights=None):
     """Read PO KRC capacity from ClickHouse: kf_purchase_order + kf_receipt_items.
 
-    Fetches row-level data and applies weight fallback (same as transfer PT):
+    Flow (matching manual PO file):
+      PO_Headers.delivery_date_vendor_confirm → filter date
+      PO_Headers.code → join receipt_items.purchase_code
+      receipt_items.product_barcode + po_qty → map to master data weight → tonnage
+
+    Weight fallback (same as transfer PT):
       1. ri.net_weight from receipt_items (grams)
       2. master_weights lookup by barcode (Google Sheets master data)
       3. extract_weight_from_name() from product name
-
-    delivery_date is stored as epoch seconds in kf_purchase_order.
 
     Returns: dict of {date_str: total_tons}, or None on failure.
     """
@@ -161,13 +164,14 @@ def read_po_krc_from_db(master_weights=None):
             'database': cfg['database'],
         }
 
-        # Row-level query: fetch barcode, product_name, qty, net_weight per item
+        # Row-level query: use delivery_date_vendor_confirm (NCC confirmed date)
+        # and po_qty (ordered quantity) — matching the manual PO file flow
         sql = f"""
         SELECT
-            formatDateTime(fromUnixTimestamp(toUInt32(po.delivery_date)), '%d/%m/%Y') AS del_date,
+            formatDateTime(fromUnixTimestamp(toUInt32(po.delivery_date_vendor_confirm)), '%d/%m/%Y') AS del_date,
             ri.product_barcode AS barcode,
             ri.product_name AS product_name,
-            ri.qty AS qty,
+            ri.po_qty AS qty,
             ri.net_weight AS net_weight
         FROM kf_receipt_items ri
         INNER JOIN kf_purchase_order po
