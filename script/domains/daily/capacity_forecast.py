@@ -174,7 +174,7 @@ def read_po_krc_from_db(master_weights=None):
             ON ri.purchase_code = po.code
             AND po.branch_id = '{KRC_BRANCH_ID}'
             AND po.deleted = 0
-            AND po.status = 5
+            AND po.status IN (5, 7)
         WHERE ri.branch_id = '{KRC_BRANCH_ID}'
         FORMAT JSONEachRow
         """
