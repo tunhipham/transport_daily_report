@@ -166,19 +166,21 @@ def read_po_krc_from_db(master_weights=None):
 
         # Row-level query: use delivery_date_vendor_confirm (NCC confirmed date)
         # and po_qty (ordered quantity) — matching the manual PO file flow
+        # GROUP BY purchase_code + barcode to deduplicate (PO ảo / cutoff dupes)
         sql = f"""
         SELECT
             formatDateTime(fromUnixTimestamp(toUInt32(po.delivery_date_vendor_confirm)), '%d/%m/%Y') AS del_date,
             ri.product_barcode AS barcode,
-            ri.product_name AS product_name,
-            ri.po_qty AS qty,
-            ri.net_weight AS net_weight
+            any(ri.product_name) AS product_name,
+            any(ri.po_qty) AS qty,
+            any(ri.net_weight) AS net_weight
         FROM kf_receipt_items ri
         INNER JOIN kf_purchase_order po
             ON ri.purchase_code = po.code
             AND po.branch_id = '{KRC_BRANCH_ID}'
             AND po.deleted = 0
         WHERE ri.branch_id = '{KRC_BRANCH_ID}'
+        GROUP BY del_date, ri.purchase_code, ri.product_barcode
         FORMAT JSONEachRow
         """
 
