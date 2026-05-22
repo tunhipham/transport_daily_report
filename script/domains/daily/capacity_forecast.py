@@ -134,17 +134,21 @@ def extract_weight_from_name(product_name):
 # ══════════════════════════════════════════════════════════════
 # KRC — Read PO from ClickHouse DB (primary source)
 # ══════════════════════════════════════════════════════════════
-def read_po_krc_from_db():
+def read_po_krc_from_db(master_weights=None):
     """Read PO KRC capacity from ClickHouse: kf_purchase_order + kf_receipt_items.
 
-    Query joins PO headers (for delivery_date + branch filter) with
-    receipt line items (for qty * net_weight).
+    Fetches row-level data and applies weight fallback (same as transfer PT):
+      1. ri.net_weight from receipt_items (grams)
+      2. master_weights lookup by barcode (Google Sheets master data)
+      3. extract_weight_from_name() from product name
 
     delivery_date is stored as epoch seconds in kf_purchase_order.
 
     Returns: dict of {date_str: total_tons}, or None on failure.
     """
     KRC_BRANCH_ID = '5fdc170ebd89c10006f15b7c'
+    if master_weights is None:
+        master_weights = {}
 
     try:
         from data_pipeline.config import load_clickhouse_config
@@ -157,46 +161,91 @@ def read_po_krc_from_db():
             'database': cfg['database'],
         }
 
-        # Query: aggregate tons per delivery_date for KRC branch
+        # Row-level query: fetch barcode, product_name, qty, net_weight per item
         sql = f"""
         SELECT
             formatDateTime(fromUnixTimestamp(toUInt32(po.delivery_date)), '%d/%m/%Y') AS del_date,
-            SUM(ri.qty * ri.net_weight / 1000) / 1000 AS tons
+            ri.product_barcode AS barcode,
+            ri.product_name AS product_name,
+            ri.qty AS qty,
+            ri.net_weight AS net_weight
         FROM kf_receipt_items ri
         INNER JOIN kf_purchase_order po
             ON ri.purchase_code = po.code
             AND po.branch_id = '{KRC_BRANCH_ID}'
             AND po.deleted = 0
         WHERE ri.branch_id = '{KRC_BRANCH_ID}'
-        GROUP BY del_date
-        HAVING tons > 0
-        ORDER BY del_date
         FORMAT JSONEachRow
         """
 
-        print("  → Querying PO KRC from ClickHouse DB...")
+        print("  → Querying PO KRC from ClickHouse DB (row-level)...")
         r = requests.get(
             cfg['base_url'],
             params={**params, 'query': sql},
-            timeout=60,
+            timeout=120,
         )
         r.raise_for_status()
 
         daily_tons = defaultdict(float)
-        row_count = 0
+        total_rows = 0
+        rows_with_weight = 0
+        rows_master_fallback = 0
+        rows_name_fallback = 0
+        rows_no_weight = 0
+
         for line in r.text.strip().split('\n'):
             if not line.strip():
                 continue
             obj = json.loads(line)
-            date_str = obj.get('del_date', '')
-            tons = float(obj.get('tons', 0))
-            if date_str and tons > 0:
-                daily_tons[date_str] = round(tons, 4)
-                row_count += 1
+            total_rows += 1
 
-        print(f"    ✅ DB: {row_count} dates with data")
-        if row_count > 0:
-            # Show latest 5
+            date_str = obj.get('del_date', '')
+            if not date_str:
+                continue
+
+            qty = float(obj.get('qty', 0))
+            if qty <= 0:
+                continue
+
+            net_weight = float(obj.get('net_weight', 0))  # grams
+            barcode = str(obj.get('barcode', '')).strip()
+            product_name = str(obj.get('product_name', '')).strip()
+
+            # Weight resolution: same priority as transfer (PT)
+            if net_weight > 0:
+                # Source 1: net_weight from receipt_items (grams)
+                weight_grams = net_weight
+                rows_with_weight += 1
+            elif barcode and barcode in master_weights:
+                # Source 2: master data (Google Sheets Col Z — grams)
+                weight_grams = master_weights[barcode]
+                rows_master_fallback += 1
+            else:
+                # Source 3: extract from product name
+                weight_kg = extract_weight_from_name(product_name)
+                if weight_kg > 0:
+                    weight_grams = weight_kg * 1000  # convert KG → grams
+                    rows_name_fallback += 1
+                else:
+                    rows_no_weight += 1
+                    continue
+
+            # qty * weight_grams / 1,000,000 = tons
+            tons = qty * weight_grams / 1_000_000
+            daily_tons[date_str] += tons
+
+        # Round results
+        for d in daily_tons:
+            daily_tons[d] = round(daily_tons[d], 4)
+
+        # Remove zero-ton dates
+        daily_tons = defaultdict(float, {d: t for d, t in daily_tons.items() if t > 0})
+
+        date_count = len(daily_tons)
+        print(f"    ✅ DB: {date_count} dates, {total_rows:,} rows processed")
+        print(f"       Weight sources: DB={rows_with_weight:,}, master={rows_master_fallback:,}, "
+              f"name={rows_name_fallback:,}, skip={rows_no_weight:,}")
+        if date_count > 0:
             sorted_dates = sorted(daily_tons.keys(),
                                   key=lambda d: datetime.strptime(d, "%d/%m/%Y"))
             for d in sorted_dates[-5:]:
@@ -322,7 +371,7 @@ def read_po_krc(master_weights):
     Priority: DB dates override local file dates.
     Local file dates fill gaps where DB has no data.
     """
-    db_data = read_po_krc_from_db()
+    db_data = read_po_krc_from_db(master_weights)
     local_data = read_po_krc_local(master_weights)
 
     if db_data is not None and len(db_data) > 0:
