@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Deep dive 8/5 and 15/5 — after dedup, why still high?"""
+"""Check EXACT data for 08/05 and 15/05 using same query as capacity_forecast"""
 import sys, os, json, re
 from collections import defaultdict
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -35,103 +35,79 @@ for row in ws.iter_rows(min_row=2, values_only=False):
             if w > 0: master[bc] = w
         except: pass
 wb.close()
+print(f"Master: {len(master)} barcodes\n")
 
-def resolve_wt(nw, bc, pname):
-    if nw > 0: return nw, 'db'
-    if bc and bc in master: return master[bc], 'master'
-    text = (pname or '').upper()
-    for pat, mult in [(r'(\d+(?:[.,]\d+)?)\s*KG\b',1000),(r'(\d+(?:[.,]\d+)?)\s*G\b',1)]:
-        m = re.findall(pat, text)
-        if m:
-            try: return float(m[-1].replace(",","."))*mult, 'name'
-            except: pass
-    return 0, 'none'
+def resolve_wt(nw, bc):
+    if nw > 0: return nw
+    if bc and bc in master: return master[bc]
+    return 0
 
-for target_date in ['2026-05-08', '2026-05-15']:
-    d_label = target_date[8:10] + '/05'
-    
-    # Deduped query (same as capacity_forecast.py)
+# Use EXACT same query as capacity_forecast.py but filter for target dates
+for target in ['08/05/2026', '15/05/2026']:
     r1 = q(f"""
     SELECT
+        formatDateTime(fromUnixTimestamp(toUInt32(po.delivery_date_vendor_confirm)), '%d/%m/%Y') AS del_date,
         ri.purchase_code AS po_code,
         ri.product_barcode AS barcode,
         any(ri.product_name) AS pname,
-        any(ri.po_qty) AS qty,
-        any(ri.net_weight) AS net_weight,
-        any(ri.qty) AS actual_qty,
-        any(ri.qty_receipt) AS qty_receipt
+        any(ri.po_qty) AS po_qty,
+        any(ri.qty) AS qty,
+        any(ri.qty_receipt) AS qty_rcpt,
+        any(ri.net_weight) AS net_weight
     FROM kf_receipt_items ri
     INNER JOIN kf_purchase_order po
         ON ri.purchase_code = po.code
         AND po.branch_id = '{KRC}' AND po.deleted = 0
     WHERE ri.branch_id = '{KRC}'
-      AND toDate(fromUnixTimestamp(toUInt32(po.delivery_date_vendor_confirm))) = '{target_date}'
-    GROUP BY ri.purchase_code, ri.product_barcode
+    GROUP BY del_date, ri.purchase_code, ri.product_barcode
+    HAVING del_date = '{target}'
     FORMAT JSONEachRow
     """)
     
-    items = []
     total_tons = 0
+    items = []
+    po_set = set()
+    
     for line in r1.split('\n'):
         if not line.strip(): continue
         obj = json.loads(line)
+        po_qty = float(obj.get('po_qty', 0))
         qty = float(obj.get('qty', 0))
+        qr = float(obj.get('qty_rcpt', 0))
         nw = float(obj.get('net_weight', 0))
-        bc = str(obj.get('barcode','')).strip()
-        pname = str(obj.get('pname','')).strip()
-        po = obj.get('po_code','')
-        aq = float(obj.get('actual_qty', 0))
-        qr = float(obj.get('qty_receipt', 0))
+        bc = str(obj.get('barcode', '')).strip()
+        pname = str(obj.get('pname', '')).strip()
+        po = obj.get('po_code', '')
+        po_set.add(po)
         
-        wg, src = resolve_wt(nw, bc, pname)
-        if qty <= 0 or wg <= 0: continue
-        tons = qty * wg / 1_000_000
+        wg = resolve_wt(nw, bc)
+        if po_qty <= 0 or wg <= 0: continue
+        tons = po_qty * wg / 1_000_000
         total_tons += tons
-        items.append({'po': po, 'bc': bc, 'pname': pname, 'qty': qty, 'aq': aq, 'qr': qr, 'wg': wg, 'tons': tons, 'src': src})
+        items.append({'po': po, 'bc': bc, 'pname': pname, 'po_qty': po_qty, 'qty': qty, 'qr': qr, 'wg': wg, 'tons': tons})
     
-    print(f"\n{'='*70}")
-    print(f"  {d_label}: {total_tons:.2f} tấn ({len(items)} items after dedup)")
+    print(f"{'='*70}")
+    print(f"  {target}: {total_tons:.2f}T | {len(items)} items | {len(po_set)} POs")
     print(f"{'='*70}")
     
-    # Compare po_qty vs qty vs qty_receipt
-    total_po_qty_tons = sum(i['tons'] for i in items)
-    total_actual_tons = sum(i['aq'] * i['wg'] / 1_000_000 for i in items if i['wg'] > 0)
-    total_receipt_tons = sum(i['qr'] * i['wg'] / 1_000_000 for i in items if i['wg'] > 0)
+    # Check for same barcode appearing in multiple POs
+    bc_po = defaultdict(list)
+    for i in items:
+        bc_po[i['bc']].append(i)
+    multi_po_bc = {bc: rows for bc, rows in bc_po.items() if len(rows) > 1}
+    multi_tons = sum(sum(r['tons'] for r in rows[1:]) for rows in multi_po_bc.values())
     
-    print(f"\n  Tonnage by qty field:")
-    print(f"    po_qty (đặt):     {total_po_qty_tons:.2f}T")
-    print(f"    qty (actual):     {total_actual_tons:.2f}T")
-    print(f"    qty_receipt (nhận): {total_receipt_tons:.2f}T")
+    print(f"\n  Barcodes in multiple POs: {len(multi_po_bc)} ({multi_tons:.2f}T from extra POs)")
     
-    # Count POs
-    po_set = set(i['po'] for i in items)
-    print(f"\n  POs: {len(po_set)}")
-    
-    # Top items
-    items.sort(key=lambda x: x['tons'], reverse=True)
-    print(f"\n  Top 10 items:")
-    print(f"  {'Barcode':<15} {'po_qty':>7} {'qty':>7} {'rcpt':>7} {'Wt(g)':>7} {'Tons':>7} {'Src':>6}  Product")
-    for i in items[:10]:
-        print(f"  {i['bc']:<15} {i['qty']:>7.0f} {i['aq']:>7.0f} {i['qr']:>7.0f} {i['wg']:>7.0f} {i['tons']:>7.3f} {i['src']:>6}  {i['pname'][:35]}")
-    
-    # Check: items where po_qty >> qty (over-ordered?)
-    over = [i for i in items if i['qty'] > i['aq'] * 1.5 and i['aq'] > 0]
-    if over:
-        over_tons = sum(i['tons'] - i['aq']*i['wg']/1_000_000 for i in over)
-        print(f"\n  ⚠ po_qty >> qty items: {len(over)} (extra {over_tons:.2f}T)")
-        for i in over[:5]:
-            diff = i['qty'] - i['aq']
-            print(f"    {i['bc']} po_qty={i['qty']:.0f} vs qty={i['aq']:.0f} Δ={diff:.0f} (+{diff*i['wg']/1_000_000:.3f}T)")
+    # Top barcodes appearing in multiple POs
+    multi_sorted = sorted(multi_po_bc.items(), key=lambda x: sum(r['tons'] for r in x[1]), reverse=True)
+    print(f"\n  Top 10 multi-PO barcodes:")
+    for bc, rows in multi_sorted[:10]:
+        total = sum(r['tons'] for r in rows)
+        pos = set(r['po'] for r in rows)
+        print(f"    {bc:<15} {len(pos)} POs  {total:.3f}T  {rows[0]['pname'][:35]}")
+        for r2 in rows:
+            print(f"      {r2['po']} po_qty={r2['po_qty']:.0f} qty={r2['qty']:.0f} rcpt={r2['qr']:.0f}")
+    print()
 
-    # Also: compare with local file if available
-    local_file = rf'G:\My Drive\DOCS\DAILY\po_krc\po_krc_{target_date[8:10]}052026.xlsx'
-    if os.path.exists(local_file):
-        wb2 = lw(local_file, read_only=True, data_only=True)
-        ws2 = wb2.worksheets[0]
-        local_rows = sum(1 for _ in ws2.iter_rows(min_row=2)) 
-        wb2.close()
-        print(f"\n  📎 Local file exists: {os.path.basename(local_file)} ({local_rows} rows)")
-    else:
-        print(f"\n  📎 No local file for {d_label}")
-
-print("\nDone.")
+print("Done.")

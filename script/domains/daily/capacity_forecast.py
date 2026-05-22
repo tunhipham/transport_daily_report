@@ -179,6 +179,7 @@ def read_po_krc_from_db(master_weights=None):
             ON ri.purchase_code = po.code
             AND po.branch_id = '{KRC_BRANCH_ID}'
             AND po.deleted = 0
+            AND NOT has(po.list_sub_status, 11)
         WHERE ri.branch_id = '{KRC_BRANCH_ID}'
         GROUP BY del_date, ri.purchase_code, ri.product_barcode
         FORMAT JSONEachRow
