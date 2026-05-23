@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-16"?>
-<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+<Task version="1.3" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
     <Description>Sync Realtime — Auto generate + deploy dashboard mỗi 15 phút (06:00-22:00)</Description>
   </RegistrationInfo>
   <Triggers>
+    <!-- Primary: every 15 min, 06:00-22:00 daily -->
     <CalendarTrigger>
       <StartBoundary>2026-05-20T06:00:00</StartBoundary>
       <Enabled>true</Enabled>
@@ -16,6 +17,23 @@
         <DaysInterval>1</DaysInterval>
       </ScheduleByDay>
     </CalendarTrigger>
+    <!-- Backup 1: resume from sleep / Modern Standby -->
+    <SessionStateChangeTrigger>
+      <Enabled>true</Enabled>
+      <Delay>PT1M</Delay>
+      <StateChange>ConsoleConnect</StateChange>
+    </SessionStateChangeTrigger>
+    <!-- Backup 2: unlock screen -->
+    <SessionStateChangeTrigger>
+      <Enabled>true</Enabled>
+      <Delay>PT1M</Delay>
+      <StateChange>SessionUnlock</StateChange>
+    </SessionStateChangeTrigger>
+    <!-- Backup 3: logon (reboot) -->
+    <LogonTrigger>
+      <Enabled>true</Enabled>
+      <Delay>PT2M</Delay>
+    </LogonTrigger>
   </Triggers>
   <Principals>
     <Principal id="Author">
@@ -29,14 +47,14 @@
     <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
     <AllowHardTerminate>true</AllowHardTerminate>
     <StartWhenAvailable>true</StartWhenAvailable>
-    <RunOnlyIfNetworkAvailable>true</RunOnlyIfNetworkAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
     <AllowStartOnDemand>true</AllowStartOnDemand>
     <Enabled>true</Enabled>
     <ExecutionTimeLimit>PT10M</ExecutionTimeLimit>
   </Settings>
   <Actions Context="Author">
     <Exec>
-      <Command>python</Command>
+      <Command>C:\Users\admin\AppData\Local\Programs\Python\Python312\python.exe</Command>
       <Arguments>script\data_pipeline\sync_realtime.py</Arguments>
       <WorkingDirectory>G:\My Drive\DOCS\transport_daily_report</WorkingDirectory>
     </Exec>
