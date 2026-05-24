@@ -28,7 +28,7 @@ REM ==========================================
 echo  [Step 1] Kiem tra status cac kho...
 echo  -------------------------------------------
 echo.
-python -u script\compose\auto_compose.py --status
+python -u script\compose\auto_compose.py --status < nul
 echo.
 echo  -------------------------------------------
 echo.

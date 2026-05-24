@@ -28,7 +28,7 @@ REM ==========================================
 echo  [Step 1] Kiem tra status cac kho...
 echo  -------------------------------------------
 echo.
-python -u script\compose\auto_compose.py --status
+python -u script\compose\auto_compose.py --status < nul
 echo.
 echo  -------------------------------------------
 echo.
@@ -67,7 +67,7 @@ REM ==========================================
 echo  [Step 2b] Fetch data ngay %DELIVERY_DATE%...
 echo  -------------------------------------------
 echo.
-python -u script\domains\performance\fetch_weekly.py --week %WEEK_NUM% --date %DELIVERY_DATE%
+python -u script\domains\performance\fetch_weekly.py --week %WEEK_NUM% --date %DELIVERY_DATE% < nul
 if errorlevel 1 (
     echo  [ERROR] Fetch data that bai!
     pause
@@ -122,15 +122,15 @@ echo.
 echo  BAT DAU COMPOSE + INJECT: %ARG%
 echo.
 
-if /i "%ARG%"=="KRC"       call :DO_KHO KRC & goto :DONE
-if /i "%ARG%"=="DONG MAT"  call :DO_KHO "DONG MAT" & goto :DONE
-if /i "%ARG%"=="DONGMAT"   call :DO_KHO "DONG MAT" & goto :DONE
-if /i "%ARG%"=="DM"        call :DO_KHO "DONG MAT" & goto :DONE
-if /i "%ARG%"=="THIT CA"   call :DO_KHO "THIT CA" & goto :DONE
-if /i "%ARG%"=="THITCA"    call :DO_KHO "THIT CA" & goto :DONE
-if /i "%ARG%"=="TC"        call :DO_KHO "THIT CA" & goto :DONE
-if /i "%ARG%"=="DRY_SANG"  call :DO_KHO_DRY sang & goto :DONE
-if /i "%ARG%"=="DRY_TOI"   call :DO_KHO_DRY toi & goto :DONE
+if /i "%ARG%"=="KRC"       ( call :DO_KHO KRC & goto :DONE )
+if /i "%ARG%"=="DONG MAT"  ( call :DO_KHO "DONG MAT" & goto :DONE )
+if /i "%ARG%"=="DONGMAT"   ( call :DO_KHO "DONG MAT" & goto :DONE )
+if /i "%ARG%"=="DM"        ( call :DO_KHO "DONG MAT" & goto :DONE )
+if /i "%ARG%"=="THIT CA"   ( call :DO_KHO "THIT CA" & goto :DONE )
+if /i "%ARG%"=="THITCA"    ( call :DO_KHO "THIT CA" & goto :DONE )
+if /i "%ARG%"=="TC"        ( call :DO_KHO "THIT CA" & goto :DONE )
+if /i "%ARG%"=="DRY_SANG"  ( call :DO_KHO_DRY sang & goto :DONE )
+if /i "%ARG%"=="DRY_TOI"   ( call :DO_KHO_DRY toi & goto :DONE )
 if /i "%ARG%"=="ALL"        goto :ALL_KHO
 
 echo  [ERROR] Khong biet kho: %ARG%
