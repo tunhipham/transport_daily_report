@@ -498,6 +498,11 @@ def save_kho_output(kho, session):
 def inject_to_haraworks(kho, session, date_str, week):
     """Call inject_haraworks.py to paste composed mail into Haraworks CKEditor.
     Returns (success, output_text). NEVER sends — only creates draft.
+    
+    Uses Popen instead of subprocess.run to properly handle timeout.
+    inject_haraworks.py spawns browser child processes (Edge/msedgedriver)
+    that inherit pipe handles — subprocess.run(timeout=) can hang forever
+    because pipes stay open even after the main process is killed.
     """
     cmd = [
         sys.executable,
@@ -511,24 +516,45 @@ def inject_to_haraworks(kho, session, date_str, week):
 
     log.info(f"  🌐 Injecting into Haraworks...")
     try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True,
-            encoding='utf-8', errors='replace', timeout=240
+        # CREATE_NEW_PROCESS_GROUP so we can kill the entire tree on timeout
+        creation_flags = 0
+        if sys.platform == 'win32':
+            creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP
+        proc = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            text=True, encoding='utf-8', errors='replace',
+            creationflags=creation_flags,
         )
-        if result.returncode == 0:
+        try:
+            stdout, stderr = proc.communicate(timeout=240)
+        except subprocess.TimeoutExpired:
+            log.error(f"  ❌ Haraworks injection timed out (4 min), killing process tree...")
+            # Kill entire process tree (browser + driver + python)
+            if sys.platform == 'win32':
+                try:
+                    subprocess.run(
+                        ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                        capture_output=True, timeout=10
+                    )
+                except Exception:
+                    pass
+            proc.kill()
+            try:
+                proc.communicate(timeout=5)
+            except Exception:
+                pass
+            return False, "timeout"
+
+        if proc.returncode == 0:
             log.info(f"  ✅ Haraworks injection successful (draft saved)")
-            return True, result.stdout
+            return True, stdout
         else:
-            log.warning(f"  ⚠ Haraworks injection failed (code {result.returncode})")
-            if result.stdout:
-                # Show last few lines of output for debugging
-                last_lines = result.stdout.strip().split('\n')[-5:]
+            log.warning(f"  ⚠ Haraworks injection failed (code {proc.returncode})")
+            if stdout:
+                last_lines = stdout.strip().split('\n')[-5:]
                 for l in last_lines:
                     log.warning(f"     {l}")
-            return False, result.stdout
-    except subprocess.TimeoutExpired:
-        log.error(f"  ❌ Haraworks injection timed out (4 min)")
-        return False, "timeout"
+            return False, stdout
     except Exception as e:
         log.error(f"  ❌ Haraworks injection error: {e}")
         return False, str(e)
