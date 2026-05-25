@@ -1,10 +1,10 @@
 {
-  "_updated": "25/05/2026 09:37",
+  "_updated": "25/05/2026 09:49",
   "stats": {
-    "total": 61,
+    "total": 60,
     "upcoming": 33,
     "opening": 3,
-    "reschedule": 6
+    "reschedule": 5
   },
   "stores": [
     {
@@ -214,14 +214,6 @@
       "iso_date": "2026-06-26",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
-    },
-    {
-      "name": "KFM_HCM_TDU - 86C-88 Đường 339 - Phước Long B",
-      "code": "A107",
-      "opening_date": "29/05/2026",
-      "iso_date": "2026-05-29",
-      "status_type": "reschedule",
-      "status_text": "Đôn lịch: 26/06/2026 → 29/05/2026"
     },
     {
       "name": "KFM_HCM_GVA - 173 Lê Văn Chí - Thủ Đức",
@@ -654,12 +646,6 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-05-29",
-      "label": "A107 - 86C-88 Đường 339 - Phước Long B",
-      "code": "A107",
-      "type": "reschedule"
-    },
-    {
       "date": "2026-07-03",
       "label": "LVT - 173 Lê Văn Chí - Thủ Đức",
       "code": "LVT",
@@ -977,63 +963,6 @@
         }
       ],
       "total_ksl": 12100,
-      "total_dm": 400
-    },
-    {
-      "label": "KFM_HCM_TDU - 86C-88 Đường 339 - Phước Long B (A107)",
-      "version": 2000,
-      "days": [
-        {
-          "date": "29/05/2026",
-          "day_name": "Thứ 6",
-          "label": "D",
-          "ksl": 3500,
-          "dm": 0
-        },
-        {
-          "date": "30/05/2026",
-          "day_name": "Thứ 7",
-          "label": "D+1",
-          "ksl": 5500,
-          "dm": 400
-        },
-        {
-          "date": "31/05/2026",
-          "day_name": "CN",
-          "label": "D+2",
-          "ksl": 3500,
-          "dm": 0
-        },
-        {
-          "date": "01/06/2026",
-          "day_name": "Thứ 2",
-          "label": "D+3",
-          "ksl": 3000,
-          "dm": 0
-        },
-        {
-          "date": "02/06/2026",
-          "day_name": "Thứ 3",
-          "label": "D+4",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "03/06/2026",
-          "day_name": "Thứ 4",
-          "label": "D+5",
-          "ksl": "Daily",
-          "dm": 0
-        },
-        {
-          "date": "04/06/2026",
-          "day_name": "Thứ 5",
-          "label": "D+6",
-          "ksl": "Daily",
-          "dm": 0
-        }
-      ],
-      "total_ksl": 15500,
       "total_dm": 400
     },
     {
