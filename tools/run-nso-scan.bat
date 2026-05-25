@@ -6,7 +6,12 @@ chcp 65001 >nul
 REM Add Python to PATH
 set "PATH=%PATH%;%LOCALAPPDATA%\Programs\Python\Python312;%LOCALAPPDATA%\Programs\Python\Python311;%LOCALAPPDATA%\Programs\Python\Python310"
 
-cd /d "G:\My Drive\DOCS\transport_daily_report"
+REM Navigate to project root (bat is in tools\, so go up one level)
+pushd "%~dp0.." || (
+    echo  [ERROR] Cannot navigate to project root!
+    pause
+    exit /b 1
+)
 
 REM Check Python
 python --version >nul 2>&1
@@ -93,6 +98,9 @@ echo  1. PASTE noi dung mail NSO vao Notepad
 echo  2. LUU lai - Ctrl+S
 echo  3. DONG Notepad de tiep tuc
 echo.
+
+REM Ensure directory exists
+if not exist "data\nso" mkdir "data\nso"
 
 REM Create empty UTF-8 file
 powershell -nologo -noprofile -command "[System.IO.File]::WriteAllText((Join-Path '%CD%' '%MAIL_FILE%'), '', [System.Text.UTF8Encoding]::new($true))"
