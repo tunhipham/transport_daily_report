@@ -1,10 +1,10 @@
 {
-  "_updated": "25/05/2026 09:27",
+  "_updated": "25/05/2026 09:37",
   "stats": {
     "total": 61,
-    "upcoming": 34,
+    "upcoming": 33,
     "opening": 3,
-    "reschedule": 5
+    "reschedule": 6
   },
   "stores": [
     {
@@ -402,10 +402,10 @@
     {
       "name": "KFM_HCM_BTA - 99 Đường Số 7",
       "code": "DS7",
-      "opening_date": "19/06/2026",
-      "iso_date": "2026-06-19",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
+      "opening_date": "10/07/2026",
+      "iso_date": "2026-07-10",
+      "status_type": "reschedule",
+      "status_text": "Dời lịch: 19/06/2026 → 10/07/2026"
     },
     {
       "name": "146 Đường D1, Phường Phước Long B, Quận 9 - A212 ★",
@@ -792,10 +792,10 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-06-19",
+      "date": "2026-07-10",
       "label": "DS7 - Số 81/2 Đường số 59, Phường 14, Quận Gò Vấp - A205",
       "code": "DS7",
-      "type": "upcoming"
+      "type": "reschedule"
     },
     {
       "date": "2026-06-20",

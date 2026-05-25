@@ -327,6 +327,8 @@ class NsoMaster:
                 added.append(ms["name_mail"][:25])
 
         # Enrich with DSST — match against name_full (NOT branch_name prefix)
+        # ⚠ CRITICAL: Check NKT (ngày khai trương) cross-match — same name/address
+        # but different NKT means different store. Must NOT map old code to new store.
         from fetch_nso_mail import _normalize, _lcs_length, _is_name_match
         for store in self.stores:
             code = store.get("code")
@@ -343,17 +345,28 @@ class NsoMaster:
             mail_name = _normalize(store.get("name_mail") or store.get("name_full") or "")
             if not mail_name:
                 continue
+
+            store_opening = store.get("opening_date", "")
             best_match, best_lcs = None, 0
+
             for dsst_code, dsst_info in dsst_lookup.items():
                 dsst_name = _normalize(dsst_info.get("name_full") or "")
                 if not dsst_name:
                     continue
                 if not _is_name_match(mail_name, dsst_name):
                     continue
+
+                # ⚠ NKT cross-check: if DSST has NKT, it must match store opening_date
+                # Same address but different NKT → different store (old vs new), skip
+                dsst_nkt = dsst_info.get("nkt", "")
+                if dsst_nkt and store_opening and dsst_nkt != store_opening:
+                    continue
+
                 lcs = _lcs_length(mail_name, dsst_name)
                 if lcs > best_lcs:
                     best_lcs = lcs
                     best_match = (dsst_code, dsst_info)
+
             if best_match:
                 dsst_code, dsst_info = best_match
                 old_code = store.get("code")

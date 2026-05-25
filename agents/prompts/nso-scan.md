@@ -28,8 +28,11 @@ Prioritize store data correctness.
 - Clean: strip URLs, "- Mới bổ sung", "- dời..."
 
 ## Merge
-- Stores có code → giữ nguyên, chỉ fill missing (name_system, version)
+- Stores có code → **LOCKED** — giữ nguyên, chỉ fill missing (name_system, version)
 - Stores chưa có code → DSST match: LCS(`name_full`) ≥10 chars VÀ ≥70% shorter name
+- **NKT cross-check**: khi match DSST, NKT (ngày khai trương) từ DSST **PHẢI** khớp `opening_date` store → mới map code
+  - Cùng địa chỉ nhưng NKT khác → store **KHÁC** (cũ vs mới), KHÔNG map code cũ
+  - VD: DSST A107 có NKT 01/03/2026, store mới có opening 29/05/2026 → SKIP, không map A107
 - Tên <10 chars → full containment. Match `name_full` DSST (KHÔNG `branch_name`)
 - Code=None → KHÔNG match None==None trong weekly plan
 - Dedup tự động: `name_mail + opening_date`
