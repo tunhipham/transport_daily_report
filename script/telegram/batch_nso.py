@@ -61,17 +61,33 @@ Hàng DC sẽ châm hàng *4 ngày liên tục* cho NSO.
 
 
 def fetch_sheet():
-    """Download and parse the Google Sheet CSV."""
-    print("📥 Fetching Google Sheet...")
-    r = req.get(SHEET_URL)
-    r.raise_for_status()
-    text = r.content.decode("utf-8")
-    reader = csv.reader(io.StringIO(text))
-    rows = list(reader)
-    header = rows[0]
-    data = rows[1:]
-    print(f"  ✅ {len(data)} rows loaded\n")
-    return header, data
+    """Download and parse the Google Sheet CSV with retry."""
+    import time as _time
+
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+    max_retries = 3
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            print(f"📥 Fetching Google Sheet... (attempt {attempt}/{max_retries})")
+            r = req.get(SHEET_URL, headers=headers, timeout=30)
+            r.raise_for_status()
+            text = r.content.decode("utf-8")
+            reader = csv.reader(io.StringIO(text))
+            rows = list(reader)
+            header = rows[0]
+            data = rows[1:]
+            print(f"  ✅ {len(data)} rows loaded\n")
+            return header, data
+        except (req.exceptions.ConnectionError, req.exceptions.Timeout) as e:
+            print(f"  ⚠️ Attempt {attempt} failed: {e}")
+            if attempt < max_retries:
+                wait = 5 * attempt
+                print(f"  ⏳ Retrying in {wait}s...")
+                _time.sleep(wait)
+            else:
+                print("  ❌ All retries failed!")
+                raise
 
 
 def normalize_phone(phone_str):
