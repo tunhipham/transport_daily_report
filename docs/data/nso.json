@@ -1,9 +1,9 @@
 {
-  "_updated": "25/05/2026 09:59",
+  "_updated": "26/05/2026 09:00",
   "stats": {
     "total": 60,
     "upcoming": 33,
-    "opening": 3,
+    "opening": 1,
     "reschedule": 5
   },
   "stores": [
@@ -180,8 +180,8 @@
       "code": "A159",
       "opening_date": "22/05/2026",
       "iso_date": "2026-05-22",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
+      "status_type": "completed",
+      "status_text": "Đã khai trương (22/05/2026)"
     },
     {
       "name": "KFM_HCM_TDU - SH5-SH6 Homyland Riverside",
@@ -236,8 +236,8 @@
       "code": "A199",
       "opening_date": "22/05/2026",
       "iso_date": "2026-05-22",
-      "status_type": "opening",
-      "status_text": "Đang khai trương"
+      "status_type": "completed",
+      "status_text": "Đã khai trương (22/05/2026)"
     },
     {
       "name": "KFM_HCM_Q12 - 135 Tân Thới Nhất 17",
@@ -384,8 +384,8 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "Shophouse A1.03 Chung cư Sunrise City View - A198",
-      "code": "",
+      "name": "KFM_HCM_Q07 - A1.03 Sunrise City View",
+      "code": "A198",
       "opening_date": "12/06/2026",
       "iso_date": "2026-06-12",
       "status_type": "upcoming",
@@ -619,7 +619,7 @@
       "date": "2026-05-22",
       "label": "A159 - 52 Thoại Ngọc Hầu",
       "code": "A159",
-      "type": "opening"
+      "type": "completed"
     },
     {
       "date": "2026-05-23",
@@ -661,7 +661,7 @@
       "date": "2026-05-22",
       "label": "A199 - Bàu Cát - TBI",
       "code": "A199",
-      "type": "opening"
+      "type": "completed"
     },
     {
       "date": "2026-05-28",
@@ -773,8 +773,8 @@
     },
     {
       "date": "2026-06-12",
-      "label": "None - Shophouse A1.03 Chung cư Sunrise City View - A198",
-      "code": "",
+      "label": "A198 - Shophouse A1.03 Chung cư Sunrise City View - A198",
+      "code": "A198",
       "type": "upcoming"
     },
     {
