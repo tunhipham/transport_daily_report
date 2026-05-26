@@ -344,8 +344,18 @@ def main():
     if single_date_str and os.path.exists(out_path):
         # Merge mode: load existing, remove old rows for fetched date(s),
         # then append fresh rows — preserving data for other dates
-        with open(out_path, "r", encoding="utf-8") as f:
-            existing = json.load(f)
+        try:
+            with open(out_path, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"  ⚠️ Corrupted JSON found: {e}. Resetting file.")
+            existing = {
+                "week": week_num,
+                "start": format_date_vn(start_date),
+                "end": format_date_vn(end_date),
+                "data": {},
+                "warnings": []
+            }
 
         fetched_dates = set()
         current = start_date
