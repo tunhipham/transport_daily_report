@@ -17,6 +17,16 @@ Tạo báo cáo hiệu suất vận chuyển hàng tháng: on-time SLA, route co
 
 ---
 
+## Completion Logic
+
+> **Trip/Destination hoàn thành NẾU:**
+> - `status == "Hoàn thành"` (t_status = 3) **HOẶC**
+> - `arrival_time IS NOT NULL` (tl_arrival có data)
+>
+> → Chuyến đang giao nhưng tài xế đã đến siêu thị = **tính hoàn thành**.
+
+---
+
 ## SLA Windows
 
 | Kho | Start | End |
@@ -39,7 +49,25 @@ thiếu planned_time          → KHÔNG TÍNH
 
 > **KHÔNG tự fill planned_time từ ngày khác** (giờ KH biến động 94-585 phút giữa các ngày).
 
+---
 
+## Data Sources
+
+### Trip Data (2 modes)
+
+| Mode | Source | Speed |
+|---|---|---|
+| **Realtime** (`--realtime`) | ClickHouse `kf_trip_locations_items` | ~5 giây |
+| **Manual** (default) | File Excel `DS chi tiết chuyến xe/*.xlsx` | ~30 giây (cached) |
+
+> THỊT CÁ: luôn từ `thitca_actual` trong `monthly_plan_Txx.json` (file BÁO CÁO GIAO HÀNG).
+
+### Plan Data
+
+| Mode | Source |
+|---|---|
+| **Realtime** | `fetch_plan_incremental.py` — chỉ fetch hôm nay → merge vào cache |
+| **Manual** | `fetch_monthly.py` — full tháng từ Google Sheets |
 
 ---
 
@@ -53,6 +81,16 @@ thiếu planned_time          → KHÔNG TÍNH
 | KSL (DRY) | 6/7 | **Không giao CN** (ngoại lệ: CN khai trương) |
 
 → Ngày thường mà thiếu kho = **warning**.
+
+---
+
+## Automation
+
+| Task | Schedule | Script |
+|---|---|---|
+| `RealtimePerformance` | Mỗi 30 phút | `run-realtime-performance.bat` |
+| `TripReminder` | T2 + T3 08:00 | `trip_reminder.py` → Telegram cá nhân |
+| `TripCutoff` | T3 09:00 | `trip_cutoff_export.py` → Excel + Telegram |
 
 ---
 

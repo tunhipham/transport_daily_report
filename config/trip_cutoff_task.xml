@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
-    <Description>Trip Cutoff — T3 09:00: gửi Telegram nhắc chạy run-trip-cutoff.bat thủ công</Description>
+    <Description>Trip Cutoff — T3 09:00: generate final Excel + send via Telegram</Description>
   </RegistrationInfo>
   <Triggers>
     <CalendarTrigger>
-      <StartBoundary>2026-05-26T09:00:00</StartBoundary>
+      <StartBoundary>2026-05-27T09:00:00</StartBoundary>
       <Enabled>true</Enabled>
       <ScheduleByWeek>
         <WeeksInterval>1</WeeksInterval>
@@ -30,12 +30,12 @@
     <RunOnlyIfNetworkAvailable>true</RunOnlyIfNetworkAvailable>
     <AllowStartOnDemand>true</AllowStartOnDemand>
     <Enabled>true</Enabled>
-    <ExecutionTimeLimit>PT5M</ExecutionTimeLimit>
+    <ExecutionTimeLimit>PT15M</ExecutionTimeLimit>
   </Settings>
   <Actions Context="Author">
     <Exec>
       <Command>python</Command>
-      <Arguments>script\data_pipeline\trip_cutoff.py --notify-only</Arguments>
+      <Arguments>script\telegram\trip_cutoff_export.py</Arguments>
       <WorkingDirectory>G:\My Drive\DOCS\transport_daily_report</WorkingDirectory>
     </Exec>
   </Actions>

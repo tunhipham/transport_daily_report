@@ -10,20 +10,69 @@ description: Generate or modify the monthly performance report (on-time, route, 
 
 Read `agents/prompts/performance-report.md` trước khi chạy.
 
-## Backup (trước khi sửa code)
+## Mode 1: Realtime (Auto — mỗi 30 phút)
+
+Dashboard tự động cập nhật qua Task Scheduler `RealtimePerformance`.
+
+```powershell
+# Chạy thủ công 1 lần
+tools\run-realtime-performance.bat
+
+# Check sync đang chạy không
+tools\check-realtime-status.bat
+```
+
+Luồng realtime:
+1. `fetch_db_realtime.py` — trip data từ ClickHouse (~5 giây)
+2. `fetch_plan_incremental.py` — plan hôm nay từ Google Sheet (~30 giây)
+3. `generate.py --realtime` — tính KPI + xuất HTML/Excel/JSON
+4. `deploy.py --domain performance` — push GitHub Pages
+
+### Task Scheduler
+
+| Task | Schedule | Description |
+|---|---|---|
+| `RealtimePerformance` | Mỗi 30 phút | Fetch DB + deploy dashboard |
+| `TripReminder` | T2 + T3 08:00 | Telegram: trips chưa hoàn thành |
+| `TripCutoff` | T3 09:00 | Xuất Excel final + gửi Telegram |
+
+```powershell
+# Kiểm tra / bật / tắt
+schtasks /query /tn "RealtimePerformance" /v /fo LIST
+schtasks /change /tn "RealtimePerformance" /disable
+schtasks /change /tn "RealtimePerformance" /enable
+```
+
+### Monday Telegram (Dzí trip)
+
+```powershell
+python script\telegram\trip_reminder.py --dry-run    # Preview
+python script\telegram\trip_reminder.py               # Send
+```
+
+### Tuesday Cutoff (9h — xuất Excel)
+
+```powershell
+tools\run-trip-cutoff.bat                              # Chạy manual
+python script\telegram\trip_cutoff_export.py --dry-run # Preview
+```
+
+---
+
+## Mode 2: Manual (Báo cáo tháng — full data)
+
+Backup trước khi sửa code:
 
 ```powershell
 $ts = Get-Date -Format "yyyyMMdd_HHmm"
 Copy-Item "script\domains\performance\generate.py" "backups\generate_performance_report_$ts.py"
 ```
 
-## Run
+### Run
 
 1. Fetch latest monthly plan (chạy cho **mỗi tháng** cần data):
 ```powershell
 python -u script/domains/performance/fetch_monthly.py --month 4 --year 2026
-```
-```powershell
 python -u script/domains/performance/fetch_monthly.py --month 5 --year 2026
 ```
 
@@ -47,9 +96,6 @@ python -u script/domains/performance/generate.py --months 3,4,5 --sla-weeks 14,1
 
 # Auto-detect weeks từ months (sẽ ra nhiều tuần)
 python -u script/domains/performance/generate.py --months 3,4,5 --sla-weeks auto
-
-# Standalone (chạy riêng nếu cần — sẽ load data lại)
-python -u script/domains/performance/export_sla_weekly.py --months 3,4,5 --weeks 14,15,16,17,18
 ```
 
 Output (2 files in `output/artifacts/performance/`):
@@ -65,4 +111,10 @@ Output (2 files in `output/artifacts/performance/`):
 
 ## Troubleshooting
 
-Script lỗi? → Đọc `agents/reference/performance-report-detail.md` trước khi sửa code.
+| Vấn đề | Giải pháp |
+|---------|-----------|
+| Script lỗi | Đọc `agents/reference/performance-report-detail.md` |
+| Realtime sync không chạy | `check-realtime-status.bat` → kiểm tra Task Scheduler |
+| Plan hôm nay thiếu | `fetch_plan_incremental.py` chạy auto, check file KH local |
+| THỊT CÁ data cũ | Re-run `fetch_monthly.py` khi anh update file BÁO CÁO |
+| Trip Telegram sai | `trip_reminder.py --dry-run` → check ClickHouse connection |
