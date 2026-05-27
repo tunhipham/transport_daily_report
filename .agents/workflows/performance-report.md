@@ -23,10 +23,11 @@ tools\check-realtime-status.bat
 ```
 
 Luồng realtime:
-1. `fetch_db_realtime.py` — trip data từ ClickHouse (~5 giây)
-2. `fetch_plan_incremental.py` — plan hôm nay từ Google Sheet (~30 giây)
-3. `generate.py --realtime` — tính KPI + xuất HTML/Excel/JSON
-4. `deploy.py --domain performance` — push GitHub Pages
+1. `push_compose_plan.py` — extract lịch dự kiến từ auto_compose_state.json
+2. `fetch_db_realtime.py` — trip data từ ClickHouse (~5 giây, kèm data thùng/rổ cho tracking)
+3. `fetch_plan_incremental.py` — plan hôm nay từ Google Sheet (~30 giây)
+4. `generate.py --realtime` — tính KPI + xuất HTML/Excel/JSON
+5. `deploy.py --domain performance` — push GitHub Pages
 
 ### Task Scheduler
 
@@ -56,6 +57,13 @@ python script\telegram\trip_reminder.py               # Send
 tools\run-trip-cutoff.bat                              # Chạy manual
 python script\telegram\trip_cutoff_export.py --dry-run # Preview
 ```
+
+### Dashboard Tracking Realtime
+
+Tính năng tracking trên Dashboard được nuôi bằng:
+1. **Planned Times**: Lấy từ mail Compose (D-1) sang `auto_compose_state.json`. `push_compose_plan.py` extract ra `tracking_plan.json`.
+2. **Thực tế + Container**: `fetch_db_realtime.py` query `tli_transfer_qty` và `tli_received_qty` từ ClickHouse, phân rã loại container (Rổ/Tote vs Thùng/Kiện) bằng `barrel_basket_name`.
+3. **Hiển thị**: 6 tabs kho, click tooltip để xem chi tiết thùng/rổ. Thịt cá được fix cứng ẩn lượng giao nhận.
 
 ---
 

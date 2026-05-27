@@ -217,14 +217,16 @@ def _classify_container(barrel_name):
     return "tote"  # Default = rổ/tote
 
 
-def load_tracking_data(date_str_iso):
-    """Load tracking data for a specific date (YYYY-MM-DD) with container breakdown.
+def load_tracking_data(start_date_iso, end_date_iso=None):
+    """Load tracking data for a date range with container breakdown.
     
-    Returns dict keyed by kho → list of row dicts:
-    {trip_id, plate, driver, phone, dest, arrival, kho, sub_kho,
-     tote_t, tote_r, carton_t, carton_r}
+    Returns dict keyed by date_iso → kho → list of row dicts:
+    { "YYYY-MM-DD": { "KHO": [ {trip_id, dest, arrival...} ] } }
     """
     import requests
+
+    if not end_date_iso:
+        end_date_iso = start_date_iso
 
     base_url, params = _load_ch_config()
 
@@ -244,15 +246,16 @@ def load_tracking_data(date_str_iso):
         t.tli_received_qty
     FROM kdb.kf_trip_locations_items t
     LEFT JOIN kdb.kf_branch_location b ON t.tl_branch_id = b.id
-    WHERE toDate(t.t_departure) = '{date_str_iso}'
+    WHERE toDate(t.t_departure) >= '{start_date_iso}' 
+      AND toDate(t.t_departure) <= '{end_date_iso}'
     FORMAT JSONEachRow
     """
 
-    print(f"  → Tracking data for {date_str_iso}...")
+    print(f"  → Tracking data for {start_date_iso} to {end_date_iso}...")
     r = requests.get(base_url, params={**params, "query": sql}, timeout=60)
     r.raise_for_status()
 
-    # Aggregate containers per (trip_id, dest, kho)
+    # Aggregate containers per (date, trip_id, dest, kho)
     agg = {}  # key → {meta, tote_t, tote_r, carton_t, carton_r}
 
     for line in r.text.strip().split("\n"):
@@ -264,10 +267,12 @@ def load_tracking_data(date_str_iso):
         dest = str(obj.get("dest", "")).strip()
         noi_chuyen = str(obj.get("noi_chuyen", "")).strip()
         barrel = str(obj.get("barrel_basket_name", "")).strip()
+        dep_date = _parse_departure_date(obj.get("t_departure", ""))
 
-        if not t_code or not dest:
+        if not t_code or not dest or not dep_date:
             continue
 
+        date_iso = dep_date.strftime("%Y-%m-%d")
         arrival_raw = str(obj.get("tl_arrival", "")).strip()
         arrival_time, _ = _parse_arrival(arrival_raw)
         depart_time = _parse_depart_time(obj.get("t_departure", ""))
@@ -281,13 +286,14 @@ def load_tracking_data(date_str_iso):
         # Use sub_kho as display kho for tracking
         display_kho = sub_kho if sub_kho else kho
 
-        key = (t_code, dest, display_kho)
+        key = (date_iso, t_code, dest, display_kho)
         transfer = int(obj.get("tli_transfer_qty", 0) or 0)
         received = int(obj.get("tli_received_qty", 0) or 0)
         ctype = _classify_container(barrel)
 
         if key not in agg:
             agg[key] = {
+                "date_iso": date_iso,
                 "trip": t_code,
                 "plate": str(obj.get("t_license_number", "")).strip(),
                 "driver": str(obj.get("t_driver_name", "")).strip(),
@@ -306,19 +312,24 @@ def load_tracking_data(date_str_iso):
             agg[key]["carton_t"] += transfer
             agg[key]["carton_r"] += received
 
-    # Group by kho
-    by_kho = defaultdict(list)
+    # Group by date -> kho
+    by_date = defaultdict(lambda: defaultdict(list))
     for row in agg.values():
-        by_kho[row["kho"]].append(row)
+        date_iso = row.pop("date_iso")
+        by_date[date_iso][row["kho"]].append(row)
 
     # Sort each kho by trip → dest
-    for kho in by_kho:
-        by_kho[kho].sort(key=lambda r: (r["trip"], r["dest"]))
+    for d in by_date:
+        for kho in by_date[d]:
+            by_date[d][kho].sort(key=lambda r: (r["trip"], r["dest"]))
 
-    total = sum(len(v) for v in by_kho.values())
-    print(f"    📋 {total} tracking rows across {len(by_kho)} khos")
+    # Convert defaultdict to normal dict for JSON
+    res = {d: dict(khos) for d, khos in by_date.items()}
+    
+    total = sum(len(v) for dates in res.values() for v in dates.values())
+    print(f"    📋 {total} tracking rows across {len(res)} dates")
 
-    return dict(by_kho)
+    return res
 
 
 if __name__ == "__main__":

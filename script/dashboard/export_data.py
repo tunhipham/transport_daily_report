@@ -241,7 +241,8 @@ def export_performance(target_month=None, target_year=None):
 
 
 def _load_tracking_data():
-    """Load tracking data: trip+container from DB + planned times from compose."""
+    """Load tracking data: trip+container from DB + planned times from compose.
+    Fetches data for the entire current month up to today."""
     tracking = {}
     try:
         perf_dir = os.path.join(BASE, "script", "domains", "performance")
@@ -252,52 +253,67 @@ def _load_tracking_data():
         # Push compose plan first
         plan_lookup = push_compose()
 
-        # Load today's tracking from DB
-        today_iso = datetime.now().strftime("%Y-%m-%d")
-        today_vn = datetime.now().strftime("%d/%m/%Y")
-        tracking_by_kho = load_tracking_data(today_iso)
-
-        # Merge planned times into tracking rows
-        plan_today = plan_lookup.get(today_vn, {})
-        for kho, rows in tracking_by_kho.items():
-            for r in rows:
-                # Try exact kho|dest match
-                plan_key = f"{kho}|{r['dest']}"
-                pt = plan_today.get(plan_key, "")
-                # Fallback: ĐÔNG/MÁT → try ĐÔNG MÁT|dest
-                if not pt and kho in ("ĐÔNG", "MÁT"):
-                    pt = plan_today.get(f"ĐÔNG MÁT|{r['dest']}", "")
-                r["plan_time"] = pt
-
-        # Add plan-only rows (stores with plan but no trip yet)
-        for plan_key, gio in plan_today.items():
-            parts = plan_key.split("|", 1)
-            if len(parts) != 2:
-                continue
-            plan_kho, plan_dest = parts
-            # Map to display kho
-            if plan_kho == "ĐÔNG MÁT":
-                # Can't determine sub-kho from plan alone; skip (will show under both ĐÔNG and MÁT)
-                continue
-            # Check if this dest already has a tracking row
-            kho_rows = tracking_by_kho.get(plan_kho, [])
-            existing_dests = {r["dest"] for r in kho_rows}
-            if plan_dest not in existing_dests:
-                kho_rows.append({
-                    "trip": "", "plate": "", "driver": "", "phone": "",
-                    "dest": plan_dest, "kho": plan_kho, "arrival": "",
-                    "tote_t": 0, "tote_r": 0, "carton_t": 0, "carton_r": 0,
-                    "plan_time": gio,
-                })
-                tracking_by_kho[plan_kho] = kho_rows
+        # Load current month tracking from DB
+        today = datetime.now()
+        start_date_iso = today.replace(day=1).strftime("%Y-%m-%d")
+        end_date_iso = today.strftime("%Y-%m-%d")
+        
+        # Returns { "YYYY-MM-DD": { "KHO": [rows...] } }
+        tracking_by_date = load_tracking_data(start_date_iso, end_date_iso)
+        
+        # We need to process all dates from start to end, even if DB has no data but plan does
+        from datetime import timedelta
+        current_dt = today.replace(day=1)
+        
+        tracking_result = {}
+        
+        while current_dt <= today:
+            date_iso = current_dt.strftime("%Y-%m-%d")
+            date_vn = current_dt.strftime("%d/%m/%Y")
+            
+            tracking_by_kho = tracking_by_date.get(date_iso, {})
+            plan_today = plan_lookup.get(date_vn, {})
+            
+            # Merge planned times into tracking rows
+            for kho, rows in tracking_by_kho.items():
+                for r in rows:
+                    plan_key = f"{kho}|{r['dest']}"
+                    pt = plan_today.get(plan_key, "")
+                    if not pt and kho in ("ĐÔNG", "MÁT"):
+                        pt = plan_today.get(f"ĐÔNG MÁT|{r['dest']}", "")
+                    r["plan_time"] = pt
+            
+            # Add plan-only rows
+            for plan_key, gio in plan_today.items():
+                parts = plan_key.split("|", 1)
+                if len(parts) != 2:
+                    continue
+                plan_kho, plan_dest = parts
+                if plan_kho == "ĐÔNG MÁT":
+                    continue
+                
+                kho_rows = tracking_by_kho.get(plan_kho, [])
+                existing_dests = {r["dest"] for r in kho_rows}
+                if plan_dest not in existing_dests:
+                    kho_rows.append({
+                        "trip": "", "plate": "", "driver": "", "phone": "",
+                        "dest": plan_dest, "kho": plan_kho, "arrival": "",
+                        "tote_t": 0, "tote_r": 0, "carton_t": 0, "carton_r": 0,
+                        "plan_time": gio,
+                    })
+                    tracking_by_kho[plan_kho] = kho_rows
+            
+            if tracking_by_kho:
+                tracking_result[date_iso] = tracking_by_kho
+                
+            current_dt += timedelta(days=1)
 
         tracking = {
-            "date": today_vn,
-            "date_iso": today_iso,
-            "khos": tracking_by_kho,
+            "dates": tracking_result,
+            "latest_date": end_date_iso
         }
-        total = sum(len(v) for v in tracking_by_kho.values())
-        print(f"  📋 Tracking: {total} rows for {today_vn}")
+        total = sum(len(v) for dates in tracking_result.values() for v in dates.values())
+        print(f"  📋 Tracking: {total} total rows across {len(tracking_result)} dates")
     except Exception as e:
         print(f"  ⚠ Tracking load error: {e}")
         import traceback; traceback.print_exc()

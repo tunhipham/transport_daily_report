@@ -3158,20 +3158,35 @@
       if (!container) return;
 
       const tracking = window._perfTracking;
-      if (!tracking || !tracking.khos) {
+      if (!tracking || !tracking.dates) {
         container.innerHTML = '<div class="trk-no-data">📡 Chưa có tracking data. Chạy <code>run-realtime-performance.bat</code> để cập nhật.</div>';
         return;
       }
 
-      const dateVn = tracking.date || '';
-      const dateIso = tracking.date_iso || '';
-      const khos = tracking.khos || {};
+      const latestDate = tracking.latest_date || '';
+      if (!window._trkSelectedDate) {
+        window._trkSelectedDate = latestDate;
+      }
+      
+      const selDateIso = window._trkSelectedDate;
+      const datesData = tracking.dates;
+      const khos = datesData[selDateIso] || {};
+      
+      const parts = selDateIso.split('-');
+      const dateVn = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : selDateIso;
+      
+      let dateOpts = '';
+      const availDates = Object.keys(datesData).sort((a,b) => b.localeCompare(a));
+      availDates.forEach(d => {
+        const isLatest = d === latestDate;
+        dateOpts += `<option value="${d}"${d === selDateIso ? ' selected' : ''}>${d}${isLatest ? ' (Mới nhất)' : ''}</option>`;
+      });
 
       // Filter bar
       let html = `<div class="filter-bar" style="margin-bottom:.8rem">
     <label>📅 Ngày tracking:</label>
-    <input type="date" id="trkDatePicker" value="${dateIso}" disabled style="opacity:.7">
-    <span class="filter-info">${dateVn} (realtime)</span>
+    <select id="trkDatePicker" onchange="trkSetDate(this.value)" style="min-width:140px">${dateOpts}</select>
+    <span class="filter-info">${dateVn}</span>
   </div>`;
 
       // Kho tabs
@@ -3206,15 +3221,23 @@
       }
     }
 
+    function trkSetDate(dateIso) {
+      window._trkSelectedDate = dateIso;
+      trkRender();
+    }
+
     function trkRenderKho(kho) {
       const panel = document.getElementById('trkPanel-' + kho);
       if (!panel) return;
       if (panel.dataset.rendered) return; // Don't re-render
 
       const tracking = window._perfTracking;
-      if (!tracking || !tracking.khos) { panel.innerHTML = '<div class="trk-no-data">Không có data</div>'; return; }
+      if (!tracking || !tracking.dates) { panel.innerHTML = '<div class="trk-no-data">Không có data</div>'; return; }
 
-      const rows = tracking.khos[kho] || [];
+      const selDateIso = window._trkSelectedDate || tracking.latest_date;
+      const datesData = tracking.dates;
+      const khos = datesData[selDateIso] || {};
+      const rows = khos[kho] || [];
       const isThitCa = kho === 'THỊT CÁ';
 
       // Summary
