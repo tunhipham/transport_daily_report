@@ -1,0 +1,97 @@
+[
+  {
+    "t_code": "TRIP0000052600",
+    "t_status": 3,
+    "t_license_number": "72A-357.13",
+    "t_driver_name": "Nguyễn Trung Tính",
+    "t_driver_phone": "0937929773",
+    "t_departure": "2026-05-20 01:45:00",
+    "t_from_location_name_abbreviates": [
+      "KRC"
+    ],
+    "tl_branch_id": "68a7f09edf88a80007517cc0",
+    "tl_arrival": "2026-05-20 04:47:06",
+    "tl_received_at": "2026-05-20 05:34:51",
+    "tl_received_by": "68cb6baca2e64a0007390d51",
+    "barrel_basket_name": "KRC Rổ nhựa đen xếp chồng quai đỏ",
+    "tli_transfer_qty": 31,
+    "tli_received_qty": 31,
+    "modified_at": "2026-05-26 14:15:05"
+  },
+  {
+    "t_code": "TRIP0000052600",
+    "t_status": 3,
+    "t_license_number": "72A-357.13",
+    "t_driver_name": "Nguyễn Trung Tính",
+    "t_driver_phone": "0937929773",
+    "t_departure": "2026-05-20 01:45:00",
+    "t_from_location_name_abbreviates": [
+      "KRC"
+    ],
+    "tl_branch_id": "61c02bfa0d72c5000713fba7",
+    "tl_arrival": "2026-05-20 03:02:55",
+    "tl_received_at": "2026-05-20 03:16:20",
+    "tl_received_by": "67c7ea73c787020007b35237",
+    "barrel_basket_name": "KRC Rổ nhựa đen xếp chồng quai đỏ",
+    "tli_transfer_qty": 66,
+    "tli_received_qty": 66,
+    "modified_at": "2026-05-26 14:15:05"
+  },
+  {
+    "t_code": "TRIP0000052600",
+    "t_status": 3,
+    "t_license_number": "72A-357.13",
+    "t_driver_name": "Nguyễn Trung Tính",
+    "t_driver_phone": "0937929773",
+    "t_departure": "2026-05-20 01:45:00",
+    "t_from_location_name_abbreviates": [
+      "KRC"
+    ],
+    "tl_branch_id": "66b2f0fd57c7b800076a22a8",
+    "tl_arrival": "2026-05-20 02:34:41",
+    "tl_received_at": "2026-05-20 02:52:26",
+    "tl_received_by": "681c77542934d100081f95fa",
+    "barrel_basket_name": "KRC Rổ nhựa đen xếp chồng quai đỏ",
+    "tli_transfer_qty": 51,
+    "tli_received_qty": 51,
+    "modified_at": "2026-05-26 14:15:05"
+  },
+  {
+    "t_code": "TRIP0000052600",
+    "t_status": 3,
+    "t_license_number": "72A-357.13",
+    "t_driver_name": "Nguyễn Trung Tính",
+    "t_driver_phone": "0937929773",
+    "t_departure": "2026-05-20 01:45:00",
+    "t_from_location_name_abbreviates": [
+      "KRC"
+    ],
+    "tl_branch_id": "68a7f09edf88a80007517cc0",
+    "tl_arrival": "2026-05-20 04:47:06",
+    "tl_received_at": "2026-05-20 05:34:51",
+    "tl_received_by": "68cb6baca2e64a0007390d51",
+    "barrel_basket_name": "Tote đỏ bánh tươi",
+    "tli_transfer_qty": 1,
+    "tli_received_qty": 1,
+    "modified_at": "2026-05-26 14:15:05"
+  },
+  {
+    "t_code": "TRIP0000052600",
+    "t_status": 3,
+    "t_license_number": "72A-357.13",
+    "t_driver_name": "Nguyễn Trung Tính",
+    "t_driver_phone": "0937929773",
+    "t_departure": "2026-05-20 01:45:00",
+    "t_from_location_name_abbreviates": [
+      "KRC"
+    ],
+    "tl_branch_id": "61c02bfa0d72c5000713fba7",
+    "tl_arrival": "2026-05-20 03:02:55",
+    "tl_received_at": "2026-05-20 03:16:20",
+    "tl_received_by": "67c7ea73c787020007b35237",
+    "barrel_basket_name": "Tote đỏ bánh tươi",
+    "tli_transfer_qty": 3,
+    "tli_received_qty": 3,
+    "modified_at": "2026-05-26 14:15:05"
+  }
+]
