@@ -233,12 +233,80 @@ def export_performance(target_month=None, target_year=None):
     }
     months_store[current_key] = month_data
 
-    _write_performance(out_path, existing, months_store, current_key)
+    # ── Load tracking data (today's realtime tracking) ──
+    tracking = _load_tracking_data()
+
+    _write_performance(out_path, existing, months_store, current_key, tracking)
     return True
 
 
-def _write_performance(out_path, existing, months_store, current_key):
-    """Write accumulated performance.json with all months."""
+def _load_tracking_data():
+    """Load tracking data: trip+container from DB + planned times from compose."""
+    tracking = {}
+    try:
+        perf_dir = os.path.join(BASE, "script", "domains", "performance")
+        sys.path.insert(0, perf_dir)
+        from fetch_db_realtime import load_tracking_data
+        from push_compose_plan import push as push_compose
+
+        # Push compose plan first
+        plan_lookup = push_compose()
+
+        # Load today's tracking from DB
+        today_iso = datetime.now().strftime("%Y-%m-%d")
+        today_vn = datetime.now().strftime("%d/%m/%Y")
+        tracking_by_kho = load_tracking_data(today_iso)
+
+        # Merge planned times into tracking rows
+        plan_today = plan_lookup.get(today_vn, {})
+        for kho, rows in tracking_by_kho.items():
+            for r in rows:
+                # Try exact kho|dest match
+                plan_key = f"{kho}|{r['dest']}"
+                pt = plan_today.get(plan_key, "")
+                # Fallback: ĐÔNG/MÁT → try ĐÔNG MÁT|dest
+                if not pt and kho in ("ĐÔNG", "MÁT"):
+                    pt = plan_today.get(f"ĐÔNG MÁT|{r['dest']}", "")
+                r["plan_time"] = pt
+
+        # Add plan-only rows (stores with plan but no trip yet)
+        for plan_key, gio in plan_today.items():
+            parts = plan_key.split("|", 1)
+            if len(parts) != 2:
+                continue
+            plan_kho, plan_dest = parts
+            # Map to display kho
+            if plan_kho == "ĐÔNG MÁT":
+                # Can't determine sub-kho from plan alone; skip (will show under both ĐÔNG and MÁT)
+                continue
+            # Check if this dest already has a tracking row
+            kho_rows = tracking_by_kho.get(plan_kho, [])
+            existing_dests = {r["dest"] for r in kho_rows}
+            if plan_dest not in existing_dests:
+                kho_rows.append({
+                    "trip": "", "plate": "", "driver": "", "phone": "",
+                    "dest": plan_dest, "kho": plan_kho, "arrival": "",
+                    "tote_t": 0, "tote_r": 0, "carton_t": 0, "carton_r": 0,
+                    "plan_time": gio,
+                })
+                tracking_by_kho[plan_kho] = kho_rows
+
+        tracking = {
+            "date": today_vn,
+            "date_iso": today_iso,
+            "khos": tracking_by_kho,
+        }
+        total = sum(len(v) for v in tracking_by_kho.values())
+        print(f"  📋 Tracking: {total} rows for {today_vn}")
+    except Exception as e:
+        print(f"  ⚠ Tracking load error: {e}")
+        import traceback; traceback.print_exc()
+
+    return tracking
+
+
+def _write_performance(out_path, existing, months_store, current_key, tracking=None):
+    """Write accumulated performance.json with all months + tracking."""
     available = sorted(months_store.keys())
     data = {
         "_updated": NOW_STR,
@@ -246,6 +314,8 @@ def _write_performance(out_path, existing, months_store, current_key):
         "available_months": available,
         "current_month": current_key,
     }
+    if tracking:
+        data["tracking"] = tracking
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False)
     total_dates = sum(len(m.get("iso_dates", [])) for m in months_store.values())

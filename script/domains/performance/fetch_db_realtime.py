@@ -203,12 +203,139 @@ def load_trip_data_from_db(month, year):
     return rows
 
 
+# ── Container classification ──
+TOTE_KEYWORDS = ["tote", "rổ", "ro "]
+CARTON_KEYWORDS = ["carton", "kiện", "kien", "bịch", "bich", "pallet"]
+
+
+def _classify_container(barrel_name):
+    """Classify barrel_basket_name → 'tote' or 'carton'."""
+    low = barrel_name.lower()
+    for kw in CARTON_KEYWORDS:
+        if kw in low:
+            return "carton"
+    return "tote"  # Default = rổ/tote
+
+
+def load_tracking_data(date_str_iso):
+    """Load tracking data for a specific date (YYYY-MM-DD) with container breakdown.
+    
+    Returns dict keyed by kho → list of row dicts:
+    {trip_id, plate, driver, phone, dest, arrival, kho, sub_kho,
+     tote_t, tote_r, carton_t, carton_r}
+    """
+    import requests
+
+    base_url, params = _load_ch_config()
+
+    sql = f"""
+    SELECT
+        t.t_code,
+        t.t_status,
+        t.t_license_number,
+        t.t_driver_name,
+        t.t_driver_phone,
+        t.t_departure,
+        arrayJoin(t.t_from_location_name_abbreviates) AS noi_chuyen,
+        b.branch_name_abbreviate AS dest,
+        t.tl_arrival,
+        t.barrel_basket_name,
+        t.tli_transfer_qty,
+        t.tli_received_qty
+    FROM kdb.kf_trip_locations_items t
+    LEFT JOIN kdb.kf_branch_location b ON t.tl_branch_id = b.id
+    WHERE toDate(t.t_departure) = '{date_str_iso}'
+    FORMAT JSONEachRow
+    """
+
+    print(f"  → Tracking data for {date_str_iso}...")
+    r = requests.get(base_url, params={**params, "query": sql}, timeout=60)
+    r.raise_for_status()
+
+    # Aggregate containers per (trip_id, dest, kho)
+    agg = {}  # key → {meta, tote_t, tote_r, carton_t, carton_r}
+
+    for line in r.text.strip().split("\n"):
+        if not line.strip():
+            continue
+        obj = json.loads(line)
+
+        t_code = str(obj.get("t_code", "")).strip()
+        dest = str(obj.get("dest", "")).strip()
+        noi_chuyen = str(obj.get("noi_chuyen", "")).strip()
+        barrel = str(obj.get("barrel_basket_name", "")).strip()
+
+        if not t_code or not dest:
+            continue
+
+        arrival_raw = str(obj.get("tl_arrival", "")).strip()
+        arrival_time, _ = _parse_arrival(arrival_raw)
+        depart_time = _parse_depart_time(obj.get("t_departure", ""))
+        kho = _get_kho_session(noi_chuyen, arrival_time, depart_time)
+
+        # Sub-kho
+        sub_kho = ""
+        if kho == "ĐÔNG MÁT":
+            sub_kho = "ĐÔNG" if "tote" in barrel.lower() else "MÁT"
+
+        # Use sub_kho as display kho for tracking
+        display_kho = sub_kho if sub_kho else kho
+
+        key = (t_code, dest, display_kho)
+        transfer = int(obj.get("tli_transfer_qty", 0) or 0)
+        received = int(obj.get("tli_received_qty", 0) or 0)
+        ctype = _classify_container(barrel)
+
+        if key not in agg:
+            agg[key] = {
+                "trip": t_code,
+                "plate": str(obj.get("t_license_number", "")).strip(),
+                "driver": str(obj.get("t_driver_name", "")).strip(),
+                "phone": str(obj.get("t_driver_phone", "")).strip(),
+                "dest": dest,
+                "kho": display_kho,
+                "arrival": arrival_time.strftime("%H:%M") if arrival_time else "",
+                "tote_t": 0, "tote_r": 0,
+                "carton_t": 0, "carton_r": 0,
+            }
+
+        if ctype == "tote":
+            agg[key]["tote_t"] += transfer
+            agg[key]["tote_r"] += received
+        else:
+            agg[key]["carton_t"] += transfer
+            agg[key]["carton_r"] += received
+
+    # Group by kho
+    by_kho = defaultdict(list)
+    for row in agg.values():
+        by_kho[row["kho"]].append(row)
+
+    # Sort each kho by trip → dest
+    for kho in by_kho:
+        by_kho[kho].sort(key=lambda r: (r["trip"], r["dest"]))
+
+    total = sum(len(v) for v in by_kho.values())
+    print(f"    📋 {total} tracking rows across {len(by_kho)} khos")
+
+    return dict(by_kho)
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--month", type=int, default=datetime.now().month)
     parser.add_argument("--year", type=int, default=datetime.now().year)
+    parser.add_argument("--tracking-date", default=None, help="YYYY-MM-DD for tracking")
     args = parser.parse_args()
 
-    rows = load_trip_data_from_db(args.month, args.year)
-    print(f"\n✅ Total: {len(rows)} rows for T{args.month:02d}/{args.year}")
+    if args.tracking_date:
+        data = load_tracking_data(args.tracking_date)
+        for kho, rows in data.items():
+            print(f"\n  {kho}: {len(rows)} rows")
+            for r in rows[:3]:
+                print(f"    {r['trip']} → {r['dest']} | arr={r['arrival']} | tote={r['tote_t']}/{r['tote_r']} carton={r['carton_t']}/{r['carton_r']}")
+    else:
+        rows = load_trip_data_from_db(args.month, args.year)
+        print(f"\n✅ Total: {len(rows)} rows for T{args.month:02d}/{args.year}")
+
