@@ -2,13 +2,11 @@
 """
 trip_reminder.py — T2+T3 Telegram reminder for incomplete trips
 ================================================================
-Queries StarRocks for trips that were NOT completed (status 1,2)
-during the previous week (Mon→Sun), and sends a detailed summary
-to the personal Telegram chat.
+T2 08:00 → Send list of incomplete trips + stores to personal Telegram
+T3 08:00 → Second reminder with cutoff warning (09:00 deadline)
 
-Schedule:
-  Monday    08:00 → First remind
-  Tuesday   08:00 → Second remind (cutoff warning)
+Queries ClickHouse for trips NOT completed (status != 3) during
+the previous week, including per-store breakdown from tl_arrival.
 
 Usage:
     python script/telegram/trip_reminder.py            # Run
@@ -30,6 +28,13 @@ def load_config():
         return json.load(f)
 
 
+def load_ch_config():
+    ch_path = os.path.join(BASE, "config", "mcp_clickhouse.json")
+    with open(ch_path, encoding="utf-8") as f:
+        cfg = json.load(f)
+    return cfg["base_url"], cfg["params"]
+
+
 def get_week_range():
     """Return (monday, sunday) of the PREVIOUS week as YYYY-MM-DD."""
     today = datetime.now()
@@ -45,49 +50,64 @@ def get_week_number():
     return prev_week.isocalendar()[1]
 
 
-# ── StarRocks Query ──
+# ── ClickHouse Query ──
 def query_incomplete_trips(start_date, end_date):
-    """Query incomplete trips from StarRocks.
-    Returns list of trip dicts with transfer codes.
+    """Query incomplete trips from ClickHouse with per-store breakdown."""
+    import requests as _req
+
+    base_url, params = load_ch_config()
+
+    # Get incomplete trips (status 1,2) with per-store arrival info
+    sql = f"""
+    SELECT
+        t.t_code AS trip_code,
+        CAST(t.t_status AS Int32) AS status,
+        toString(toDate(t.t_departure)) AS dep_date,
+        t.t_license_number AS plate,
+        t.t_driver_name AS driver,
+        arrayJoin(t.t_from_location_name_abbreviates) AS noi_chuyen,
+        b.branch_name_abbreviate AS dest,
+        t.tl_arrival AS arrival
+    FROM kdb.kf_trip_locations_items t
+    LEFT JOIN kdb.kf_branch_location b ON t.tl_branch_id = b.id
+    WHERE toDate(t.t_departure) BETWEEN '{start_date}' AND '{end_date}'
+      AND t.t_status IN (1, 2)
+    ORDER BY t.t_departure, t.t_code
+    FORMAT JSON
     """
-    from data_pipeline.config import load_starrocks_config
-    import pymysql
 
-    sr = load_starrocks_config()
-    conn = pymysql.connect(
-        host=sr["host"], port=sr["port"], user=sr["user"],
-        password=sr["password"], database=sr["database"],
-        charset="utf8mb4", connect_timeout=30, read_timeout=60,
-    )
+    r = _req.get(base_url, params={**params, "query": sql}, timeout=60)
+    r.raise_for_status()
+    data = r.json().get("data", [])
 
-    trips = []
-    with conn.cursor() as cur:
-        cur.execute("""
-            SELECT t_code, CAST(t_status AS INT) as status,
-                   DATE_FORMAT(t_departure, '%%Y-%%m-%%d') as dep_date,
-                   t_license_number, t_driver_name,
-                   t_transfercodes
-            FROM __cdc_kfm_kf_inventories_kf_trips
-            WHERE DATE(t_departure) BETWEEN %s AND %s
-              AND t_status IN (1, 2)
-              AND deleted = 0
-            ORDER BY t_departure, t_code
-        """, (start_date, end_date))
-
-        for row in cur.fetchall():
-            code, status, dep, plate, driver, tcodes_raw = row
-            tcodes = json.loads(tcodes_raw) if tcodes_raw else []
-            trips.append({
+    # Group by trip_code
+    trips = {}
+    for row in data:
+        code = row["trip_code"]
+        if code not in trips:
+            trips[code] = {
                 "code": code,
-                "status": int(status),
-                "departure_date": dep,
-                "license": plate or "",
-                "driver": driver or "",
-                "transfer_codes": tcodes,
-            })
+                "status": int(row["status"]),
+                "departure_date": row["dep_date"],
+                "license": row.get("plate", ""),
+                "driver": row.get("driver", ""),
+                "noi_chuyen": row.get("noi_chuyen", ""),
+                "stores_done": [],
+                "stores_pending": [],
+            }
+        dest = row.get("dest", "")
+        arrival = str(row.get("arrival", "")).strip()
+        has_arrival = arrival and arrival not in ("", "0001-01-01T00:00:00Z", "0001-01-01 00:00:00")
 
-    conn.close()
-    return trips
+        if dest:
+            if has_arrival:
+                if dest not in trips[code]["stores_done"]:
+                    trips[code]["stores_done"].append(dest)
+            else:
+                if dest not in trips[code]["stores_pending"]:
+                    trips[code]["stores_pending"].append(dest)
+
+    return list(trips.values())
 
 
 def format_status(status):
@@ -117,6 +137,8 @@ def build_message(trips, week_num, is_second_remind=False):
     lines = [f"🔴 <b>Trips chưa hoàn thành — W{week_num}</b>"]
     lines.append(f"{remind_label}\n")
 
+    total_stores_pending = 0
+
     for date in sorted(by_date.keys()):
         date_vn = format_date_vn(date)
         day_trips = by_date[date]
@@ -124,18 +146,26 @@ def build_message(trips, week_num, is_second_remind=False):
 
         for t in day_trips:
             status = format_status(t["status"])
-            pt_str = ", ".join(t["transfer_codes"][:3])
-            if len(t["transfer_codes"]) > 3:
-                pt_str += f" +{len(t['transfer_codes'])-3}"
-            if not pt_str:
-                pt_str = "(no PT)"
+            done = len(t["stores_done"])
+            pending = len(t["stores_pending"])
+            total = done + pending
+            total_stores_pending += pending
+
+            # Store breakdown
+            store_info = f"{done}/{total} stores done"
+            if t["stores_pending"]:
+                pending_list = ", ".join(t["stores_pending"][:5])
+                if len(t["stores_pending"]) > 5:
+                    pending_list += f" +{len(t['stores_pending'])-5}"
+                store_info += f"\n      ❌ Chưa: {pending_list}"
 
             lines.append(
-                f"  <code>{t['code']}</code> | {t['driver']} | {pt_str} | {status}"
+                f"  <code>{t['code']}</code> | {t['driver']} | {t['noi_chuyen']}"
+                f"\n      {status} | {store_info}"
             )
         lines.append("")
 
-    lines.append(f"<b>Tổng: {len(trips)} trips</b>")
+    lines.append(f"<b>Tổng: {len(trips)} trips, {total_stores_pending} stores chưa giao</b>")
     if is_second_remind:
         lines.append(f"\n⏰ <b>Cutoff 09:00 — xử lý trước khi generate report</b>")
 
@@ -178,13 +208,14 @@ def main():
     week_num = get_week_number()
     print(f"  Tuần W{week_num}: {start} → {end}")
 
-    print(f"  Querying StarRocks...")
+    print(f"  Querying ClickHouse...")
     trips = query_incomplete_trips(start, end)
 
     if not trips:
         print(f"  ✅ Không có trip chưa hoàn thành!")
     else:
-        print(f"  ⚠ {len(trips)} trips chưa hoàn thành")
+        total_pending_stores = sum(len(t["stores_pending"]) for t in trips)
+        print(f"  ⚠ {len(trips)} trips chưa hoàn thành ({total_pending_stores} stores pending)")
 
     msg = build_message(trips, week_num, is_second_remind=is_tuesday)
     print(f"\n{msg}\n")

@@ -606,7 +606,7 @@ def calc_metrics(all_rows, plan_lookup, route_order):
         # Destination level
         for k in kho_keys:
             metrics["completion_dest"][k][date]["total"] += 1
-            if r["dest_status"] == "Hoàn thành":
+            if r["dest_status"] == "Hoàn thành" or r.get("arrival_time") is not None:
                 metrics["completion_dest"][k][date]["complete"] += 1
         
         # Trip level (dedup per trip_id per kho per date)
@@ -617,7 +617,7 @@ def calc_metrics(all_rows, plan_lookup, route_order):
         if driver:
             for k in kho_keys:
                 metrics["completion_by_driver"][k][(date, driver)]["total"] += 1
-                if r["dest_status"] == "Hoàn thành":
+                if r["dest_status"] == "Hoàn thành" or r.get("arrival_time") is not None:
                     metrics["completion_by_driver"][k][(date, driver)]["complete"] += 1
         
         if not arrival:
@@ -696,6 +696,12 @@ def calc_metrics(all_rows, plan_lookup, route_order):
             trip_dests[(date, tuyen, kho)].append((arrival, r["dest"]))
     
     # ── Trip-level completion (dedup by trip_id) ──
+    # Pre-build lookup: which trips have at least 1 arrival
+    trip_has_arrival = set()  # (trip_id, kho)
+    for r in all_rows:
+        if r.get("arrival_time") is not None and r.get("date"):
+            trip_has_arrival.add((r["trip_id"], r["kho"]))
+    
     trip_status_map = {}  # (trip_id, kho) -> (date, status, sub_kho)
     for r in all_rows:
         if not r["date"]:
@@ -708,7 +714,7 @@ def calc_metrics(all_rows, plan_lookup, route_order):
         kkeys = [kho] + ([sub_kho] if sub_kho else [])
         for k in kkeys:
             metrics["completion_trip"][k][date]["total"] += 1
-            if status == "Hoàn thành":
+            if status == "Hoàn thành" or (trip_id, kho) in trip_has_arrival:
                 metrics["completion_trip"][k][date]["complete"] += 1
     
     # ── Route compliance + Plan compliance (per-destination) ──
@@ -1709,10 +1715,16 @@ def main():
                         help="Cutoff date DD/MM/YYYY — only include data up to this date (inclusive)")
     parser.add_argument("--sla-weeks", type=str, default=None,
                         help="Export SLA weekly Excel. 'auto' = detect from months, or comma-separated e.g. '14,15,16,17,18'")
+    parser.add_argument("--realtime", action="store_true",
+                        help="Realtime mode: fetch trips from ClickHouse DB + incremental plan fetch")
     args = parser.parse_args()
     
     year = args.year
-    if args.months:
+    if args.realtime and not args.months and not args.month:
+        # Realtime default: current month
+        months = [datetime.now().month]
+        year = datetime.now().year
+    elif args.months:
         months = [int(m.strip()) for m in args.months.split(",")]
     elif args.month:
         months = [args.month]
@@ -1739,8 +1751,19 @@ def main():
     # 1. Load data
     print("\n📥 Loading data...")
     trip_rows = []
-    for m in months:
-        trip_rows.extend(load_trip_data(m, year))
+    if args.realtime:
+        # ── Realtime: fetch from DB + incremental plan ──
+        from fetch_db_realtime import load_trip_data_from_db
+        from fetch_plan_incremental import fetch_and_merge
+        for m in months:
+            trip_rows.extend(load_trip_data_from_db(m, year))
+        # Incremental plan fetch for today
+        today_str = datetime.now().strftime("%d/%m/%Y")
+        print(f"\n  📋 Incremental plan fetch for {today_str}...")
+        fetch_and_merge(today_str)
+    else:
+        for m in months:
+            trip_rows.extend(load_trip_data(m, year))
     thitca_rows = load_thitca_data(months)
     
     # Apply end-date cutoff filter
