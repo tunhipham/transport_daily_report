@@ -1,0 +1,144 @@
+{
+  "tickets": [
+    {
+      "_id": "6a0ea7940620d4f89761f336",
+      "vendor_code": "V001487",
+      "vendor_name": "CÔNG TY CỔ PHẦN LC FOODS",
+      "code": "PO1002517695",
+      "hrw_id": "6a0ea678d56ff22a3158268f"
+    },
+    {
+      "_id": "6a11357d0620d4f8973255e8",
+      "vendor_code": "V001451",
+      "vendor_name": "CÔNG TY TNHH THỰC PHẨM SẠCH ĐÀ LẠT G.A.P",
+      "code": "PO1002520217",
+      "hrw_id": "6a1134693034720a4368fb40"
+    },
+    {
+      "_id": "6a11357d0620d4f897325634",
+      "vendor_code": "V000562",
+      "vendor_name": "CÔNG TY TNHH TMDV XNK TRƯỜNG AN",
+      "code": "PO1002520206",
+      "hrw_id": "6a1134673034720a4368fb10"
+    }
+  ],
+  "tickets_items": [
+    {
+      "_parent_id": "6a0eae9c0620d4f897036278",
+      "item_code": "8935039571028",
+      "item_name": "AJINOMOTO - BÁNH XẾP KIỂU NHẬT GYOZA NHÂN THỊT HEO VÀ GÀ 114G",
+      "quantity": 160.0,
+      "original_quantity": 160.0,
+      "total_sample_quantity": 48.0,
+      "support_rate": null,
+      "min_sample_percent": 0.1,
+      "max_sample_percent": 0.3
+    },
+    {
+      "_parent_id": "6a0fd5ed0620d4f897e9bbf0",
+      "item_code": "9310653105597",
+      "item_name": "CHOBANI - SỮA CHUA HY LẠP VỊ VIỆT QUẤT 160G",
+      "quantity": 120.0,
+      "original_quantity": 120.0,
+      "total_sample_quantity": 15.0,
+      "support_rate": null,
+      "min_sample_percent": 0.1,
+      "max_sample_percent": 0.3
+    },
+    {
+      "_parent_id": "6a0fd5ed0620d4f897e9bbf0",
+      "item_code": "9310653105641",
+      "item_name": "CHOBANI - SỮA CHUA HY LẠP VỊ DÂU TÂY 160G",
+      "quantity": 96.0,
+      "original_quantity": 96.0,
+      "total_sample_quantity": 15.0,
+      "support_rate": null,
+      "min_sample_percent": 0.1,
+      "max_sample_percent": 0.3
+    }
+  ],
+  "claim_txn_details": [
+    {
+      "_id": "6a12e55e055c7a00078f9755",
+      "barcode": "11640",
+      "object_code": "PR1002520068",
+      "transaction_quantity": 44.0,
+      "claim_quantity": 0.0,
+      "ratio": "0",
+      "claim_stock": 0.0,
+      "transaction_stock": 44.0
+    },
+    {
+      "_id": "6a12e5d65ba53c00072406f1",
+      "barcode": "8936127490726",
+      "object_code": "PR1002520168",
+      "transaction_quantity": 93.0,
+      "claim_quantity": 5.0,
+      "ratio": "5.376",
+      "claim_stock": 5.0,
+      "transaction_stock": 93.0
+    },
+    {
+      "_id": "6a13036e5093ae000735274e",
+      "barcode": "11130",
+      "object_code": "PR1002520631",
+      "transaction_quantity": 190.0,
+      "claim_quantity": 25.0,
+      "ratio": "3.794",
+      "claim_stock": 25.0,
+      "transaction_stock": 659.0
+    }
+  ],
+  "claim_stock_summaries": [
+    {
+      "_id": "69fa25a30620d4f897db2cea",
+      "base_variant_id": "6454d339335512000797e528",
+      "on_hand": 2979.0,
+      "claim_quantity": 35.0,
+      "ratio": 1.175
+    },
+    {
+      "_id": "69fa35ba0620d4f897b3be91",
+      "base_variant_id": "67ad50acbccc180007a68484",
+      "on_hand": 2103.0,
+      "claim_quantity": 0.0,
+      "ratio": 0.0
+    },
+    {
+      "_id": "69fa35bb0620d4f897b3e31f",
+      "base_variant_id": "686787fb533afe000787f4de",
+      "on_hand": 6228.0,
+      "claim_quantity": 180.0,
+      "ratio": 2.89
+    }
+  ],
+  "claim_tickets": [
+    {
+      "_id": "6a1265255b1ddfaf923a0b67",
+      "code": "CM00013428",
+      "barcode": "1102035",
+      "product_name": "MẬN ĐÁ ĐƯỜNG",
+      "requested_qty": 0.305,
+      "claim_pt_qty": 0.0,
+      "inventory_transfer__code": "PT1351565"
+    },
+    {
+      "_id": "6a12df41481d8f05fc3843c8",
+      "code": "CM00014164",
+      "barcode": "1101033",
+      "product_name": "NHO ĐEN ÚC",
+      "requested_qty": 0.245,
+      "claim_pt_qty": 0.0,
+      "inventory_transfer__code": "PT1352704"
+    },
+    {
+      "_id": "6a13900a11d5a96eab396d13",
+      "code": "CM00014214",
+      "barcode": "10790",
+      "product_name": "NGÒ RÍ 50G",
+      "requested_qty": 1.0,
+      "claim_pt_qty": 0.0,
+      "inventory_transfer__code": "PT1353699"
+    }
+  ]
+}

@@ -1,0 +1,302 @@
+{
+  "show_tables_pr_po": [],
+  "show_tables_receipt": [
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_delivery_receipts"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_receipt_items"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_receipt_notes"
+    }
+  ],
+  "claim_tickets_schema": [
+    {
+      "Field": "_id",
+      "Type": "varchar(255)",
+      "Null": "NO",
+      "Key": "true",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "updated_at",
+      "Type": "datetime",
+      "Null": "NO",
+      "Key": "false",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED"
+    },
+    {
+      "Field": "code",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "status",
+      "Type": "bigint",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "request_branch__id",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "request_branch__code",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "claim_branch__id",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "claim_branch__code",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "transfer_item__id",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "transfer_item__code",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "transfer_item__transfer_date",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "transfer_item__receive_date",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "barcode",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "product_name",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "product_id",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "variant_id",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "category_id",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "unit__id",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "unit__name",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "requested_qty",
+      "Type": "double",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "claim_pt_qty",
+      "Type": "double",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "reason",
+      "Type": "bigint",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "note",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "images",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "created_by",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "modified_by",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "modified_at",
+      "Type": "datetime",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "created_at",
+      "Type": "datetime",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "deleted",
+      "Type": "boolean",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "__v",
+      "Type": "bigint",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "inventory_transfer__code",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "inventory_transfer__id",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "physical_damage__code",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    },
+    {
+      "Field": "physical_damage__id",
+      "Type": "varchar(65533)",
+      "Null": "YES",
+      "Key": "false",
+      "Default": null,
+      "Extra": ""
+    }
+  ],
+  "quality_tickets_hrw": [
+    {
+      "source": "Hàng hoá KFM",
+      "note": null
+    },
+    {
+      "source": "Hàng hoá KFM",
+      "note": null
+    },
+    {
+      "source": "Hàng hoá KFM",
+      "note": null
+    }
+  ]
+}

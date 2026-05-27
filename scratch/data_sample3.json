@@ -1,0 +1,112 @@
+{
+  "tables_in_scm": [
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_bede5be7_de5b9963_L2___criterias"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_ec9d24ab_1a050070_L2___product_lines"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_ec9d24ab_33bc7bbc_L3___line_items"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_ec9d24ab_c49f2956_L2___trip_locations"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_ec9d24ab_e99d544c_L4___origin_transfer_codes"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_claim_rates"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_claim_stock_summaries"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_claim_tickets"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_claim_transaction_details"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_hrw_quality_tickets"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_hrw_quality_tickets___items"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_inventory_transaction_stock_summaries"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_inventory_transaction_stockcard"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_transfer_items"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_transfer_items___container_lines"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_transfer_items___return_transfers"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_transfer_items___trips"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_trips"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_trips_locations_items"
+    },
+    {
+      "Tables_in_kfm_scm": "__cdc_kfm_kf_inventories_kf_trips_locations_items___containers"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_barcodes"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_delivery_receipts"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_delivery_schedule"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_discrepancies"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_employees"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_erp_stock_summary"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_group_members"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_messages"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_ocr_cache"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_receipt_items"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_receipt_notes"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_scheduled_messages"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_sessions"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_telegram_groups"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_telegram_sessions"
+    },
+    {
+      "Tables_in_kfm_scm": "krc_dashboard_users"
+    }
+  ]
+}
