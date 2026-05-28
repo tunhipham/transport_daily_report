@@ -437,17 +437,17 @@ def generate_pilot_image(kho, date_iso, all_rows):
 
     diff = summary["diff"]
     if diff == 0:
-        st_text, st_color = "DU", GREEN
+        st_text, st_color = "ĐỦ", GREEN
     elif diff < 0:
-        st_text, st_color = f"THIEU {abs(diff)}", RED
+        st_text, st_color = f"THIẾU {abs(diff)}", RED
     else:
-        st_text, st_color = f"DU {diff}", ORANGE
+        st_text, st_color = f"DƯ {diff}", ORANGE
 
     sx = PAD
     sum_items = [
-        (f"{summary['done']}/{summary['total']}", WHITE, "da giao"),
+        (f"{summary['done']}/{summary['total']}", WHITE, "đã giao"),
         (f"{summary['total_giao']}", WHITE, "giao"),
-        (f"{summary['total_nhan']}", WHITE, "nhan"),
+        (f"{summary['total_nhan']}", WHITE, "nhận"),
         (st_text, st_color, ""),
     ]
     for val, color, label in sum_items:
@@ -490,7 +490,7 @@ def generate_pilot_image(kho, date_iso, all_rows):
 
         trip_giao = sum((r.get("tote_t", 0) or 0) + (r.get("carton_t", 0) or 0) for r in td["rows"])
         trip_nhan = sum((r.get("tote_r", 0) or 0) + (r.get("carton_r", 0) or 0) for r in td["rows"])
-        ts_text = f"G:{trip_giao}  N:{trip_nhan}"
+        ts_text = f"Giao: {trip_giao}  Nhận: {trip_nhan}"
         ts_bb = draw.textbbox((0, 0), ts_text, font=f_trip)
         draw.text((table_x + table_w - (ts_bb[2] - ts_bb[0]) - 8, y + 12), ts_text, fill=TEXT_DIM, font=f_trip)
 
@@ -507,11 +507,11 @@ def generate_pilot_image(kho, date_iso, all_rows):
             d = nhan - giao
 
             if d == 0 and giao > 0:
-                st_txt, st_col = "Du", GREEN
+                st_txt, st_col = "Đủ", GREEN
             elif d < 0:
-                st_txt, st_col = f"Thieu {abs(d)}", RED
+                st_txt, st_col = f"Thiếu {abs(d)}", RED
             elif d > 0:
-                st_txt, st_col = f"Du {d}", ORANGE
+                st_txt, st_col = f"Dư {d}", ORANGE
             else:
                 st_txt, st_col = "—", TEXT_DARK
 
@@ -534,7 +534,7 @@ def generate_pilot_image(kho, date_iso, all_rows):
     # ── Footer ──
     draw.rectangle([(0, y), (W, y + FOOTER_H)], fill=TRIP_BG)
     draw.rectangle([(0, total_h - 4), (W, total_h)], fill=accent)
-    ft = f"KFM Command Center  •  PILOT HTP & SCV  •  {n_rows} diem"
+    ft = f"KFM Command Center  •  PILOT HTP & SCV  •  {n_rows} điểm"
     bb = draw.textbbox((0, 0), ft, font=f_footer)
     draw.text(((W - (bb[2] - bb[0])) // 2, y + 12), ft, fill=TEXT_DARK, font=f_footer)
 
