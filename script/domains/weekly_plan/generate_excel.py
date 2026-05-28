@@ -290,9 +290,12 @@ def apply_nso(stores, week_dates):
             if dsst_name:
                 store_name = dsst_name
             else:
+                name_sys = nso.get("name_system", "")
                 name_full = nso.get("name_full", "")
-                name_mail = nso.get("name_mail", "")
-                store_name = name_full or name_mail or f"NSO {code or '?'}"
+                if name_sys:
+                    store_name = f"{name_sys} - {name_full}"
+                else:
+                    store_name = name_full or nso.get("name_mail", "") or f"NSO {code or '?'}"
             schedule_chia = sched.get("schedule_chia", "")
 
             matched = {
