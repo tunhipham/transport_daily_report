@@ -242,7 +242,15 @@ def export_performance(target_month=None, target_year=None):
 
 def _load_tracking_data():
     """Load tracking data: trip+container from DB + planned times from compose.
-    Fetches data for the entire current month up to today."""
+    
+    Logic:
+      B1: Load plan (compose state) → plan_time + store code → KSL session from compose key
+      B2: Load DB trips → map to plan by store code → inherit session from plan
+      
+    NSO "xe N" normalization: "A154 xe 1" → "A154" (extract code only)
+    KSL session: DRY_sang → KSL-Sáng, DRY_toi → KSL-Tối (compose key is source of truth)
+    """
+    import re
     tracking = {}
     try:
         perf_dir = os.path.join(BASE, "script", "domains", "performance")
@@ -250,7 +258,7 @@ def _load_tracking_data():
         from fetch_db_realtime import load_tracking_data
         from push_compose_plan import push as push_compose
 
-        # Push compose plan first
+        # B1: Push compose plan → plan_lookup {date_vn: {kho|store: time}}
         plan_lookup = push_compose()
 
         # Load current month tracking from DB
@@ -258,32 +266,24 @@ def _load_tracking_data():
         start_date_iso = today.replace(day=1).strftime("%Y-%m-%d")
         end_date_iso = today.strftime("%Y-%m-%d")
         
-        # Returns { "YYYY-MM-DD": { "KHO": [rows...] } }
+        # DB tracking: {date_iso: {kho: [rows]}}
         tracking_by_date = load_tracking_data(start_date_iso, end_date_iso)
         
-        # We need to process all dates from start to end, even if DB has no data but plan does
-        from datetime import timedelta
-        current_dt = today.replace(day=1)
-        
         tracking_result = {}
+        current_dt = today.replace(day=1)
         
         while current_dt <= today:
             date_iso = current_dt.strftime("%Y-%m-%d")
             date_vn = current_dt.strftime("%d/%m/%Y")
             
-            tracking_by_kho = tracking_by_date.get(date_iso, {})
+            db_by_kho = tracking_by_date.get(date_iso, {})
             plan_today = plan_lookup.get(date_vn, {})
             
-            # Merge planned times into tracking rows
-            for kho, rows in tracking_by_kho.items():
-                for r in rows:
-                    plan_key = f"{kho}|{r['dest']}"
-                    pt = plan_today.get(plan_key, "")
-                    if not pt and kho in ("ĐÔNG", "MÁT"):
-                        pt = plan_today.get(f"ĐÔNG MÁT|{r['dest']}", "")
-                    r["plan_time"] = pt
+            # ── B1: Build store→session map from plan ──
+            # Plan keys like "KSL-Tối|A154 xe 1" → store "A154" belongs to KSL-Tối
+            store_session = {}   # store_code → kho_session (KSL-Sáng or KSL-Tối)
+            plan_stores = {}     # (kho, store_code) → plan_time (first occurrence)
             
-            # Add plan-only rows
             for plan_key, gio in plan_today.items():
                 parts = plan_key.split("|", 1)
                 if len(parts) != 2:
@@ -292,19 +292,69 @@ def _load_tracking_data():
                 if plan_kho == "ĐÔNG MÁT":
                     continue
                 
-                kho_rows = tracking_by_kho.get(plan_kho, [])
-                existing_dests = {r["dest"] for r in kho_rows}
-                if plan_dest not in existing_dests:
-                    kho_rows.append({
+                # Normalize "A154 xe 1" → "A154"
+                store_code = re.sub(r'\s+xe\s+\d+$', '', plan_dest).strip()
+                
+                # Record session for KSL stores
+                if plan_kho in ("KSL-Sáng", "KSL-Tối"):
+                    store_session[store_code] = plan_kho
+                
+                # Record plan_time (keep first occurrence per store)
+                ps_key = (plan_kho, store_code)
+                if ps_key not in plan_stores:
+                    plan_stores[ps_key] = gio
+            
+            # ── B2: Re-classify DB KSL rows based on plan session ──
+            # Pull all KSL rows out, then re-assign using plan session
+            ksl_rows = []
+            for kho_name in ("KSL-Sáng", "KSL-Tối"):
+                for r in db_by_kho.pop(kho_name, []):
+                    ksl_rows.append(r)
+            
+            for r in ksl_rows:
+                dest = r["dest"]
+                # Plan session overrides DB classification
+                correct_kho = store_session.get(dest, r["kho"])
+                r["kho"] = correct_kho
+                if correct_kho not in db_by_kho:
+                    db_by_kho[correct_kho] = []
+                db_by_kho[correct_kho].append(r)
+            
+            # ── Merge plan_time into DB rows ──
+            for kho, rows in db_by_kho.items():
+                for r in rows:
+                    # Try exact plan key first
+                    plan_key_full = f"{kho}|{r['dest']}"
+                    pt = plan_today.get(plan_key_full, "")
+                    # Fallback: ĐÔNG MÁT combined key
+                    if not pt and kho in ("ĐÔNG", "MÁT"):
+                        pt = plan_today.get(f"ĐÔNG MÁT|{r['dest']}", "")
+                    # Fallback: plan_stores (normalized)
+                    if not pt:
+                        pt = plan_stores.get((kho, r['dest']), "")
+                    r["plan_time"] = pt
+            
+            # ── Add plan-only rows for stores with no DB trips ──
+            # Track which (kho, store) combos already have DB data
+            seen = set()
+            for kho, rows in db_by_kho.items():
+                for r in rows:
+                    seen.add((kho, r['dest']))
+            
+            for (plan_kho, store_code), gio in plan_stores.items():
+                if (plan_kho, store_code) not in seen:
+                    if plan_kho not in db_by_kho:
+                        db_by_kho[plan_kho] = []
+                    db_by_kho[plan_kho].append({
                         "trip": "", "plate": "", "driver": "", "phone": "",
-                        "dest": plan_dest, "kho": plan_kho, "arrival": "",
+                        "dest": store_code, "kho": plan_kho, "arrival": "",
                         "tote_t": 0, "tote_r": 0, "carton_t": 0, "carton_r": 0,
                         "plan_time": gio,
                     })
-                    tracking_by_kho[plan_kho] = kho_rows
+                    seen.add((plan_kho, store_code))
             
-            if tracking_by_kho:
-                tracking_result[date_iso] = tracking_by_kho
+            if db_by_kho:
+                tracking_result[date_iso] = db_by_kho
                 
             current_dt += timedelta(days=1)
 
