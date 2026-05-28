@@ -12,6 +12,8 @@ import json
 import subprocess
 from datetime import datetime, timedelta
 
+sys.stdout.reconfigure(encoding='utf-8')
+
 # Default to personal ID for testing. User will change this later to Group ID.
 GROUP_CHAT_ID = "5782090339"
 
