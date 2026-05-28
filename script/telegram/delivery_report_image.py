@@ -342,119 +342,210 @@ function filterRows() {{
 
 
 # ══════════════════════════════════════════════════════════════
-# Pilot Image (Selenium screenshot of mini HTML)
+# Pilot Image (PIL — high quality, clear, large fonts)
 # ══════════════════════════════════════════════════════════════
-def generate_pilot_html(kho, date_iso, all_rows):
-    """Generate a mini HTML for pilot stores, then screenshot it."""
+def _hex_to_rgb(h):
+    h = h.lstrip("#")
+    return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+
+
+def generate_pilot_image(kho, date_iso, all_rows):
+    """Generate a beautiful, clear PIL image for HTP & SCV pilot stores."""
+    from PIL import Image, ImageDraw, ImageFont
+
     pilot_rows = [r for r in all_rows if r.get("dest", "") in PILOT_STORES]
     if not pilot_rows:
-        return None
+        return None, None
 
     pilot_rows = sort_rows(pilot_rows)
     trips, trip_order = group_by_trip(pilot_rows)
     summary = calc_summary(pilot_rows)
     date_vn = format_date_vn(date_iso)
     day_name = get_day_name(date_iso)
-    accent = KHO_ACCENT_HEX.get(kho, "#22D3EE")
     now_str = datetime.now().strftime("%H:%M %d/%m/%Y")
+    accent = _hex_to_rgb(KHO_ACCENT_HEX.get(kho, "#22D3EE"))
+
+    # ── Fonts (large for clarity) ──
+    f_title = ImageFont.truetype("arialbd.ttf", 28)
+    f_subtitle = ImageFont.truetype("arial.ttf", 18)
+    f_summary = ImageFont.truetype("arialbd.ttf", 22)
+    f_sum_label = ImageFont.truetype("arial.ttf", 16)
+    f_header = ImageFont.truetype("arialbd.ttf", 20)
+    f_cell = ImageFont.truetype("arial.ttf", 20)
+    f_cell_bold = ImageFont.truetype("arialbd.ttf", 20)
+    f_status = ImageFont.truetype("arialbd.ttf", 20)
+    f_trip = ImageFont.truetype("arialbd.ttf", 16)
+    f_footer = ImageFont.truetype("arial.ttf", 14)
+
+    # ── Colors ──
+    BG = (15, 23, 42)        # #0F172A
+    HEADER_BG = (30, 41, 59) # #1E293B
+    ROW_A = (30, 41, 59)
+    ROW_B = (15, 23, 42)
+    TRIP_BG = (11, 17, 32)   # #0B1120
+    BORDER = (51, 65, 85)    # #334155
+    TEXT = (226, 232, 240)    # #E2E8F0
+    TEXT_DIM = (148, 163, 184)
+    TEXT_DARK = (71, 85, 105)
+    GOLD = (240, 192, 96)
+    GREEN = (16, 185, 129)
+    RED = (239, 68, 68)
+    ORANGE = (249, 115, 22)
+    WHITE = (241, 245, 249)
+
+    # ── Layout constants ──
+    W = 820
+    PAD = 30
+    TITLE_H = 100
+    SUMMARY_H = 70
+    HDR_H = 50
+    ROW_H = 48
+    TRIP_H = 44
+    FOOTER_H = 40
+
+    # Column widths: Siêu Thị | Giao | Nhận | Đủ/Thiếu/Dư
+    cols = [("Siêu Thị", 200), ("Giao", 150), ("Nhận", 150), ("Đủ/Thiếu/Dư", 260)]
+    table_w = sum(c[1] for c in cols)
+    table_x = (W - table_w) // 2
+
+    # Calculate height
+    n_rows = len(pilot_rows)
+    n_trips = len(trips)
+    total_h = TITLE_H + SUMMARY_H + HDR_H + n_trips * TRIP_H + n_rows * ROW_H + FOOTER_H + 10
+
+    # ── Create image ──
+    img = Image.new("RGB", (W, total_h), BG)
+    draw = ImageDraw.Draw(img)
+
+    # ── Title bar ──
+    draw.rectangle([(0, 0), (W, TITLE_H)], fill=HEADER_BG)
+    draw.rectangle([(0, 0), (W, 5)], fill=accent)
+
+    title = f"BÁO CÁO GIAO HÀNG HTP & SCV_{kho}_{date_vn.replace('/', '.')}"
+    draw.text((PAD, 20), title, fill=accent, font=f_title)
+    draw.text((PAD, 58), f"{day_name}, {date_vn}", fill=TEXT_DIM, font=f_subtitle)
+
+    # Timestamp right
+    ts_bb = draw.textbbox((0, 0), now_str, font=f_footer)
+    draw.text((W - PAD - (ts_bb[2] - ts_bb[0]), 66), now_str, fill=TEXT_DARK, font=f_footer)
+
+    y = TITLE_H
+
+    # ── Summary bar ──
+    draw.rectangle([(0, y), (W, y + SUMMARY_H)], fill=HEADER_BG)
+    draw.line([(0, y + SUMMARY_H - 1), (W, y + SUMMARY_H - 1)], fill=BORDER)
 
     diff = summary["diff"]
     if diff == 0:
-        diff_html = '<span style="color:#10b981;font-weight:700">✅ ĐỦ</span>'
+        st_text, st_color = "DU", GREEN
     elif diff < 0:
-        diff_html = f'<span style="color:#ef4444;font-weight:700">🔴 THIẾU {abs(diff)}</span>'
+        st_text, st_color = f"THIEU {abs(diff)}", RED
     else:
-        diff_html = f'<span style="color:#f97316;font-weight:700">🟡 DƯ {diff}</span>'
+        st_text, st_color = f"DU {diff}", ORANGE
 
-    thead = '<tr><th>Siêu Thị</th><th>Giao</th><th>Nhận</th><th>Đủ/Thiếu/Dư</th></tr>'
-    table_rows = _build_table_rows(pilot_rows, trips, trip_order)
+    sx = PAD
+    sum_items = [
+        (f"{summary['done']}/{summary['total']}", WHITE, "da giao"),
+        (f"{summary['total_giao']}", WHITE, "giao"),
+        (f"{summary['total_nhan']}", WHITE, "nhan"),
+        (st_text, st_color, ""),
+    ]
+    for val, color, label in sum_items:
+        draw.text((sx, y + 14), val, fill=color, font=f_summary)
+        vbb = draw.textbbox((0, 0), val, font=f_summary)
+        vw = vbb[2] - vbb[0]
+        if label:
+            draw.text((sx + vw + 6, y + 20), label, fill=TEXT_DIM, font=f_sum_label)
+            lbb = draw.textbbox((0, 0), label, font=f_sum_label)
+            sx += vw + 6 + (lbb[2] - lbb[0]) + 30
+        else:
+            sx += vw + 30
 
-    title = f"BÁO CÁO GIAO HÀNG HTP & SCV_{kho}_{date_vn.replace('/', '.')}"
+    y += SUMMARY_H
 
-    html = f'''<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<style>
-  {_get_report_css(accent)}
-  body {{ width:700px; padding:0; margin:0 }}
-</style>
-</head>
-<body>
-<div class="header">
-  <h1>📦 {title}</h1>
-  <div class="sub">{day_name}, {date_vn}</div>
-  <div class="ts">Cập nhật: {now_str}</div>
-</div>
+    # ── Table header ──
+    draw.rectangle([(0, y), (W, y + HDR_H)], fill=HEADER_BG)
+    draw.line([(0, y + HDR_H - 2), (W, y + HDR_H - 2)], fill=accent, width=3)
 
-<div class="summary">
-  <div class="s-item"><span>🚛</span><span class="s-val white">{len(trips)}</span><span class="s-label">trip</span></div>
-  <div class="s-item"><span>✅</span><span class="s-val green">{summary["done"]}</span><span class="s-label">đã giao</span></div>
-  <div class="s-item"><span>❌</span><span class="s-val red">{summary["pending"]}</span><span class="s-label">chưa giao</span></div>
-  <div class="s-item"><span>📤</span><span class="s-val white">{summary["total_giao"]:,}</span><span class="s-label">giao</span></div>
-  <div class="s-item"><span>📥</span><span class="s-val white">{summary["total_nhan"]:,}</span><span class="s-label">nhận</span></div>
-  <div class="s-item">{diff_html}</div>
-</div>
+    x = table_x
+    for col_name, col_w in cols:
+        bb = draw.textbbox((0, 0), col_name, font=f_header)
+        tw = bb[2] - bb[0]
+        draw.text((x + (col_w - tw) // 2, y + 13), col_name, fill=GOLD, font=f_header)
+        x += col_w
 
-<div class="wrap">
-<table>
-<thead>{thead}</thead>
-<tbody>
-{table_rows}
-</tbody>
-</table>
-</div>
+    y += HDR_H
 
-<div class="footer">KFM Command Center • PILOT HTP & SCV • {summary["total"]} điểm</div>
-</body>
-</html>'''
+    # ── Data rows ──
+    row_idx = 0
+    for trip_id in trip_order:
+        td = trips[trip_id]
 
+        # Trip separator
+        draw.rectangle([(0, y), (W, y + TRIP_H)], fill=TRIP_BG)
+        draw.line([(0, y), (W, y)], fill=BORDER)
+
+        trip_label = f"{trip_id}  |  {td['plate']}  |  {td['driver']}" if trip_id.strip() else "— Chưa có Trip —"
+        draw.text((table_x + 8, y + 12), trip_label, fill=accent, font=f_trip)
+
+        trip_giao = sum((r.get("tote_t", 0) or 0) + (r.get("carton_t", 0) or 0) for r in td["rows"])
+        trip_nhan = sum((r.get("tote_r", 0) or 0) + (r.get("carton_r", 0) or 0) for r in td["rows"])
+        ts_text = f"G:{trip_giao}  N:{trip_nhan}"
+        ts_bb = draw.textbbox((0, 0), ts_text, font=f_trip)
+        draw.text((table_x + table_w - (ts_bb[2] - ts_bb[0]) - 8, y + 12), ts_text, fill=TEXT_DIM, font=f_trip)
+
+        y += TRIP_H
+
+        for r in td["rows"]:
+            row_idx += 1
+            row_bg = ROW_A if row_idx % 2 == 0 else ROW_B
+            draw.rectangle([(0, y), (W, y + ROW_H)], fill=row_bg)
+            draw.line([(0, y + ROW_H - 1), (W, y + ROW_H - 1)], fill=(30, 41, 59))
+
+            giao = (r.get("tote_t", 0) or 0) + (r.get("carton_t", 0) or 0)
+            nhan = (r.get("tote_r", 0) or 0) + (r.get("carton_r", 0) or 0)
+            d = nhan - giao
+
+            if d == 0 and giao > 0:
+                st_txt, st_col = "Du", GREEN
+            elif d < 0:
+                st_txt, st_col = f"Thieu {abs(d)}", RED
+            elif d > 0:
+                st_txt, st_col = f"Du {d}", ORANGE
+            else:
+                st_txt, st_col = "—", TEXT_DARK
+
+            cell_vals = [
+                (r.get("dest", "—"), WHITE, f_cell_bold),
+                (str(giao) if giao else "—", TEXT, f_cell),
+                (str(nhan) if nhan else "—", TEXT, f_cell),
+                (st_txt, st_col, f_status),
+            ]
+
+            x = table_x
+            for (val, color, font), (_, col_w) in zip(cell_vals, cols):
+                bb = draw.textbbox((0, 0), val, font=font)
+                tw = bb[2] - bb[0]
+                draw.text((x + (col_w - tw) // 2, y + 12), val, fill=color, font=font)
+                x += col_w
+
+            y += ROW_H
+
+    # ── Footer ──
+    draw.rectangle([(0, y), (W, y + FOOTER_H)], fill=TRIP_BG)
+    draw.rectangle([(0, total_h - 4), (W, total_h)], fill=accent)
+    ft = f"KFM Command Center  •  PILOT HTP & SCV  •  {n_rows} diem"
+    bb = draw.textbbox((0, 0), ft, font=f_footer)
+    draw.text(((W - (bb[2] - bb[0])) // 2, y + 12), ft, fill=TEXT_DARK, font=f_footer)
+
+    # ── Save ──
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     kho_safe = kho.replace("-", "").replace(" ", "_")
-    html_path = os.path.join(OUTPUT_DIR, f"pilot_{kho_safe}_{date_iso}.html")
-    with open(html_path, "w", encoding="utf-8") as f:
-        f.write(html)
-    return html_path, summary
-
-
-def screenshot_html(html_path, output_png):
-    """Use Selenium headless Chrome to screenshot the HTML file."""
-    from selenium import webdriver
-    from selenium.webdriver.chrome.options import Options
-    import time
-
-    chrome_options = Options()
-    chrome_options.add_argument('--headless=new')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--force-device-scale-factor=2')
-    chrome_options.add_argument('--window-size=700,4000')
-    chrome_options.add_argument('--hide-scrollbars')
-
-    driver = None
-    try:
-        driver = webdriver.Chrome(options=chrome_options)
-        file_url = 'file:///' + html_path.replace('\\', '/')
-        driver.get(file_url)
-        time.sleep(1)
-
-        # Get actual page height
-        height = driver.execute_script("return document.body.scrollHeight")
-        driver.set_window_size(700, height + 50)
-        time.sleep(0.5)
-
-        driver.save_screenshot(output_png)
-        print(f"  📸 Screenshot: {output_png}")
-        return output_png
-    except Exception as e:
-        print(f"  ❌ Screenshot error: {e}")
-        import traceback
-        traceback.print_exc()
-        return None
-    finally:
-        if driver:
-            driver.quit()
+    fname = f"pilot_{kho_safe}_{date_iso}.png"
+    fpath = os.path.join(OUTPUT_DIR, fname)
+    img.save(fpath, "PNG")
+    print(f"  📸 Pilot image: {fpath} ({img.width}x{img.height})")
+    return fpath, summary
 
 
 # ── Git deploy ──
@@ -570,16 +661,11 @@ def main():
             pilot_rows = [r for r in rows if r.get("dest", "") in PILOT_STORES]
             if pilot_rows:
                 print(f"\n  🧪 Pilot ({len(pilot_rows)} stores)...")
-                pilot_result = generate_pilot_html(kho, date_iso, rows)
-                if pilot_result:
-                    pilot_html_path, pilot_summary = pilot_result
-                    kho_safe = kho.replace("-", "").replace(" ", "_")
-                    pilot_png = os.path.join(OUTPUT_DIR, f"pilot_{kho_safe}_{date_iso}.png")
-                    png_path = screenshot_html(pilot_html_path, pilot_png)
-                    if png_path:
-                        pilot_caption = build_caption(kho, date_iso, pilot_summary,
-                                                      pilot_label=f" (PILOT HTP & SCV)")
-                        results.append(("image", kho, date_iso, png_path, pilot_caption))
+                pilot_path, pilot_summary = generate_pilot_image(kho, date_iso, rows)
+                if pilot_path:
+                    pilot_caption = build_caption(kho, date_iso, pilot_summary,
+                                                  pilot_label=f" (PILOT HTP & SCV)")
+                    results.append(("image", kho, date_iso, pilot_path, pilot_caption))
 
     if not results:
         print("\n  ❌ Nothing generated!")
