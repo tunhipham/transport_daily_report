@@ -63,7 +63,7 @@ def fetch_inventory_schedule():
         for row in ws.iter_rows(min_row=10, values_only=False):
             store_id = str(row[3].value or "").strip()  # Col D = ID Mart
             store_name = str(row[2].value or "").strip()  # Col C = Tên Mart  
-            kiem_ke = row[7].value  # Col H = Ngày kiểm kê tổng 2026
+            kiem_ke = row[8].value  # Col I = Ngày kiểm kê tổng 2026
             if store_id and kiem_ke:
                 dt = None
                 if isinstance(kiem_ke, datetime):

@@ -120,7 +120,7 @@ def fetch_inventory():
         inv = {}
         for row in ws.iter_rows(min_row=10, values_only=False):
             store_id = str(row[3].value or "").strip()
-            kiem_ke = row[7].value
+            kiem_ke = row[8].value  # Col I
             if store_id and kiem_ke:
                 dt = None
                 if isinstance(kiem_ke, datetime):
