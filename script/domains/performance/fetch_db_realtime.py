@@ -268,8 +268,9 @@ def load_tracking_data(start_date_iso, end_date_iso=None):
         noi_chuyen = str(obj.get("noi_chuyen", "")).strip()
         barrel = str(obj.get("barrel_basket_name", "")).strip()
         dep_date = _parse_departure_date(obj.get("t_departure", ""))
+        t_status = obj.get("t_status", 0)
 
-        if not t_code or not dest or not dep_date:
+        if not t_code or not dest or not dep_date or t_status == 4:
             continue
 
         date_iso = dep_date.strftime("%Y-%m-%d")
