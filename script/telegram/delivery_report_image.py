@@ -147,14 +147,9 @@ def _get_report_css(accent):
   td {{ padding:10px 12px; border-bottom:1px solid #1E293B; font-size:14px }}
   .tc {{ text-align:center }}
   .dest {{ font-weight:700; white-space:nowrap; font-size:15px }}
+  .trip-cell {{ color:{accent}; font-family:monospace; font-size:12px; white-space:nowrap }}
   .even {{ background:#1E293B }}
   .odd {{ background:#0F172A }}
-
-  .trip-row {{ background:#0B1120 !important }}
-  .trip-row td {{ padding:10px 16px; border-bottom:1px solid #334155; font-size:13px }}
-  .trip-id {{ color:{accent}; font-weight:700; font-family:monospace; font-size:13px }}
-  .trip-meta {{ color:#94A3B8; font-size:13px; margin-left:12px }}
-  .trip-stats {{ float:right; color:#64748B; font-size:13px }}
 
   .arr-done {{ color:#10B981; font-weight:600 }}
   .arr-pending {{ color:#EF4444; font-weight:600 }}
@@ -175,52 +170,37 @@ def _get_report_css(accent):
 '''
 
 
-def _build_table_rows(rows, trips, trip_order, is_thitca=False):
-    """Build HTML table rows grouped by trip."""
+def _build_table_rows(rows, is_thitca=False):
+    """Build flat HTML table rows — Trip | Siêu Thị | Giao | Nhận | Đủ/Thiếu/Dư."""
     html = ""
-    stt = 0
-    col_count = 4 if is_thitca else 5
 
-    for trip_id in trip_order:
-        td = trips[trip_id]
-        trip_giao = sum((r.get("tote_t", 0) or 0) + (r.get("carton_t", 0) or 0) for r in td["rows"])
-        trip_nhan = sum((r.get("tote_r", 0) or 0) + (r.get("carton_r", 0) or 0) for r in td["rows"])
-        trip_done = sum(1 for r in td["rows"] if r.get("arrival"))
+    for stt, r in enumerate(rows, 1):
+        giao = (r.get("tote_t", 0) or 0) + (r.get("carton_t", 0) or 0)
+        nhan = (r.get("tote_r", 0) or 0) + (r.get("carton_r", 0) or 0)
+        d = nhan - giao
 
-        html += f'''<tr class="trip-row">
-  <td colspan="{col_count}">
-    <span class="trip-id">🚚 {trip_id}</span>
-    <span class="trip-meta">{td["plate"]} • {td["driver"]}</span>
-    <span class="trip-stats">✅{trip_done}/{len(td["rows"])} | G:{trip_giao} N:{trip_nhan}</span>
-  </td>
-</tr>\n'''
+        if d == 0 and giao > 0:
+            st_cls, st_txt = "ok", "Đủ ✅"
+        elif d < 0:
+            st_cls, st_txt = "bad", f"Thiếu {abs(d)} ❌"
+        elif d > 0:
+            st_cls, st_txt = "warn", f"Dư {d} ⚠️"
+        else:
+            st_cls, st_txt = "na", "—"
 
-        for r in td["rows"]:
-            stt += 1
-            giao = (r.get("tote_t", 0) or 0) + (r.get("carton_t", 0) or 0)
-            nhan = (r.get("tote_r", 0) or 0) + (r.get("carton_r", 0) or 0)
-            d = nhan - giao
+        row_cls = "even" if stt % 2 == 0 else "odd"
+        trip_id = r.get("trip", "") or "—"
 
-            if d == 0 and giao > 0:
-                st_cls, st_txt = "ok", "Đủ ✅"
-            elif d < 0:
-                st_cls, st_txt = "bad", f"Thiếu {abs(d)} ❌"
-            elif d > 0:
-                st_cls, st_txt = "warn", f"Dư {d} ⚠️"
-            else:
-                st_cls, st_txt = "na", "—"
-
-            row_cls = "even" if stt % 2 == 0 else "odd"
-
-            if is_thitca:
-                html += f'''<tr class="{row_cls}">
-  <td class="tc">{stt}</td>
+        if is_thitca:
+            html += f'''<tr class="{row_cls}">
+  <td class="trip-cell">{trip_id}</td>
   <td class="dest">{r.get("dest", "—")}</td>
   <td class="tc">{giao if giao else "—"}</td>
   <td class="tc st-{st_cls}">{st_txt}</td>
 </tr>\n'''
-            else:
-                html += f'''<tr class="{row_cls}">
+        else:
+            html += f'''<tr class="{row_cls}">
+  <td class="trip-cell">{trip_id}</td>
   <td class="dest">{r.get("dest", "—")}</td>
   <td class="tc">{giao if giao else "—"}</td>
   <td class="tc">{nhan if nhan else "—"}</td>
@@ -235,13 +215,13 @@ def _build_table_rows(rows, trips, trip_order, is_thitca=False):
 # ══════════════════════════════════════════════════════════════
 def generate_html_report(kho, date_iso, rows):
     rows = sort_rows(rows)
-    trips, trip_order = group_by_trip(rows)
     summary = calc_summary(rows)
     date_vn = format_date_vn(date_iso)
     day_name = get_day_name(date_iso)
     accent = KHO_ACCENT_HEX.get(kho, "#22D3EE")
     now_str = datetime.now().strftime("%H:%M %d/%m/%Y")
     is_thitca = kho == "THỊT CÁ"
+    n_trips = len(set(r.get("trip", "") for r in rows if r.get("trip")))
 
     diff = summary["diff"]
     if diff == 0:
@@ -252,11 +232,11 @@ def generate_html_report(kho, date_iso, rows):
         diff_html = f'<span style="color:#f97316;font-weight:700">🟡 DƯ {diff}</span>'
 
     if is_thitca:
-        thead = '<tr><th>STT</th><th>Siêu Thị</th><th>Giao</th><th>Đủ/Thiếu/Dư</th></tr>'
+        thead = '<tr><th>Trip</th><th>Siêu Thị</th><th>Giao</th><th>Đủ/Thiếu/Dư</th></tr>'
     else:
-        thead = '<tr><th>Siêu Thị</th><th>Giao</th><th>Nhận</th><th>Đủ/Thiếu/Dư</th></tr>'
+        thead = '<tr><th>Trip</th><th>Siêu Thị</th><th>Giao</th><th>Nhận</th><th>Đủ/Thiếu/Dư</th></tr>'
 
-    table_rows = _build_table_rows(rows, trips, trip_order, is_thitca)
+    table_rows = _build_table_rows(rows, is_thitca)
 
     html = f'''<!DOCTYPE html>
 <html lang="vi">
@@ -274,7 +254,7 @@ def generate_html_report(kho, date_iso, rows):
 </div>
 
 <div class="summary">
-  <div class="s-item"><span>🚛</span><span class="s-val white">{len(trips)}</span><span class="s-label">trip</span></div>
+  <div class="s-item"><span>🚛</span><span class="s-val white">{n_trips}</span><span class="s-label">trip</span></div>
   <div class="s-item"><span>✅</span><span class="s-val green">{summary["done"]}</span><span class="s-label">đã giao</span></div>
   <div class="s-item"><span>❌</span><span class="s-val red">{summary["pending"]}</span><span class="s-label">chưa giao</span></div>
   <div class="s-item"><span>📤</span><span class="s-val white">{summary["total_giao"]:,}</span><span class="s-label">giao</span></div>
@@ -296,32 +276,17 @@ def generate_html_report(kho, date_iso, rows):
 </table>
 </div>
 
-<div class="footer">KFM Command Center • {summary["total"]} điểm giao • {len(trips)} chuyến</div>
+<div class="footer">KFM Command Center • {summary["total"]} điểm giao • {n_trips} chuyến</div>
 
 <script>
 function filterRows() {{
   const tq = document.getElementById('searchTrip').value.toLowerCase();
   const sq = document.getElementById('searchSthi').value.toLowerCase();
   const rows = document.querySelectorAll('#tbody tr');
-  const tripRows = [];
   rows.forEach(r => {{
-    if (r.classList.contains('trip-row')) {{
-      tripRows.push({{ el: r, dataRows: [] }});
-    }} else if (tripRows.length) {{
-      tripRows[tripRows.length - 1].dataRows.push(r);
-    }}
-  }});
-  tripRows.forEach(tr => {{
-    const tripText = tr.el.textContent.toLowerCase();
-    let anyVisible = false;
-    tr.dataRows.forEach(dr => {{
-      const dest = dr.querySelector('.dest');
-      const destText = dest ? dest.textContent.toLowerCase() : '';
-      const match = tripText.includes(tq) && destText.includes(sq);
-      dr.style.display = match ? '' : 'none';
-      if (match) anyVisible = true;
-    }});
-    tr.el.style.display = anyVisible ? '' : 'none';
+    const text = r.textContent.toLowerCase();
+    const match = text.includes(tq) && text.includes(sq);
+    r.style.display = match ? '' : 'none';
   }});
 }}
 </script>
@@ -403,15 +368,14 @@ def generate_pilot_image(kho, date_iso, all_rows):
     TRIP_H = 44
     FOOTER_H = 40
 
-    # Column widths: Siêu Thị | Giao | Nhận | Đủ/Thiếu/Dư
-    cols = [("Siêu Thị", 200), ("Giao", 150), ("Nhận", 150), ("Đủ/Thiếu/Dư", 260)]
+    # Column widths: Trip | Siêu Thị | Giao | Nhận | Đủ/Thiếu/Dư
+    cols = [("Trip", 200), ("Siêu Thị", 130), ("Giao", 120), ("Nhận", 120), ("Đủ/Thiếu/Dư", 230)]
     table_w = sum(c[1] for c in cols)
     table_x = (W - table_w) // 2
 
     # Calculate height
     n_rows = len(pilot_rows)
-    n_trips = len(trips)
-    total_h = TITLE_H + SUMMARY_H + HDR_H + n_trips * TRIP_H + n_rows * ROW_H + FOOTER_H + 10
+    total_h = TITLE_H + SUMMARY_H + HDR_H + n_rows * ROW_H + FOOTER_H + 10
 
     # ── Create image ──
     img = Image.new("RGB", (W, total_h), BG)
@@ -476,60 +440,43 @@ def generate_pilot_image(kho, date_iso, all_rows):
 
     y += HDR_H
 
-    # ── Data rows ──
-    row_idx = 0
-    for trip_id in trip_order:
-        td = trips[trip_id]
+    # ── Data rows (flat table) ──
+    for row_idx, r in enumerate(pilot_rows, 1):
+        row_bg = ROW_A if row_idx % 2 == 0 else ROW_B
+        draw.rectangle([(0, y), (W, y + ROW_H)], fill=row_bg)
+        draw.line([(0, y + ROW_H - 1), (W, y + ROW_H - 1)], fill=(30, 41, 59))
 
-        # Trip separator
-        draw.rectangle([(0, y), (W, y + TRIP_H)], fill=TRIP_BG)
-        draw.line([(0, y), (W, y)], fill=BORDER)
+        giao = (r.get("tote_t", 0) or 0) + (r.get("carton_t", 0) or 0)
+        nhan = (r.get("tote_r", 0) or 0) + (r.get("carton_r", 0) or 0)
+        d = nhan - giao
 
-        trip_label = f"{trip_id}  |  {td['plate']}  |  {td['driver']}" if trip_id.strip() else "— Chưa có Trip —"
-        draw.text((table_x + 8, y + 12), trip_label, fill=accent, font=f_trip)
+        if d == 0 and giao > 0:
+            st_txt, st_col = "Đủ", GREEN
+        elif d < 0:
+            st_txt, st_col = f"Thiếu {abs(d)}", RED
+        elif d > 0:
+            st_txt, st_col = f"Dư {d}", ORANGE
+        else:
+            st_txt, st_col = "—", TEXT_DARK
 
-        trip_giao = sum((r.get("tote_t", 0) or 0) + (r.get("carton_t", 0) or 0) for r in td["rows"])
-        trip_nhan = sum((r.get("tote_r", 0) or 0) + (r.get("carton_r", 0) or 0) for r in td["rows"])
-        ts_text = f"Giao: {trip_giao}  Nhận: {trip_nhan}"
-        ts_bb = draw.textbbox((0, 0), ts_text, font=f_trip)
-        draw.text((table_x + table_w - (ts_bb[2] - ts_bb[0]) - 8, y + 12), ts_text, fill=TEXT_DIM, font=f_trip)
+        trip_id = r.get("trip", "") or "—"
 
-        y += TRIP_H
+        cell_vals = [
+            (trip_id, accent, f_trip),
+            (r.get("dest", "—"), WHITE, f_cell_bold),
+            (str(giao) if giao else "—", TEXT, f_cell),
+            (str(nhan) if nhan else "—", TEXT, f_cell),
+            (st_txt, st_col, f_status),
+        ]
 
-        for r in td["rows"]:
-            row_idx += 1
-            row_bg = ROW_A if row_idx % 2 == 0 else ROW_B
-            draw.rectangle([(0, y), (W, y + ROW_H)], fill=row_bg)
-            draw.line([(0, y + ROW_H - 1), (W, y + ROW_H - 1)], fill=(30, 41, 59))
+        x = table_x
+        for (val, color, font), (_, col_w) in zip(cell_vals, cols):
+            bb = draw.textbbox((0, 0), val, font=font)
+            tw = bb[2] - bb[0]
+            draw.text((x + (col_w - tw) // 2, y + 12), val, fill=color, font=font)
+            x += col_w
 
-            giao = (r.get("tote_t", 0) or 0) + (r.get("carton_t", 0) or 0)
-            nhan = (r.get("tote_r", 0) or 0) + (r.get("carton_r", 0) or 0)
-            d = nhan - giao
-
-            if d == 0 and giao > 0:
-                st_txt, st_col = "Đủ", GREEN
-            elif d < 0:
-                st_txt, st_col = f"Thiếu {abs(d)}", RED
-            elif d > 0:
-                st_txt, st_col = f"Dư {d}", ORANGE
-            else:
-                st_txt, st_col = "—", TEXT_DARK
-
-            cell_vals = [
-                (r.get("dest", "—"), WHITE, f_cell_bold),
-                (str(giao) if giao else "—", TEXT, f_cell),
-                (str(nhan) if nhan else "—", TEXT, f_cell),
-                (st_txt, st_col, f_status),
-            ]
-
-            x = table_x
-            for (val, color, font), (_, col_w) in zip(cell_vals, cols):
-                bb = draw.textbbox((0, 0), val, font=font)
-                tw = bb[2] - bb[0]
-                draw.text((x + (col_w - tw) // 2, y + 12), val, fill=color, font=font)
-                x += col_w
-
-            y += ROW_H
+        y += ROW_H
 
     # ── Footer ──
     draw.rectangle([(0, y), (W, y + FOOTER_H)], fill=TRIP_BG)
