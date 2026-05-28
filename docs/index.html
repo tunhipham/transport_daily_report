@@ -3237,7 +3237,18 @@
       const selDateIso = window._trkSelectedDate || tracking.latest_date;
       const datesData = tracking.dates;
       const khos = datesData[selDateIso] || {};
-      const rows = khos[kho] || [];
+      const rows = [...(khos[kho] || [])];
+      
+      // Sort rows by Trip ID then by plan_time
+      rows.sort((a, b) => {
+        const tripA = a.trip || '';
+        const tripB = b.trip || '';
+        if (tripA !== tripB) return tripA.localeCompare(tripB);
+        const timeA = a.plan_time || '23:59';
+        const timeB = b.plan_time || '23:59';
+        return timeA.localeCompare(timeB);
+      });
+
       const isThitCa = kho === 'THỊT CÁ';
 
       // Summary
@@ -3248,6 +3259,10 @@
     <div class="trk-stat"><div class="trk-dot" style="background:#10b981"></div> Đã giao: <b>${done}</b></div>
     <div class="trk-stat"><div class="trk-dot" style="background:#ef4444"></div> Chưa giao: <b>${pending}</b></div>
     <div class="trk-stat">Tổng: <b>${rows.length}</b> điểm</div>
+  </div>
+  <div class="filter-bar" style="margin-bottom:.8rem; background:transparent; padding:0; box-shadow:none">
+    <input type="text" id="trkSearchTrip-${kho}" placeholder="🔍 Tìm Trip ID..." style="background:var(--surface); border:1px solid var(--bd2); color:var(--t1); border-radius:6px; padding:.4rem .8rem; width:200px; margin-right:.5rem; font-size:.8rem" onkeyup="trkFilterTable('${kho}')">
+    <input type="text" id="trkSearchSthi-${kho}" placeholder="🔍 Tìm Siêu Thị..." style="background:var(--surface); border:1px solid var(--bd2); color:var(--t1); border-radius:6px; padding:.4rem .8rem; width:200px; font-size:.8rem" onkeyup="trkFilterTable('${kho}')">
   </div>`;
 
       if (!rows.length) {
@@ -3278,7 +3293,10 @@
           ? 'color:var(--grn);font-weight:600'
           : 'color:var(--redl);font-weight:600';
 
-        html += `<tr class="${rowClass}">`;
+        const tripStr = (r.trip || '').toLowerCase();
+        const destStr = (r.dest || '').toLowerCase();
+        
+        html += `<tr class="${rowClass} trk-row-${kho}" data-trip="${tripStr}" data-sthi="${destStr}">`;
         html += `<td style="font-family:monospace;font-size:.72rem">${r.trip || '—'}</td>`;
         html += `<td>${r.plate || '—'}</td>`;
         html += `<td style="text-align:left">${r.driver || '—'}</td>`;
@@ -3312,10 +3330,27 @@
         <div class="tt-row"><span class="tt-icon">🔵</span><span class="tt-label">Rổ/Tote</span><span class="tt-val">${tote}</span></div>
         <div class="tt-row"><span class="tt-icon">📦</span><span class="tt-label">Thùng/Kiện</span><span class="tt-val">${carton}</span></div>
       `;
-      tip.style.left = (e.clientX + 12) + 'px';
-      tip.style.top = (e.clientY - 30) + 'px';
       document.body.appendChild(tip);
+      tip.style.left = (e.clientX - tip.offsetWidth - 12) + 'px';
+      tip.style.top = (e.clientY - 30) + 'px';
       _trkTip = tip;
+    }
+    
+    window.trkFilterTable = function(kho) {
+      const tripInput = document.getElementById('trkSearchTrip-' + kho);
+      const sthiInput = document.getElementById('trkSearchSthi-' + kho);
+      const tripQ = (tripInput ? tripInput.value : '').toLowerCase();
+      const sthiQ = (sthiInput ? sthiInput.value : '').toLowerCase();
+      const rows = document.querySelectorAll('.trk-row-' + kho);
+      rows.forEach(r => {
+        const trip = r.getAttribute('data-trip') || '';
+        const sthi = r.getAttribute('data-sthi') || '';
+        if (trip.includes(tripQ) && sthi.includes(sthiQ)) {
+          r.style.display = '';
+        } else {
+          r.style.display = 'none';
+        }
+      });
     }
 
     function trkHideTip() {
