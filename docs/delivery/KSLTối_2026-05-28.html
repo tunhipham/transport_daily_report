@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Báo Cáo Giao Hàng — KSL-Tối 28/05/2026</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box }
+  body { background:#0F172A; color:#E2E8F0; font-family:'Segoe UI',Arial,sans-serif; font-size:14px }
+
+  .header { background:linear-gradient(135deg, #1E293B 0%, #0F172A 100%); padding:20px 24px 16px; border-bottom:3px solid #C49BFF }
+  .header h1 { font-size:20px; color:#C49BFF; margin-bottom:6px; letter-spacing:0.3px }
+  .header .sub { color:#94A3B8; font-size:14px }
+  .header .ts { float:right; color:#64748B; font-size:11px; margin-top:-36px }
+
+  .summary { background:#1E293B; padding:16px 24px; display:flex; gap:24px; flex-wrap:wrap; align-items:center; border-bottom:1px solid #334155 }
+  .s-item { display:flex; align-items:center; gap:8px }
+  .s-val { font-weight:700; font-size:18px }
+  .s-label { color:#94A3B8; font-size:13px }
+  .green { color:#10B981 }
+  .red { color:#EF4444 }
+  .white { color:#F1F5F9 }
+
+  .search-bar { padding:12px 24px; background:#0F172A; display:flex; gap:10px; flex-wrap:wrap }
+  .search-bar input { background:#1E293B; border:1px solid #334155; color:#E2E8F0; border-radius:8px; padding:8px 14px; font-size:13px; width:220px; outline:none; transition:border-color .2s }
+  .search-bar input:focus { border-color:#C49BFF }
+  .search-bar input::placeholder { color:#64748B }
+
+  .wrap { overflow-x:auto }
+  table { width:100%; border-collapse:collapse; font-size:14px }
+  thead { position:sticky; top:0; z-index:2 }
+  th { background:#1E293B; color:#F0C060; padding:12px 12px; font-weight:700; text-align:center; border-bottom:2px solid #C49BFF; white-space:nowrap; font-size:14px }
+  td { padding:10px 12px; border-bottom:1px solid #1E293B; font-size:14px }
+  .tc { text-align:center }
+  .dest { font-weight:700; white-space:nowrap; font-size:15px }
+  .trip-cell { color:#C49BFF; font-family:monospace; font-size:12px; white-space:nowrap }
+  .even { background:#1E293B }
+  .odd { background:#0F172A }
+
+  .arr-done { color:#10B981; font-weight:600 }
+  .arr-pending { color:#EF4444; font-weight:600 }
+  .st-ok { color:#10B981; font-weight:700 }
+  .st-bad { color:#EF4444; font-weight:700 }
+  .st-warn { color:#F97316; font-weight:700 }
+  .st-na { color:#475569 }
+
+  .footer { background:#0B1120; padding:14px 24px; text-align:center; color:#475569; font-size:12px; border-top:2px solid #C49BFF }
+
+  @media(max-width:600px) {
+    .summary { padding:12px 16px; gap:16px }
+    .search-bar { padding:10px 16px }
+    .search-bar input { width:45% }
+    th, td { padding:8px 6px; font-size:13px }
+    .trip-meta { display:none }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📦 BÁO CÁO GIAO HÀNG — KSL-Tối</h1>
+  <div class="sub">Thứ 5, 28/05/2026</div>
+  <div class="ts">Cập nhật: 15:13 28/05/2026</div>
+</div>
+
+<div class="summary">
+  <div class="s-item"><span>🚛</span><span class="s-val white">0</span><span class="s-label">trip</span></div>
+  <div class="s-item"><span>✅</span><span class="s-val green">0</span><span class="s-label">đã giao</span></div>
+  <div class="s-item"><span>❌</span><span class="s-val red">66</span><span class="s-label">chưa giao</span></div>
+  <div class="s-item"><span>📤</span><span class="s-val white">0</span><span class="s-label">giao</span></div>
+  <div class="s-item"><span>📥</span><span class="s-val white">0</span><span class="s-label">nhận</span></div>
+  <div class="s-item"><span style="color:#10b981;font-weight:700">✅ ĐỦ</span></div>
+</div>
+
+<div class="search-bar">
+  <input type="text" id="searchTrip" placeholder="🔍 Tìm Trip ID..." onkeyup="filterRows()">
+  <input type="text" id="searchSthi" placeholder="🔍 Tìm Siêu Thị..." onkeyup="filterRows()">
+</div>
+
+<div class="wrap">
+<table>
+<thead><tr><th>Trip</th><th>Siêu Thị</th><th>Giao</th><th>Nhận</th><th>Đủ/Thiếu/Dư</th></tr></thead>
+<tbody id="tbody">
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">CLN</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">LVT</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">HTC</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">A170</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A112</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">A166</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A195</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">WGA</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A104</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">A114</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A116</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">A140</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A143</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">A161</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A163</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">A175</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A188</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">A199</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">CLG</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">DMR</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">DQH</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">GDU</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">KHI</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">NKM</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">NTT</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">NVQ</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">PHL</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">Q7R</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">VHT</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">VLA</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A186</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">A129</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A159</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">BVB</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">CLD</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">TSO</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">PGS</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">TMY</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">CKO</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">HLR</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">LTC</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">LVN</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">RVS</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">A155</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A160</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">ECG</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">NHG</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">ERT</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">HHM</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">PTN</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">TNT</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">LVL</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A106</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">A157</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A136</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">A150</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A171</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">A174</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A190</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">A191</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A203</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">MZ2</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">PKD</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">A145</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">—</td>
+  <td class="dest">A109</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">—</td>
+  <td class="dest">HHT</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+
+</tbody>
+</table>
+</div>
+
+<div class="footer">KFM Command Center • 66 điểm giao • 0 chuyến</div>
+
+<script>
+function filterRows() {
+  const tq = document.getElementById('searchTrip').value.toLowerCase();
+  const sq = document.getElementById('searchSthi').value.toLowerCase();
+  const rows = document.querySelectorAll('#tbody tr');
+  rows.forEach(r => {
+    const text = r.textContent.toLowerCase();
+    const match = text.includes(tq) && text.includes(sq);
+    r.style.display = match ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
