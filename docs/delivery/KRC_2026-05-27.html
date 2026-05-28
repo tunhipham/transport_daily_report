@@ -1,0 +1,2139 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Báo Cáo Giao Hàng — KRC 27/05/2026</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box }
+  body { background:#1E1E2E; color:#E0E0E0; font-family:'Segoe UI',Arial,sans-serif; font-size:14px; padding:0 }
+
+  .header { background:#14141F; padding:16px 20px 12px; border-bottom:3px solid #6CA6FF }
+  .header h1 { font-size:20px; color:#6CA6FF; margin-bottom:4px }
+  .header .sub { color:#A0A0B4; font-size:13px }
+  .header .ts { float:right; color:#666; font-size:11px; margin-top:-32px }
+
+  .summary { background:#2A2A3C; padding:14px 20px; display:flex; gap:20px; flex-wrap:wrap; align-items:center; border-bottom:1px solid #3A3A4C }
+  .summary .s-item { display:flex; align-items:center; gap:6px }
+  .summary .s-val { font-weight:700; font-size:16px }
+  .summary .s-label { color:#A0A0B4; font-size:12px }
+  .summary .green { color:#10b981 }
+  .summary .red { color:#ef4444 }
+  .summary .white { color:#fff }
+
+  .search-bar { padding:10px 20px; background:#1E1E2E; display:flex; gap:8px; flex-wrap:wrap }
+  .search-bar input { background:#2A2A3C; border:1px solid #3A3A4C; color:#E0E0E0; border-radius:6px; padding:6px 12px; font-size:13px; width:200px }
+  .search-bar input::placeholder { color:#666 }
+
+  .wrap { overflow-x:auto; padding:0 }
+  table { width:100%; border-collapse:collapse; font-size:13px }
+  thead { position:sticky; top:0; z-index:2 }
+  th { background:#2A2A3C; color:#F0C060; padding:10px 8px; font-weight:700; text-align:center; border-bottom:2px solid #6CA6FF; white-space:nowrap }
+  td { padding:8px 8px; border-bottom:1px solid #2A2A3C }
+  .tc { text-align:center }
+  .dest { font-weight:600; white-space:nowrap }
+  .even { background:#23233A }
+  .odd { background:#1E1E2E }
+
+  .trip-row { background:#16162A !important }
+  .trip-row td { padding:8px 12px; border-bottom:1px solid #3A3A4C }
+  .trip-id { color:#6CA6FF; font-weight:700; font-size:12px; font-family:monospace }
+  .trip-meta { color:#A0A0B4; font-size:12px; margin-left:10px }
+  .trip-stats { float:right; color:#888; font-size:12px }
+
+  .arr-done { color:#10b981; font-weight:600 }
+  .arr-pending { color:#ef4444; font-weight:600 }
+
+  .st-ok { color:#10b981; font-weight:600 }
+  .st-bad { color:#ef4444; font-weight:600 }
+  .st-warn { color:#f97316; font-weight:600 }
+  .st-na { color:#666 }
+
+  .footer { background:#14141F; padding:12px 20px; text-align:center; color:#666; font-size:11px; border-top:2px solid #6CA6FF }
+
+  @media(max-width:600px) {
+    .summary { padding:10px 12px; gap:12px }
+    .search-bar { padding:8px 12px }
+    .search-bar input { width:45% }
+    th, td { padding:6px 4px; font-size:12px }
+    .trip-meta { display:none }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📦 Báo Cáo Giao Hàng — KRC</h1>
+  <div class="sub">Thứ 4, 27/05/2026</div>
+  <div class="ts">Cập nhật: 13:56 28/05/2026</div>
+</div>
+
+<div class="summary">
+  <div class="s-item"><span>🚛</span><span class="s-val white">48</span><span class="s-label">trip</span></div>
+  <div class="s-item"><span>✅</span><span class="s-val green">185</span><span class="s-label">đã giao</span></div>
+  <div class="s-item"><span>❌</span><span class="s-val red">1</span><span class="s-label">chưa giao</span></div>
+  <div class="s-item"><span>📤</span><span class="s-val white">7,149</span><span class="s-label">giao</span></div>
+  <div class="s-item"><span>📥</span><span class="s-val white">7,079</span><span class="s-label">nhận</span></div>
+  <div class="s-item"><span style="color:#ef4444">🔴 THIẾU 70</span></div>
+</div>
+
+<div class="search-bar">
+  <input type="text" id="searchTrip" placeholder="🔍 Tìm Trip ID..." onkeyup="filterRows()">
+  <input type="text" id="searchSthi" placeholder="🔍 Tìm Siêu Thị..." onkeyup="filterRows()">
+</div>
+
+<div class="wrap">
+<table>
+<thead><tr><th>STT</th><th>Siêu Thị</th><th>Dự Kiến</th><th>Đến ST</th><th>Giao</th><th>Nhận</th><th>Thiếu/Đủ</th></tr></thead>
+<tbody id="tbody">
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053616</span>
+    <span class="trip-meta">50H34180 • CHÂU VĂN SƠN</span>
+    <span class="trip-stats">✅5/5 | G:163 N:163</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">1</td>
+  <td class="dest"><b>A174</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">03:40</td>
+  <td class="tc">17</td>
+  <td class="tc">17</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">2</td>
+  <td class="dest"><b>A191</b></td>
+  <td class="tc">3:35</td>
+  <td class="tc arr-done">03:08</td>
+  <td class="tc">17</td>
+  <td class="tc">17</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">3</td>
+  <td class="dest"><b>A112</b></td>
+  <td class="tc">4:10</td>
+  <td class="tc arr-done">04:05</td>
+  <td class="tc">42</td>
+  <td class="tc">42</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">4</td>
+  <td class="dest"><b>KHI</b></td>
+  <td class="tc">4:40</td>
+  <td class="tc arr-done">04:27</td>
+  <td class="tc">52</td>
+  <td class="tc">52</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">5</td>
+  <td class="dest"><b>D10</b></td>
+  <td class="tc">5:10</td>
+  <td class="tc arr-done">04:57</td>
+  <td class="tc">35</td>
+  <td class="tc">35</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053617</span>
+    <span class="trip-meta">50E88949 • LƯƠNG HUY CƯỜNG</span>
+    <span class="trip-stats">✅3/3 | G:167 N:167</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">6</td>
+  <td class="dest"><b>A113</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">03:17</td>
+  <td class="tc">26</td>
+  <td class="tc">26</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">7</td>
+  <td class="dest"><b>NVD</b></td>
+  <td class="tc">4:30</td>
+  <td class="tc arr-done">03:39</td>
+  <td class="tc">86</td>
+  <td class="tc">86</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">8</td>
+  <td class="dest"><b>BQI</b></td>
+  <td class="tc">5:00</td>
+  <td class="tc arr-done">04:21</td>
+  <td class="tc">55</td>
+  <td class="tc">55</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053618</span>
+    <span class="trip-meta">51D51521 • LƯƠNG ĐỨC QUANG</span>
+    <span class="trip-stats">✅3/3 | G:161 N:164</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">9</td>
+  <td class="dest"><b>A114</b></td>
+  <td class="tc">3:35</td>
+  <td class="tc arr-done">02:56</td>
+  <td class="tc">34</td>
+  <td class="tc">34</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">10</td>
+  <td class="dest"><b>PHG</b></td>
+  <td class="tc">4:05</td>
+  <td class="tc arr-done">03:13</td>
+  <td class="tc">82</td>
+  <td class="tc">82</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">11</td>
+  <td class="dest"><b>A140</b></td>
+  <td class="tc">4:35</td>
+  <td class="tc arr-done">03:33</td>
+  <td class="tc">45</td>
+  <td class="tc">48</td>
+  <td class="tc st-warn">Dư 3</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053619</span>
+    <span class="trip-meta">50H-92835 • Sơn Quốc Trưởng</span>
+    <span class="trip-stats">✅4/4 | G:141 N:141</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">12</td>
+  <td class="dest"><b>A110</b></td>
+  <td class="tc">3:25</td>
+  <td class="tc arr-done">02:53</td>
+  <td class="tc">55</td>
+  <td class="tc">55</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">13</td>
+  <td class="dest"><b>A118</b></td>
+  <td class="tc">3:55</td>
+  <td class="tc arr-done">03:23</td>
+  <td class="tc">25</td>
+  <td class="tc">25</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">14</td>
+  <td class="dest"><b>A120</b></td>
+  <td class="tc">4:25</td>
+  <td class="tc arr-done">03:33</td>
+  <td class="tc">47</td>
+  <td class="tc">47</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">15</td>
+  <td class="dest"><b>A188</b></td>
+  <td class="tc">5:00</td>
+  <td class="tc arr-done">04:14</td>
+  <td class="tc">14</td>
+  <td class="tc">14</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053620</span>
+    <span class="trip-meta">72A-356.60 • Lê Tấn Nghĩa</span>
+    <span class="trip-stats">✅2/3 | G:117 N:41</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">16</td>
+  <td class="dest"><b>A8001</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-pending">—</td>
+  <td class="tc">76</td>
+  <td class="tc">—</td>
+  <td class="tc st-bad">Thiếu 76</td>
+</tr>
+<tr class="odd">
+  <td class="tc">17</td>
+  <td class="dest"><b>A189</b></td>
+  <td class="tc">4:35</td>
+  <td class="tc arr-done">05:58</td>
+  <td class="tc">18</td>
+  <td class="tc">18</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">18</td>
+  <td class="dest"><b>A108</b></td>
+  <td class="tc">5:10</td>
+  <td class="tc arr-done">03:40</td>
+  <td class="tc">23</td>
+  <td class="tc">23</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053621</span>
+    <span class="trip-meta">50E-186.58 • Thạch Thành Tâm</span>
+    <span class="trip-stats">✅4/4 | G:151 N:151</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">19</td>
+  <td class="dest"><b>A109</b></td>
+  <td class="tc">3:45</td>
+  <td class="tc arr-done">03:45</td>
+  <td class="tc">22</td>
+  <td class="tc">22</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">20</td>
+  <td class="dest"><b>LPM</b></td>
+  <td class="tc">4:15</td>
+  <td class="tc arr-done">03:57</td>
+  <td class="tc">22</td>
+  <td class="tc">22</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">21</td>
+  <td class="dest"><b>PTN</b></td>
+  <td class="tc">4:50</td>
+  <td class="tc arr-done">03:27</td>
+  <td class="tc">37</td>
+  <td class="tc">37</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">22</td>
+  <td class="dest"><b>LTC</b></td>
+  <td class="tc">5:20</td>
+  <td class="tc arr-done">03:07</td>
+  <td class="tc">70</td>
+  <td class="tc">70</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053622</span>
+    <span class="trip-meta">50H-615.40 • Huỳnh Minh Bảo</span>
+    <span class="trip-stats">✅5/5 | G:160 N:160</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">23</td>
+  <td class="dest"><b>NKM</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">02:27</td>
+  <td class="tc">26</td>
+  <td class="tc">26</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">24</td>
+  <td class="dest"><b>A106</b></td>
+  <td class="tc">3:30</td>
+  <td class="tc arr-done">02:38</td>
+  <td class="tc">61</td>
+  <td class="tc">61</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">25</td>
+  <td class="dest"><b>A190</b></td>
+  <td class="tc">4:05</td>
+  <td class="tc arr-done">03:02</td>
+  <td class="tc">24</td>
+  <td class="tc">24</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">26</td>
+  <td class="dest"><b>CLG</b></td>
+  <td class="tc">4:40</td>
+  <td class="tc arr-done">03:29</td>
+  <td class="tc">31</td>
+  <td class="tc">31</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">27</td>
+  <td class="dest"><b>A175</b></td>
+  <td class="tc">5:15</td>
+  <td class="tc arr-done">03:16</td>
+  <td class="tc">18</td>
+  <td class="tc">18</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053623</span>
+    <span class="trip-meta">50E80040 • DUY LONG</span>
+    <span class="trip-stats">✅5/5 | G:160 N:160</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">28</td>
+  <td class="dest"><b>A156</b></td>
+  <td class="tc">3:05</td>
+  <td class="tc arr-done">03:03</td>
+  <td class="tc">13</td>
+  <td class="tc">13</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">29</td>
+  <td class="dest"><b>GHA</b></td>
+  <td class="tc">3:40</td>
+  <td class="tc arr-done">03:13</td>
+  <td class="tc">77</td>
+  <td class="tc">77</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">30</td>
+  <td class="dest"><b>DXH</b></td>
+  <td class="tc">4:10</td>
+  <td class="tc arr-done">03:37</td>
+  <td class="tc">18</td>
+  <td class="tc">18</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">31</td>
+  <td class="dest"><b>A107</b></td>
+  <td class="tc">4:40</td>
+  <td class="tc arr-done">03:52</td>
+  <td class="tc">33</td>
+  <td class="tc">33</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">32</td>
+  <td class="dest"><b>A179</b></td>
+  <td class="tc">5:15</td>
+  <td class="tc arr-done">04:21</td>
+  <td class="tc">19</td>
+  <td class="tc">19</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053624</span>
+    <span class="trip-meta">50H-198.03 • Nguyễn Duy Khánh</span>
+    <span class="trip-stats">✅5/5 | G:157 N:157</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">33</td>
+  <td class="dest"><b>A146</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">04:29</td>
+  <td class="tc">30</td>
+  <td class="tc">30</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">34</td>
+  <td class="dest"><b>A159</b></td>
+  <td class="tc">3:35</td>
+  <td class="tc arr-done">02:58</td>
+  <td class="tc">25</td>
+  <td class="tc">25</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">35</td>
+  <td class="dest"><b>RS4</b></td>
+  <td class="tc">4:10</td>
+  <td class="tc arr-done">03:54</td>
+  <td class="tc">18</td>
+  <td class="tc">18</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">36</td>
+  <td class="dest"><b>A145</b></td>
+  <td class="tc">4:40</td>
+  <td class="tc arr-done">04:04</td>
+  <td class="tc">16</td>
+  <td class="tc">16</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">37</td>
+  <td class="dest"><b>CKO</b></td>
+  <td class="tc">5:10</td>
+  <td class="tc arr-done">03:30</td>
+  <td class="tc">68</td>
+  <td class="tc">68</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053625</span>
+    <span class="trip-meta">72A - 32844 • Nguyễn Bá Hạnh</span>
+    <span class="trip-stats">✅3/3 | G:144 N:144</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">38</td>
+  <td class="dest"><b>BVB</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">03:05</td>
+  <td class="tc">39</td>
+  <td class="tc">39</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">39</td>
+  <td class="dest"><b>PHL</b></td>
+  <td class="tc">4:30</td>
+  <td class="tc arr-done">04:05</td>
+  <td class="tc">49</td>
+  <td class="tc">49</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">40</td>
+  <td class="dest"><b>ERT</b></td>
+  <td class="tc">5:00</td>
+  <td class="tc arr-done">04:23</td>
+  <td class="tc">56</td>
+  <td class="tc">56</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053626</span>
+    <span class="trip-meta">50H-68557 • Đào Minh Tiến</span>
+    <span class="trip-stats">✅5/5 | G:160 N:160</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">41</td>
+  <td class="dest"><b>HNN</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">04:11</td>
+  <td class="tc">26</td>
+  <td class="tc">26</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">42</td>
+  <td class="dest"><b>THD</b></td>
+  <td class="tc">3:30</td>
+  <td class="tc arr-done">03:42</td>
+  <td class="tc">18</td>
+  <td class="tc">18</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">43</td>
+  <td class="dest"><b>A121</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">04:00</td>
+  <td class="tc">17</td>
+  <td class="tc">17</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">44</td>
+  <td class="dest"><b>A160</b></td>
+  <td class="tc">4:35</td>
+  <td class="tc arr-done">03:27</td>
+  <td class="tc">23</td>
+  <td class="tc">23</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">45</td>
+  <td class="dest"><b>AKR</b></td>
+  <td class="tc">5:10</td>
+  <td class="tc arr-done">04:34</td>
+  <td class="tc">76</td>
+  <td class="tc">76</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053627</span>
+    <span class="trip-meta">50H-085.86 • Võ Tuấn Em</span>
+    <span class="trip-stats">✅5/5 | G:129 N:129</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">46</td>
+  <td class="dest"><b>HMN</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">03:03</td>
+  <td class="tc">45</td>
+  <td class="tc">45</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">47</td>
+  <td class="dest"><b>TVK</b></td>
+  <td class="tc">3:30</td>
+  <td class="tc arr-done">03:17</td>
+  <td class="tc">21</td>
+  <td class="tc">21</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">48</td>
+  <td class="dest"><b>A199</b></td>
+  <td class="tc">4:05</td>
+  <td class="tc arr-done">03:30</td>
+  <td class="tc">17</td>
+  <td class="tc">17</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">49</td>
+  <td class="dest"><b>A143</b></td>
+  <td class="tc">4:40</td>
+  <td class="tc arr-done">04:02</td>
+  <td class="tc">22</td>
+  <td class="tc">22</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">50</td>
+  <td class="dest"><b>A186</b></td>
+  <td class="tc">5:15</td>
+  <td class="tc arr-done">03:43</td>
+  <td class="tc">24</td>
+  <td class="tc">24</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053628</span>
+    <span class="trip-meta">50H-746.47 • Nguyễn Tấn Cường</span>
+    <span class="trip-stats">✅5/5 | G:154 N:154</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">51</td>
+  <td class="dest"><b>DQH</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">03:20</td>
+  <td class="tc">54</td>
+  <td class="tc">54</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">52</td>
+  <td class="dest"><b>NVK</b></td>
+  <td class="tc">3:30</td>
+  <td class="tc arr-done">03:40</td>
+  <td class="tc">36</td>
+  <td class="tc">36</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">53</td>
+  <td class="dest"><b>PVB</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">03:57</td>
+  <td class="tc">34</td>
+  <td class="tc">34</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">54</td>
+  <td class="dest"><b>A170</b></td>
+  <td class="tc">4:35</td>
+  <td class="tc arr-done">04:16</td>
+  <td class="tc">14</td>
+  <td class="tc">14</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">55</td>
+  <td class="dest"><b>HNG</b></td>
+  <td class="tc">5:10</td>
+  <td class="tc arr-done">04:36</td>
+  <td class="tc">16</td>
+  <td class="tc">16</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053629</span>
+    <span class="trip-meta">72A-356.65 • Lê Văn Thuận</span>
+    <span class="trip-stats">✅4/4 | G:153 N:153</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">56</td>
+  <td class="dest"><b>NTO</b></td>
+  <td class="tc">3:05</td>
+  <td class="tc arr-done">03:04</td>
+  <td class="tc">56</td>
+  <td class="tc">56</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">57</td>
+  <td class="dest"><b>VTG</b></td>
+  <td class="tc">3:35</td>
+  <td class="tc arr-done">03:30</td>
+  <td class="tc">43</td>
+  <td class="tc">43</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">58</td>
+  <td class="dest"><b>KDG</b></td>
+  <td class="tc">4:05</td>
+  <td class="tc arr-done">04:03</td>
+  <td class="tc">34</td>
+  <td class="tc">34</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">59</td>
+  <td class="dest"><b>NTN</b></td>
+  <td class="tc">4:40</td>
+  <td class="tc arr-done">04:28</td>
+  <td class="tc">20</td>
+  <td class="tc">20</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053630</span>
+    <span class="trip-meta">50H-48349 • Tô Tuấn Linh</span>
+    <span class="trip-stats">✅5/5 | G:147 N:147</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">60</td>
+  <td class="dest"><b>A171</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">02:55</td>
+  <td class="tc">19</td>
+  <td class="tc">19</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">61</td>
+  <td class="dest"><b>PGS</b></td>
+  <td class="tc">3:35</td>
+  <td class="tc arr-done">03:46</td>
+  <td class="tc">62</td>
+  <td class="tc">62</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">62</td>
+  <td class="dest"><b>Q50</b></td>
+  <td class="tc">4:05</td>
+  <td class="tc arr-done">03:54</td>
+  <td class="tc">28</td>
+  <td class="tc">28</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">63</td>
+  <td class="dest"><b>A133</b></td>
+  <td class="tc">4:35</td>
+  <td class="tc arr-done">04:25</td>
+  <td class="tc">27</td>
+  <td class="tc">27</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">64</td>
+  <td class="dest"><b>A131</b></td>
+  <td class="tc">5:05</td>
+  <td class="tc arr-done">04:34</td>
+  <td class="tc">11</td>
+  <td class="tc">11</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053631</span>
+    <span class="trip-meta">50H07373 • VÕ VĂN PHÚC</span>
+    <span class="trip-stats">✅3/3 | G:146 N:146</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">65</td>
+  <td class="dest"><b>IAP</b></td>
+  <td class="tc">3:25</td>
+  <td class="tc arr-done">03:27</td>
+  <td class="tc">80</td>
+  <td class="tc">80</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">66</td>
+  <td class="dest"><b>HTN</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">04:13</td>
+  <td class="tc">54</td>
+  <td class="tc">54</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">67</td>
+  <td class="dest"><b>A167</b></td>
+  <td class="tc">4:35</td>
+  <td class="tc arr-done">04:41</td>
+  <td class="tc">12</td>
+  <td class="tc">12</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053632</span>
+    <span class="trip-meta">72A-356.37 • Huỳnh Phúc</span>
+    <span class="trip-stats">✅5/5 | G:148 N:148</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">68</td>
+  <td class="dest"><b>A101</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">03:04</td>
+  <td class="tc">44</td>
+  <td class="tc">44</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">69</td>
+  <td class="dest"><b>A105</b></td>
+  <td class="tc">3:35</td>
+  <td class="tc arr-done">03:26</td>
+  <td class="tc">17</td>
+  <td class="tc">17</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">70</td>
+  <td class="dest"><b>A102</b></td>
+  <td class="tc">4:10</td>
+  <td class="tc arr-done">03:41</td>
+  <td class="tc">31</td>
+  <td class="tc">31</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">71</td>
+  <td class="dest"><b>HPD</b></td>
+  <td class="tc">4:40</td>
+  <td class="tc arr-done">04:00</td>
+  <td class="tc">21</td>
+  <td class="tc">21</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">72</td>
+  <td class="dest"><b>A164</b></td>
+  <td class="tc">5:15</td>
+  <td class="tc arr-done">08:27</td>
+  <td class="tc">35</td>
+  <td class="tc">35</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053633</span>
+    <span class="trip-meta">50H03360 • NGUYỄN VĂN HIẾU</span>
+    <span class="trip-stats">✅3/3 | G:157 N:157</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">73</td>
+  <td class="dest"><b>A136</b></td>
+  <td class="tc">3:40</td>
+  <td class="tc arr-done">03:42</td>
+  <td class="tc">9</td>
+  <td class="tc">9</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">74</td>
+  <td class="dest"><b>HHG</b></td>
+  <td class="tc">4:10</td>
+  <td class="tc arr-done">03:28</td>
+  <td class="tc">47</td>
+  <td class="tc">47</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">75</td>
+  <td class="dest"><b>TSO</b></td>
+  <td class="tc">4:40</td>
+  <td class="tc arr-done">03:03</td>
+  <td class="tc">101</td>
+  <td class="tc">101</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053634</span>
+    <span class="trip-meta">50H-947.36 • Nguyễn Thanh Danh</span>
+    <span class="trip-stats">✅2/2 | G:147 N:147</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">76</td>
+  <td class="dest"><b>A150</b></td>
+  <td class="tc">4:25</td>
+  <td class="tc arr-done">03:00</td>
+  <td class="tc">44</td>
+  <td class="tc">44</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">77</td>
+  <td class="dest"><b>RVS</b></td>
+  <td class="tc">5:00</td>
+  <td class="tc arr-done">04:02</td>
+  <td class="tc">103</td>
+  <td class="tc">103</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053635</span>
+    <span class="trip-meta">72A-358.34 • Trần Minh Hoàng</span>
+    <span class="trip-stats">✅3/3 | G:161 N:161</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">78</td>
+  <td class="dest"><b>ECG</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">05:20</td>
+  <td class="tc">75</td>
+  <td class="tc">75</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">79</td>
+  <td class="dest"><b>LVN</b></td>
+  <td class="tc">4:30</td>
+  <td class="tc arr-done">02:51</td>
+  <td class="tc">66</td>
+  <td class="tc">66</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">80</td>
+  <td class="dest"><b>A144</b></td>
+  <td class="tc">5:00</td>
+  <td class="tc arr-done">04:11</td>
+  <td class="tc">20</td>
+  <td class="tc">20</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053636</span>
+    <span class="trip-meta">51D51874 • ĐOÀN TRUNG HIẾU</span>
+    <span class="trip-stats">✅2/2 | G:149 N:149</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">81</td>
+  <td class="dest"><b>TMY</b></td>
+  <td class="tc">4:20</td>
+  <td class="tc arr-done">03:17</td>
+  <td class="tc">105</td>
+  <td class="tc">105</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">82</td>
+  <td class="dest"><b>HV2</b></td>
+  <td class="tc">4:50</td>
+  <td class="tc arr-done">04:06</td>
+  <td class="tc">44</td>
+  <td class="tc">44</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053637</span>
+    <span class="trip-meta">72A-358.15 • Nguyễn Văn Minh</span>
+    <span class="trip-stats">✅3/3 | G:132 N:132</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">83</td>
+  <td class="dest"><b>A165</b></td>
+  <td class="tc">3:25</td>
+  <td class="tc arr-done">03:17</td>
+  <td class="tc">19</td>
+  <td class="tc">19</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">84</td>
+  <td class="dest"><b>HTP</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">04:38</td>
+  <td class="tc">76</td>
+  <td class="tc">76</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">85</td>
+  <td class="dest"><b>SCV</b></td>
+  <td class="tc">4:30</td>
+  <td class="tc arr-done">05:18</td>
+  <td class="tc">37</td>
+  <td class="tc">37</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053638</span>
+    <span class="trip-meta">50H04663 • VÕ BÁ HIẾU</span>
+    <span class="trip-stats">✅3/3 | G:149 N:149</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">86</td>
+  <td class="dest"><b>DS3</b></td>
+  <td class="tc">3:50</td>
+  <td class="tc arr-done">02:59</td>
+  <td class="tc">74</td>
+  <td class="tc">74</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">87</td>
+  <td class="dest"><b>AV4</b></td>
+  <td class="tc">4:22</td>
+  <td class="tc arr-done">03:57</td>
+  <td class="tc">47</td>
+  <td class="tc">47</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">88</td>
+  <td class="dest"><b>A111</b></td>
+  <td class="tc">4:52</td>
+  <td class="tc arr-done">04:30</td>
+  <td class="tc">28</td>
+  <td class="tc">28</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053639</span>
+    <span class="trip-meta">50H-67533 • Công Luận</span>
+    <span class="trip-stats">✅3/3 | G:159 N:159</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">89</td>
+  <td class="dest"><b>VH2</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">03:33</td>
+  <td class="tc">75</td>
+  <td class="tc">75</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">90</td>
+  <td class="dest"><b>VH3</b></td>
+  <td class="tc">4:30</td>
+  <td class="tc arr-done">04:55</td>
+  <td class="tc">45</td>
+  <td class="tc">45</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">91</td>
+  <td class="dest"><b>VH4</b></td>
+  <td class="tc">5:00</td>
+  <td class="tc arr-done">04:09</td>
+  <td class="tc">39</td>
+  <td class="tc">39</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053640</span>
+    <span class="trip-meta">50LD-09226 • Mai Văn Ngây</span>
+    <span class="trip-stats">✅3/3 | G:152 N:152</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">92</td>
+  <td class="dest"><b>A148</b></td>
+  <td class="tc">3:30</td>
+  <td class="tc arr-done">03:28</td>
+  <td class="tc">25</td>
+  <td class="tc">25</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">93</td>
+  <td class="dest"><b>A126</b></td>
+  <td class="tc">4:05</td>
+  <td class="tc arr-done">03:52</td>
+  <td class="tc">32</td>
+  <td class="tc">32</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">94</td>
+  <td class="dest"><b>LVY</b></td>
+  <td class="tc">4:35</td>
+  <td class="tc arr-done">04:09</td>
+  <td class="tc">95</td>
+  <td class="tc">95</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053641</span>
+    <span class="trip-meta">50H-941.91 • Nguyễn Hồng Châu</span>
+    <span class="trip-stats">✅4/4 | G:130 N:130</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">95</td>
+  <td class="dest"><b>NTT</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">02:16</td>
+  <td class="tc">64</td>
+  <td class="tc">64</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">96</td>
+  <td class="dest"><b>A166</b></td>
+  <td class="tc">3:35</td>
+  <td class="tc arr-done">03:02</td>
+  <td class="tc">26</td>
+  <td class="tc">26</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">97</td>
+  <td class="dest"><b>A177</b></td>
+  <td class="tc">4:10</td>
+  <td class="tc arr-done">04:04</td>
+  <td class="tc">16</td>
+  <td class="tc">16</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">98</td>
+  <td class="dest"><b>A184</b></td>
+  <td class="tc">4:45</td>
+  <td class="tc arr-done">04:29</td>
+  <td class="tc">24</td>
+  <td class="tc">24</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053642</span>
+    <span class="trip-meta">50H-01145 • Phạm Thoại Uy</span>
+    <span class="trip-stats">✅3/3 | G:147 N:147</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">99</td>
+  <td class="dest"><b>VGP</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">03:03</td>
+  <td class="tc">105</td>
+  <td class="tc">105</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">100</td>
+  <td class="dest"><b>NVT</b></td>
+  <td class="tc">4:30</td>
+  <td class="tc arr-done">04:57</td>
+  <td class="tc">16</td>
+  <td class="tc">16</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">101</td>
+  <td class="dest"><b>A125</b></td>
+  <td class="tc">5:00</td>
+  <td class="tc arr-done">05:18</td>
+  <td class="tc">26</td>
+  <td class="tc">26</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053643</span>
+    <span class="trip-meta">50E89840 • HUỲNH SÀI GÒN</span>
+    <span class="trip-stats">✅3/3 | G:158 N:158</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">102</td>
+  <td class="dest"><b>THN</b></td>
+  <td class="tc">3:40</td>
+  <td class="tc arr-done">03:20</td>
+  <td class="tc">105</td>
+  <td class="tc">105</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">103</td>
+  <td class="dest"><b>ACU</b></td>
+  <td class="tc">4:10</td>
+  <td class="tc arr-done">03:58</td>
+  <td class="tc">18</td>
+  <td class="tc">18</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">104</td>
+  <td class="dest"><b>NTD</b></td>
+  <td class="tc">5:00</td>
+  <td class="tc arr-done">04:16</td>
+  <td class="tc">35</td>
+  <td class="tc">35</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053644</span>
+    <span class="trip-meta">50H92757 • VĂN TRƯỜNG</span>
+    <span class="trip-stats">✅3/3 | G:153 N:153</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">105</td>
+  <td class="dest"><b>A124</b></td>
+  <td class="tc">3:55</td>
+  <td class="tc arr-done">03:39</td>
+  <td class="tc">31</td>
+  <td class="tc">31</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">106</td>
+  <td class="dest"><b>SFR</b></td>
+  <td class="tc">4:25</td>
+  <td class="tc arr-done">04:12</td>
+  <td class="tc">85</td>
+  <td class="tc">85</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">107</td>
+  <td class="dest"><b>EHS</b></td>
+  <td class="tc">4:55</td>
+  <td class="tc arr-done">04:46</td>
+  <td class="tc">37</td>
+  <td class="tc">37</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053645</span>
+    <span class="trip-meta">50H.15684 • NGUYỄN QUỐC CƯỜNG</span>
+    <span class="trip-stats">✅5/5 | G:170 N:170</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">108</td>
+  <td class="dest"><b>A115</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">06:32</td>
+  <td class="tc">35</td>
+  <td class="tc">35</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">109</td>
+  <td class="dest"><b>NHG</b></td>
+  <td class="tc">3:30</td>
+  <td class="tc arr-done">03:38</td>
+  <td class="tc">42</td>
+  <td class="tc">42</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">110</td>
+  <td class="dest"><b>A151</b></td>
+  <td class="tc">4:05</td>
+  <td class="tc arr-done">04:18</td>
+  <td class="tc">19</td>
+  <td class="tc">19</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">111</td>
+  <td class="dest"><b>A128</b></td>
+  <td class="tc">4:35</td>
+  <td class="tc arr-done">04:39</td>
+  <td class="tc">27</td>
+  <td class="tc">27</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">112</td>
+  <td class="dest"><b>TNT</b></td>
+  <td class="tc">5:05</td>
+  <td class="tc arr-done">04:56</td>
+  <td class="tc">47</td>
+  <td class="tc">47</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053646</span>
+    <span class="trip-meta">72A-357.61 • Danh Không Tuấn</span>
+    <span class="trip-stats">✅5/5 | G:164 N:164</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">113</td>
+  <td class="dest"><b>VH7</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">02:59</td>
+  <td class="tc">35</td>
+  <td class="tc">35</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">114</td>
+  <td class="dest"><b>A185</b></td>
+  <td class="tc">3:35</td>
+  <td class="tc arr-done">03:20</td>
+  <td class="tc">25</td>
+  <td class="tc">25</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">115</td>
+  <td class="dest"><b>VH5</b></td>
+  <td class="tc">4:10</td>
+  <td class="tc arr-done">03:36</td>
+  <td class="tc">36</td>
+  <td class="tc">36</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">116</td>
+  <td class="dest"><b>A181</b></td>
+  <td class="tc">4:45</td>
+  <td class="tc arr-done">04:02</td>
+  <td class="tc">43</td>
+  <td class="tc">43</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">117</td>
+  <td class="dest"><b>MTE</b></td>
+  <td class="tc">5:20</td>
+  <td class="tc arr-done">04:26</td>
+  <td class="tc">25</td>
+  <td class="tc">25</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053647</span>
+    <span class="trip-meta">72A-357.11 • Nguyễn Văn Dính</span>
+    <span class="trip-stats">✅5/5 | G:168 N:168</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">118</td>
+  <td class="dest"><b>NDT</b></td>
+  <td class="tc">3:15</td>
+  <td class="tc arr-done">03:15</td>
+  <td class="tc">38</td>
+  <td class="tc">38</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">119</td>
+  <td class="dest"><b>A187</b></td>
+  <td class="tc">3:50</td>
+  <td class="tc arr-done">03:30</td>
+  <td class="tc">19</td>
+  <td class="tc">19</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">120</td>
+  <td class="dest"><b>A193</b></td>
+  <td class="tc">4:25</td>
+  <td class="tc arr-done">03:43</td>
+  <td class="tc">39</td>
+  <td class="tc">39</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">121</td>
+  <td class="dest"><b>LVH</b></td>
+  <td class="tc">5:00</td>
+  <td class="tc arr-done">04:00</td>
+  <td class="tc">25</td>
+  <td class="tc">25</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">122</td>
+  <td class="dest"><b>CTH</b></td>
+  <td class="tc">5:35</td>
+  <td class="tc arr-done">04:58</td>
+  <td class="tc">47</td>
+  <td class="tc">47</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053648</span>
+    <span class="trip-meta">72A-357.13 • Nguyễn Trung Tính</span>
+    <span class="trip-stats">✅3/3 | G:156 N:156</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">123</td>
+  <td class="dest"><b>A147</b></td>
+  <td class="tc">4:05</td>
+  <td class="tc arr-done">03:55</td>
+  <td class="tc">19</td>
+  <td class="tc">19</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">124</td>
+  <td class="dest"><b>Q7R</b></td>
+  <td class="tc">4:35</td>
+  <td class="tc arr-done">04:09</td>
+  <td class="tc">93</td>
+  <td class="tc">93</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">125</td>
+  <td class="dest"><b>A104</b></td>
+  <td class="tc">5:05</td>
+  <td class="tc arr-done">04:49</td>
+  <td class="tc">44</td>
+  <td class="tc">44</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053649</span>
+    <span class="trip-meta">50E-80006 • Nguyễn Nhật Trường</span>
+    <span class="trip-stats">✅5/5 | G:152 N:155</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">126</td>
+  <td class="dest"><b>A157</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">03:08</td>
+  <td class="tc">35</td>
+  <td class="tc">35</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">127</td>
+  <td class="dest"><b>PKD</b></td>
+  <td class="tc">3:35</td>
+  <td class="tc arr-done">03:31</td>
+  <td class="tc">26</td>
+  <td class="tc">26</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">128</td>
+  <td class="dest"><b>DMR</b></td>
+  <td class="tc">4:05</td>
+  <td class="tc arr-done">03:59</td>
+  <td class="tc">32</td>
+  <td class="tc">32</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">129</td>
+  <td class="dest"><b>EH3</b></td>
+  <td class="tc">5:00</td>
+  <td class="tc arr-done">04:32</td>
+  <td class="tc">24</td>
+  <td class="tc">27</td>
+  <td class="tc st-warn">Dư 3</td>
+</tr>
+<tr class="even">
+  <td class="tc">130</td>
+  <td class="dest"><b>WGA</b></td>
+  <td class="tc">5:30</td>
+  <td class="tc arr-done">05:48</td>
+  <td class="tc">35</td>
+  <td class="tc">35</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053650</span>
+    <span class="trip-meta">63H00234 • TRỊNH ANH TUẤN</span>
+    <span class="trip-stats">✅2/2 | G:160 N:160</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">131</td>
+  <td class="dest"><b>A129</b></td>
+  <td class="tc">4:25</td>
+  <td class="tc arr-done">03:47</td>
+  <td class="tc">65</td>
+  <td class="tc">65</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">132</td>
+  <td class="dest"><b>LVL</b></td>
+  <td class="tc">4:55</td>
+  <td class="tc arr-done">04:26</td>
+  <td class="tc">95</td>
+  <td class="tc">95</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053651</span>
+    <span class="trip-meta">50H-111.37 • Nguyễn Ngọc Phú</span>
+    <span class="trip-stats">✅5/5 | G:138 N:138</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">133</td>
+  <td class="dest"><b>A149</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">03:05</td>
+  <td class="tc">25</td>
+  <td class="tc">25</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">134</td>
+  <td class="dest"><b>CLN</b></td>
+  <td class="tc">3:30</td>
+  <td class="tc arr-done">04:02</td>
+  <td class="tc">44</td>
+  <td class="tc">44</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">135</td>
+  <td class="dest"><b>DS7</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">03:32</td>
+  <td class="tc">37</td>
+  <td class="tc">37</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">136</td>
+  <td class="dest"><b>A139</b></td>
+  <td class="tc">4:30</td>
+  <td class="tc arr-done">03:41</td>
+  <td class="tc">20</td>
+  <td class="tc">20</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">137</td>
+  <td class="dest"><b>A134</b></td>
+  <td class="tc">5:00</td>
+  <td class="tc arr-done">04:30</td>
+  <td class="tc">12</td>
+  <td class="tc">12</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053652</span>
+    <span class="trip-meta">50H92760 • BÙI CÔNG HẬU</span>
+    <span class="trip-stats">✅4/4 | G:152 N:152</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">138</td>
+  <td class="dest"><b>A141</b></td>
+  <td class="tc">3:05</td>
+  <td class="tc arr-done">03:33</td>
+  <td class="tc">24</td>
+  <td class="tc">24</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">139</td>
+  <td class="dest"><b>HLR</b></td>
+  <td class="tc">3:35</td>
+  <td class="tc arr-done">03:02</td>
+  <td class="tc">57</td>
+  <td class="tc">57</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">140</td>
+  <td class="dest"><b>MZ2</b></td>
+  <td class="tc">4:20</td>
+  <td class="tc arr-done">04:02</td>
+  <td class="tc">54</td>
+  <td class="tc">54</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">141</td>
+  <td class="dest"><b>MZK</b></td>
+  <td class="tc">4:50</td>
+  <td class="tc arr-done">04:11</td>
+  <td class="tc">17</td>
+  <td class="tc">17</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053653</span>
+    <span class="trip-meta">72A-358.28 • Danh Thanh Điền</span>
+    <span class="trip-stats">✅4/4 | G:155 N:156</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">142</td>
+  <td class="dest"><b>QHG</b></td>
+  <td class="tc">3:30</td>
+  <td class="tc arr-done">03:02</td>
+  <td class="tc">59</td>
+  <td class="tc">59</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">143</td>
+  <td class="dest"><b>A130</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">03:54</td>
+  <td class="tc">30</td>
+  <td class="tc">30</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">144</td>
+  <td class="dest"><b>TNO</b></td>
+  <td class="tc">4:35</td>
+  <td class="tc arr-done">03:27</td>
+  <td class="tc">31</td>
+  <td class="tc">31</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">145</td>
+  <td class="dest"><b>A137</b></td>
+  <td class="tc">5:05</td>
+  <td class="tc arr-done">03:41</td>
+  <td class="tc">35</td>
+  <td class="tc">36</td>
+  <td class="tc st-warn">Dư 1</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053654</span>
+    <span class="trip-meta">72A-357.29 • Quách Thái Hưng</span>
+    <span class="trip-stats">✅3/3 | G:167 N:167</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">146</td>
+  <td class="dest"><b>CLD</b></td>
+  <td class="tc">3:25</td>
+  <td class="tc arr-done">02:58</td>
+  <td class="tc">126</td>
+  <td class="tc">126</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">147</td>
+  <td class="dest"><b>A163</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">03:15</td>
+  <td class="tc">27</td>
+  <td class="tc">27</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">148</td>
+  <td class="dest"><b>A195</b></td>
+  <td class="tc">4:35</td>
+  <td class="tc arr-done">03:42</td>
+  <td class="tc">14</td>
+  <td class="tc">14</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053655</span>
+    <span class="trip-meta">50E33022 • PHAN VĂN BẢO</span>
+    <span class="trip-stats">✅3/3 | G:154 N:154</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">149</td>
+  <td class="dest"><b>VH6</b></td>
+  <td class="tc">4:05</td>
+  <td class="tc arr-done">03:48</td>
+  <td class="tc">66</td>
+  <td class="tc">66</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">150</td>
+  <td class="dest"><b>NDH</b></td>
+  <td class="tc">4:35</td>
+  <td class="tc arr-done">04:18</td>
+  <td class="tc">56</td>
+  <td class="tc">56</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">151</td>
+  <td class="dest"><b>JKD</b></td>
+  <td class="tc">5:05</td>
+  <td class="tc arr-done">05:23</td>
+  <td class="tc">32</td>
+  <td class="tc">32</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053656</span>
+    <span class="trip-meta">51H-199.31 • Lê Anh Tuân</span>
+    <span class="trip-stats">✅5/5 | G:139 N:139</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">152</td>
+  <td class="dest"><b>BCG</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">03:09</td>
+  <td class="tc">22</td>
+  <td class="tc">22</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">153</td>
+  <td class="dest"><b>CHR</b></td>
+  <td class="tc">3:30</td>
+  <td class="tc arr-done">03:32</td>
+  <td class="tc">37</td>
+  <td class="tc">37</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">154</td>
+  <td class="dest"><b>EMR</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">04:11</td>
+  <td class="tc">25</td>
+  <td class="tc">25</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">155</td>
+  <td class="dest"><b>OPS</b></td>
+  <td class="tc">4:30</td>
+  <td class="tc arr-done">04:43</td>
+  <td class="tc">28</td>
+  <td class="tc">28</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">156</td>
+  <td class="dest"><b>A117</b></td>
+  <td class="tc">5:05</td>
+  <td class="tc arr-done">06:24</td>
+  <td class="tc">27</td>
+  <td class="tc">27</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053657</span>
+    <span class="trip-meta">50H.15660 • ĐỖ NGỌC ĐỨC</span>
+    <span class="trip-stats">✅3/3 | G:144 N:144</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">157</td>
+  <td class="dest"><b>A192</b></td>
+  <td class="tc">3:30</td>
+  <td class="tc arr-done">02:51</td>
+  <td class="tc">22</td>
+  <td class="tc">22</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">158</td>
+  <td class="dest"><b>VHT</b></td>
+  <td class="tc">4:05</td>
+  <td class="tc arr-done">03:09</td>
+  <td class="tc">79</td>
+  <td class="tc">79</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">159</td>
+  <td class="dest"><b>HTC</b></td>
+  <td class="tc">4:35</td>
+  <td class="tc arr-done">03:55</td>
+  <td class="tc">43</td>
+  <td class="tc">43</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053658</span>
+    <span class="trip-meta">50E88819 • TRẦN VŨ PHONG</span>
+    <span class="trip-stats">✅5/5 | G:161 N:161</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">160</td>
+  <td class="dest"><b>LVT</b></td>
+  <td class="tc">3:05</td>
+  <td class="tc arr-done">04:43</td>
+  <td class="tc">52</td>
+  <td class="tc">52</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">161</td>
+  <td class="dest"><b>NVQ</b></td>
+  <td class="tc">3:35</td>
+  <td class="tc arr-done">05:06</td>
+  <td class="tc">33</td>
+  <td class="tc">33</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">162</td>
+  <td class="dest"><b>PPZ</b></td>
+  <td class="tc">4:05</td>
+  <td class="tc arr-done">05:25</td>
+  <td class="tc">34</td>
+  <td class="tc">34</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">163</td>
+  <td class="dest"><b>A155</b></td>
+  <td class="tc">4:40</td>
+  <td class="tc arr-done">04:07</td>
+  <td class="tc">20</td>
+  <td class="tc">20</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">164</td>
+  <td class="dest"><b>A116</b></td>
+  <td class="tc">5:10</td>
+  <td class="tc arr-done">03:43</td>
+  <td class="tc">22</td>
+  <td class="tc">22</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053659</span>
+    <span class="trip-meta">50H34238 • TRẦN VĂN TÙNG</span>
+    <span class="trip-stats">✅5/5 | G:161 N:161</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">165</td>
+  <td class="dest"><b>HHM</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">03:10</td>
+  <td class="tc">42</td>
+  <td class="tc">42</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">166</td>
+  <td class="dest"><b>HHT</b></td>
+  <td class="tc">3:30</td>
+  <td class="tc arr-done">03:22</td>
+  <td class="tc">50</td>
+  <td class="tc">50</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">167</td>
+  <td class="dest"><b>A138</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">03:52</td>
+  <td class="tc">19</td>
+  <td class="tc">19</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">168</td>
+  <td class="dest"><b>A169</b></td>
+  <td class="tc">4:35</td>
+  <td class="tc arr-done">04:13</td>
+  <td class="tc">16</td>
+  <td class="tc">16</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">169</td>
+  <td class="dest"><b>PHI</b></td>
+  <td class="tc">5:10</td>
+  <td class="tc arr-done">04:31</td>
+  <td class="tc">34</td>
+  <td class="tc">34</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053660</span>
+    <span class="trip-meta">51D62370 • TRẦN DƯƠNG KHƯƠNG</span>
+    <span class="trip-stats">✅5/5 | G:163 N:163</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">170</td>
+  <td class="dest"><b>GDU</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">03:28</td>
+  <td class="tc">45</td>
+  <td class="tc">45</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">171</td>
+  <td class="dest"><b>VLA</b></td>
+  <td class="tc">3:30</td>
+  <td class="tc arr-done">03:04</td>
+  <td class="tc">25</td>
+  <td class="tc">25</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">172</td>
+  <td class="dest"><b>CN1</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">03:43</td>
+  <td class="tc">26</td>
+  <td class="tc">26</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">173</td>
+  <td class="dest"><b>NTU</b></td>
+  <td class="tc">4:30</td>
+  <td class="tc arr-done">03:55</td>
+  <td class="tc">23</td>
+  <td class="tc">23</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">174</td>
+  <td class="dest"><b>BTH</b></td>
+  <td class="tc">5:00</td>
+  <td class="tc arr-done">04:10</td>
+  <td class="tc">44</td>
+  <td class="tc">44</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053661</span>
+    <span class="trip-meta">72A-356.69 • Lê Văn Thành</span>
+    <span class="trip-stats">✅5/5 | G:135 N:134</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">175</td>
+  <td class="dest"><b>SSR</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">03:34</td>
+  <td class="tc">36</td>
+  <td class="tc">36</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">176</td>
+  <td class="dest"><b>A178</b></td>
+  <td class="tc">3:35</td>
+  <td class="tc arr-done">03:58</td>
+  <td class="tc">22</td>
+  <td class="tc">22</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">177</td>
+  <td class="dest"><b>A176</b></td>
+  <td class="tc">4:10</td>
+  <td class="tc arr-done">04:19</td>
+  <td class="tc">30</td>
+  <td class="tc">29</td>
+  <td class="tc st-bad">Thiếu 1</td>
+</tr>
+<tr class="even">
+  <td class="tc">178</td>
+  <td class="dest"><b>A161</b></td>
+  <td class="tc">4:45</td>
+  <td class="tc arr-done">04:29</td>
+  <td class="tc">26</td>
+  <td class="tc">26</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">179</td>
+  <td class="dest"><b>A103</b></td>
+  <td class="tc">5:20</td>
+  <td class="tc arr-done">04:45</td>
+  <td class="tc">21</td>
+  <td class="tc">21</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053662</span>
+    <span class="trip-meta">72A-350.13 • Lâm Tấn Trường</span>
+    <span class="trip-stats">✅5/5 | G:158 N:158</span>
+  </td>
+</tr>
+<tr class="even">
+  <td class="tc">180</td>
+  <td class="dest"><b>A119</b></td>
+  <td class="tc">3:00</td>
+  <td class="tc arr-done">03:16</td>
+  <td class="tc">16</td>
+  <td class="tc">16</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">181</td>
+  <td class="dest"><b>A123</b></td>
+  <td class="tc">3:30</td>
+  <td class="tc arr-done">03:34</td>
+  <td class="tc">22</td>
+  <td class="tc">22</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">182</td>
+  <td class="dest"><b>A132</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">03:50</td>
+  <td class="tc">30</td>
+  <td class="tc">30</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="odd">
+  <td class="tc">183</td>
+  <td class="dest"><b>VPC</b></td>
+  <td class="tc">4:30</td>
+  <td class="tc arr-done">04:48</td>
+  <td class="tc">68</td>
+  <td class="tc">68</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="even">
+  <td class="tc">184</td>
+  <td class="dest"><b>A127</b></td>
+  <td class="tc">5:00</td>
+  <td class="tc arr-done">05:11</td>
+  <td class="tc">22</td>
+  <td class="tc">22</td>
+  <td class="tc st-ok">Đủ</td>
+</tr>
+<tr class="trip-row">
+  <td colspan="7">
+    <span class="trip-id">🚚 TRIP0000053713</span>
+    <span class="trip-meta">50E-21024 • Lê Gia Bảo</span>
+    <span class="trip-stats">✅2/2 | G:0 N:0</span>
+  </td>
+</tr>
+<tr class="odd">
+  <td class="tc">185</td>
+  <td class="dest"><b>HTP</b></td>
+  <td class="tc">4:00</td>
+  <td class="tc arr-done">12:52</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+<tr class="even">
+  <td class="tc">186</td>
+  <td class="dest"><b>SCV</b></td>
+  <td class="tc">4:30</td>
+  <td class="tc arr-done">14:18</td>
+  <td class="tc">—</td>
+  <td class="tc">—</td>
+  <td class="tc st-na">—</td>
+</tr>
+
+</tbody>
+</table>
+</div>
+
+<div class="footer">KFM Command Center • 186 điểm giao • 48 chuyến</div>
+
+<script>
+function filterRows() {
+  const tq = document.getElementById('searchTrip').value.toLowerCase();
+  const sq = document.getElementById('searchSthi').value.toLowerCase();
+  let currentTrip = '';
+  let tripVisible = false;
+  const rows = document.querySelectorAll('#tbody tr');
+
+  // Two passes: first mark data rows, then show/hide trip headers
+  const tripRows = [];
+  const dataRows = [];
+  rows.forEach(r => {
+    if (r.classList.contains('trip-row')) {
+      tripRows.push({ el: r, dataRows: [] });
+    } else if (tripRows.length) {
+      tripRows[tripRows.length - 1].dataRows.push(r);
+    }
+  });
+
+  tripRows.forEach(tr => {
+    const tripText = tr.el.textContent.toLowerCase();
+    let anyVisible = false;
+    tr.dataRows.forEach(dr => {
+      const dest = dr.querySelector('.dest');
+      const destText = dest ? dest.textContent.toLowerCase() : '';
+      const match = tripText.includes(tq) && destText.includes(sq);
+      dr.style.display = match ? '' : 'none';
+      if (match) anyVisible = true;
+    });
+    tr.el.style.display = anyVisible ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
