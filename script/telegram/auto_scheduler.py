@@ -38,14 +38,15 @@ def sync_tracking_data():
     print("  🔄 Fetching latest tracking data from DB...")
     subprocess.run(["python", "script/dashboard/export_data.py", "--domain", "performance"], cwd=BASE)
 
-def send_report(kho, date_iso):
+def send_report(kho, date_iso, is_pilot=False):
     cmd = [
         "python", "script/telegram/delivery_report_image.py", 
         "--kho", kho, 
         "--date", date_iso, 
-        "--chat-id", GROUP_CHAT_ID,
-        "--pilot" # Auto-generates pilot image for HTP/SCV if data exists
+        "--chat-id", GROUP_CHAT_ID
     ]
+    if is_pilot:
+        cmd.append("--pilot")
     print(f"  ▶ Generating & Sending: {kho} ({date_iso})")
     subprocess.run(cmd, cwd=BASE)
 
@@ -65,8 +66,8 @@ def check_schedule():
         if "morning_batch" not in sent_today:
             print(f"\n⏰ [09:00 BATCH TRIGGERED] at {now.strftime('%H:%M:%S')}")
             sync_tracking_data()
-            send_report("KRC", today_str)
-            send_report("KSL-Tối", yesterday_str)
+            send_report("KRC", today_str, is_pilot=True)
+            send_report("KSL-Tối", yesterday_str, is_pilot=True)
             
             sent_today.append("morning_batch")
             save_state(state)

@@ -142,7 +142,7 @@ def load_trip_data_from_db(month, year):
         barrel = str(obj.get("barrel_basket_name", "")).strip()
         t_status = obj.get("t_status", 0)
 
-        if not t_code or not dest:
+        if not t_code or not dest or t_status == 4:
             continue
 
         # Parse times
