@@ -178,7 +178,11 @@ def fmt_date_ddmmyyyy(val):
 
 
 def parse_schedule_days(schedule_str):
-    """Parse 'Thứ 3-5-7' or 'Thứ 2-4-6' to set of weekday indices (Mon=0)."""
+    """Parse 'Thứ 3-5-7' or 'Hàng ngày' to set of weekday indices (Mon=0)."""
+    schedule_str_lower = schedule_str.lower()
+    if "hàng ngày" in schedule_str_lower or "daily" in schedule_str_lower:
+        return {0, 1, 2, 3, 4, 5, 6}
+
     days = set()
     nums = re.findall(r'\d', schedule_str)
     for n in nums:

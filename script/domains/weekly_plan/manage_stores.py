@@ -106,7 +106,7 @@ def interactive_mode():
             ans = input(f"Bạn có muốn cập nhật lịch cho {code} không? (y/n) [y]: ").strip().lower()
             if ans == 'n': continue
             
-            ve = input("Nhập Lịch về (VD: Thứ 2-4-6, Ngày chẵn...): ").strip()
+            ve = input("Nhập Lịch về (VD: Thứ 2-4-6, Ngày chẵn, Hàng ngày...): ").strip()
             shift = input("Nhập Ca giao (Ngày/Đêm) [Đêm]: ").strip() or "Đêm"
             chia = input("Nhập Lịch chia (VD: Thứ 3-5-7) [Enter để bỏ qua]: ").strip()
             
@@ -122,7 +122,7 @@ def interactive_mode():
         if not code: break
         
         name = input("Tên siêu thị (Enter để giữ nguyên nếu đã có): ").strip()
-        ve = input("Lịch về (VD: Thứ 2-4-6): ").strip()
+        ve = input("Lịch về (VD: Thứ 2-4-6, Hàng ngày): ").strip()
         shift = input("Ca giao (Ngày/Đêm): ").strip()
         is_nso = input("Đây có phải siêu thị NSO không? (y/n) [n]: ").strip().lower() == 'y'
         
