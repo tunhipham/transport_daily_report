@@ -543,10 +543,18 @@ def _is_name_match(a, b):
     """Check if two normalized names match.
 
     Rules:
+    - Must pass number token subset check (e.g. 's8.02' vs 's10.02' will fail)
     - If shorter name <10 chars: shorter must be fully contained in longer
     - Otherwise: LCS ≥10 AND LCS ≥60% of shorter name length
     """
     if not a or not b:
+        return False
+
+    # STRICT NUMBER CHECK: If both contain numbers, one must be a subset of the other
+    import re
+    ta = {t for t in re.split(r'[^a-z0-9.]+', a.lower()) if re.search(r'\d', t)}
+    tb = {t for t in re.split(r'[^a-z0-9.]+', b.lower()) if re.search(r'\d', t)}
+    if ta and tb and not (ta.issubset(tb) or tb.issubset(ta)):
         return False
     shorter = min(len(a), len(b))
     if shorter < 10:
