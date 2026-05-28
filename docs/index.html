@@ -3263,6 +3263,11 @@
   <div class="filter-bar" style="margin-bottom:.8rem; background:transparent; padding:0; box-shadow:none">
     <input type="text" id="trkSearchTrip-${kho}" placeholder="🔍 Tìm Trip ID..." style="background:var(--surface); border:1px solid var(--bd2); color:var(--t1); border-radius:6px; padding:.4rem .8rem; width:200px; margin-right:.5rem; font-size:.8rem" onkeyup="trkFilterTable('${kho}')">
     <input type="text" id="trkSearchSthi-${kho}" placeholder="🔍 Tìm Siêu Thị..." style="background:var(--surface); border:1px solid var(--bd2); color:var(--t1); border-radius:6px; padding:.4rem .8rem; width:200px; font-size:.8rem" onkeyup="trkFilterTable('${kho}')">
+    <select id="trkSearchStatus-${kho}" style="background:var(--surface); border:1px solid var(--bd2); color:var(--t1); border-radius:6px; padding:.4rem .8rem; width:150px; font-size:.8rem; margin-left:.5rem" onchange="trkFilterTable('${kho}')">
+      <option value="">Trạng thái (Tất cả)</option>
+      <option value="done">Đã giao</option>
+      <option value="pending">Chưa giao</option>
+    </select>
   </div>`;
 
       if (!rows.length) {
@@ -3339,13 +3344,22 @@
     window.trkFilterTable = function(kho) {
       const tripInput = document.getElementById('trkSearchTrip-' + kho);
       const sthiInput = document.getElementById('trkSearchSthi-' + kho);
+      const statusInput = document.getElementById('trkSearchStatus-' + kho);
       const tripQ = (tripInput ? tripInput.value : '').toLowerCase();
       const sthiQ = (sthiInput ? sthiInput.value : '').toLowerCase();
+      const statusQ = statusInput ? statusInput.value : '';
       const rows = document.querySelectorAll('.trk-row-' + kho);
       rows.forEach(r => {
         const trip = r.getAttribute('data-trip') || '';
         const sthi = r.getAttribute('data-sthi') || '';
-        if (trip.includes(tripQ) && sthi.includes(sthiQ)) {
+        const isDone = r.classList.contains('trk-done');
+        const isPending = r.classList.contains('trk-pending');
+        
+        let matchStatus = true;
+        if (statusQ === 'done' && !isDone) matchStatus = false;
+        if (statusQ === 'pending' && !isPending) matchStatus = false;
+
+        if (trip.includes(tripQ) && sthi.includes(sthiQ) && matchStatus) {
           r.style.display = '';
         } else {
           r.style.display = 'none';
