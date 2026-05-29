@@ -72,10 +72,22 @@ def calc_summary(rows):
     total_nhan = sum((r.get("tote_r", 0) or 0) + (r.get("carton_r", 0) or 0) for r in rows)
     done = sum(1 for r in rows if r.get("arrival"))
     pending = len(rows) - done
+    # Per-row thiếu/dư breakdown
+    total_thieu = 0
+    total_du = 0
+    for r in rows:
+        g = (r.get("tote_t", 0) or 0) + (r.get("carton_t", 0) or 0)
+        n = (r.get("tote_r", 0) or 0) + (r.get("carton_r", 0) or 0)
+        d = n - g
+        if d < 0:
+            total_thieu += abs(d)
+        elif d > 0:
+            total_du += d
     return {
         "total_giao": total_giao, "total_nhan": total_nhan,
         "done": done, "pending": pending,
         "diff": total_nhan - total_giao, "total": len(rows),
+        "total_thieu": total_thieu, "total_du": total_du,
     }
 
 
