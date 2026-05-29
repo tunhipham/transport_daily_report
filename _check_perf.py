@@ -1,46 +1,38 @@
-import json, sys
+import json, requests, sys
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
-with open('docs/data/performance.json', 'r', encoding='utf-8') as f:
-    p = json.load(f)
+cfg = json.load(open('config/mcp_clickhouse.json', 'r', encoding='utf-8'))
+base_url, params = cfg['base_url'], cfg['params']
 
-m = p['months']['2026-05']
-idx = 24  # 25/05
+# Check distinct t_status values
+sql = """
+SELECT t_status, count() as cnt 
+FROM kdb.kf_trip_locations_items 
+WHERE t_departure >= '2026-05-01' AND t_departure <= '2026-05-29 23:59:59'
+GROUP BY t_status 
+ORDER BY t_status
+FORMAT JSONEachRow
+"""
+r = requests.get(base_url, params={**params, 'query': sql}, timeout=30)
+print("t_status values (May 2026):")
+for line in r.text.strip().split('\n'):
+    if line.strip():
+        obj = json.loads(line)
+        print(f"  status={obj['t_status']}: {obj['cnt']} rows")
 
-charts = m['charts']
-sla = charts['sla']
-
-print(f"SLA keys: {list(sla.keys())}")
-print(f"kho_bars type: {type(sla['kho_bars'])}")
-
-# Show kho_bars structure  
-kb = sla['kho_bars']
-if isinstance(kb, dict):
-    print("kho_bars is a dict:")
-    for k, v in kb.items():
-        if isinstance(v, dict):
-            for sk, sv in v.items():
-                if isinstance(sv, list):
-                    print(f"  {k}.{sk}: [{sv[idx] if idx < len(sv) else 'N/A'}] (at idx {idx})")
-        elif isinstance(v, list):
-            print(f"  {k}: [{v[idx] if idx < len(v) else 'N/A'}] (at idx {idx})")
-elif isinstance(kb, list):
-    print(f"kho_bars is a list of {len(kb)} items")
-    print(f"First item type: {type(kb[0])}")
-    print(f"Content: {kb[:3]}")
-
-print(f"\nSLA total at idx {idx}: on={sla['on_times'][idx]}, late={sla['lates'][idx]}")
-
-# Check trends
-print(f"\nSLA trends at idx {idx}:")
-for t in sla['trends']:
-    label = t['label']
-    data = t['data']
-    val = data[idx] if idx < len(data) else 'N/A'
-    print(f"  {label}: {val}")
-
-# Show what the dashboard tab shows
-# The performance tab on dashboard uses kho_bars for the per-kho breakdown table
-# It seems the dashboard is reading these values
-print(f"\nkho_bars full:")
-print(json.dumps(kb, ensure_ascii=False, indent=2)[:2000])
+# Check: how many have arrival but status != 3?
+sql2 = """
+SELECT t_status, 
+       countIf(tl_arrival IS NOT NULL AND tl_arrival != '0001-01-01 00:00:00') as with_arrival,
+       countIf(tl_arrival IS NULL OR tl_arrival = '0001-01-01 00:00:00') as no_arrival
+FROM kdb.kf_trip_locations_items 
+WHERE t_departure >= '2026-05-25' AND t_departure <= '2026-05-25 23:59:59'
+GROUP BY t_status
+FORMAT JSONEachRow
+"""
+r2 = requests.get(base_url, params={**params, 'query': sql2}, timeout=30)
+print("\n25/05 detail:")
+for line in r2.text.strip().split('\n'):
+    if line.strip():
+        obj = json.loads(line)
+        print(f"  status={obj['t_status']}: arrived={obj['with_arrival']}, no_arrival={obj['no_arrival']}")

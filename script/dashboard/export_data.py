@@ -115,6 +115,7 @@ def export_performance(target_month=None, target_year=None):
             calc_metrics, prepare_chart_data, generate_summary_cards,
             generate_weekly_tables, export_raw_excel, KHO_COLORS
         )
+        from fetch_db_realtime import load_trip_data_from_db
     except ImportError as e:
         print(f"  ⚠ Cannot import performance generate: {e}")
         return False
@@ -162,9 +163,10 @@ def export_performance(target_month=None, target_year=None):
     print(f"  🔒 Locked months: {[k for k in months_store if k != current_key]}")
 
     # ── Load & compute current month only ──
+    # Use ClickHouse DB for realtime data (replaces xlsx which lags behind)
     all_rows = []
     for m in load_months:
-        rows = load_trip_data(m, year)
+        rows = load_trip_data_from_db(m, year)
         all_rows.extend(rows)
 
     # Load THỊT CÁ data
