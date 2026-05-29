@@ -1,61 +1,71 @@
-import requests
-import json
-import pymysql
+# -*- coding: utf-8 -*-
+"""Check tracking data for specific trips in performance.json"""
+import sys, json, os
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
-print("================ Checking ClickHouse ================")
-try:
-    url = "http://103.140.248.114:32015/"
-    auth = ("scm_lam", "xukco1-roghaB-fuqfum")
-    
-    # Check tables that might be related to trip/transport
-    query = """
-    SELECT table
-    FROM system.tables
-    WHERE database = 'kdb' 
-      AND (table LIKE '%trip%' OR table LIKE '%transport%' OR table LIKE '%delivery%' OR table LIKE '%xe%' OR table LIKE '%route%')
-    """
-    response = requests.post(url, auth=auth, params={"database": "kdb", "query": query + " FORMAT JSON"})
-    if response.status_code == 200:
-        data = response.json()
-        print("ClickHouse tables found:")
-        for row in data['data']:
-            print(f"- {row['table']}")
-            
-            # describe the table
-            desc_query = f"DESCRIBE kdb.{row['table']}"
-            desc_resp = requests.post(url, auth=auth, params={"database": "kdb", "query": desc_query + " FORMAT JSON"})
-            if desc_resp.status_code == 200:
-                cols = desc_resp.json()['data']
-                print(f"  Columns: {', '.join([c['name'] for c in cols])}")
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PERF = os.path.join(BASE, "docs", "data", "performance.json")
+
+with open(PERF, "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+tracking = data.get("tracking", {})
+dates = tracking.get("dates", {})
+today = "2026-05-29"
+
+print(f"=== performance.json ===")
+print(f"_updated: {data.get('_updated', '?')}")
+print(f"tracking.latest_date: {tracking.get('latest_date', '?')}")
+print(f"Available tracking dates: {sorted(dates.keys())[-5:]}")
+print()
+
+# Check all khos for today
+print(f"=== Khos for {today} ===")
+today_data = dates.get(today, {})
+for kho, rows in today_data.items():
+    trips = set(r.get("trip", "") for r in rows if r.get("trip"))
+    print(f"  {kho}: {len(rows)} rows, {len(trips)} trips")
+    for t in sorted(trips):
+        print(f"    {t}")
+
+# Target trips
+target_trips = [
+    "TRIP0000054004", "TRIP0000054005", "TRIP0000054006",
+    "TRIP0000054007", "TRIP0000054008",
+    "TRIP0000054020", "TRIP0000054025",
+]
+
+print()
+print("=== Target trip check ===")
+all_rows = []
+for kho, rows in today_data.items():
+    for r in rows:
+        r["_kho"] = kho
+        all_rows.append(r)
+
+found_trips = {r.get("trip") for r in all_rows}
+
+for tid in target_trips:
+    if tid in found_trips:
+        matching = [r for r in all_rows if r.get("trip") == tid]
+        for r in matching:
+            giao = (r.get("tote_t", 0) or 0) + (r.get("carton_t", 0) or 0)
+            nhan = (r.get("tote_r", 0) or 0) + (r.get("carton_r", 0) or 0)
+            print(f"  ✅ {tid} | {r['_kho']} | {r.get('dest','-')} | giao={giao} nhận={nhan}")
     else:
-        print(f"ClickHouse Error: {response.status_code} - {response.text}")
-except Exception as e:
-    print(f"ClickHouse exception: {e}")
+        print(f"  ❌ {tid} — MISSING from tracking data")
 
-
-print("\n================ Checking StarRocks ================")
-try:
-    conn = pymysql.connect(
-        host="103.147.122.56",
-        port=9030,
-        user="kfm_scm_lam_nguyen",
-        password="QPYZfjWWhJcHNi5ab5Au",
-        database="kfm_scm"
-    )
-    with conn.cursor() as cursor:
-        cursor.execute("SHOW TABLES")
-        tables_res = cursor.fetchall()
-        
-        target_keywords = ['trip', 'transport', 'delivery', 'route', 'xe']
-        
-        print("StarRocks tables found:")
-        for t_tuple in tables_res:
-            t = t_tuple[0].lower()
-            if any(k in t for k in target_keywords):
-                print(f"Table: {t_tuple[0]}")
-                cursor.execute(f"DESCRIBE {t_tuple[0]}")
-                cols = cursor.fetchall()
-                print(f"  Columns: {', '.join([c[0] for c in cols])}")
-    conn.close()
-except Exception as e:
-    print(f"StarRocks exception: {e}")
+# Also check if these trips exist in other dates
+print()
+print("=== Search in all dates ===")
+for tid in target_trips:
+    found_dates = []
+    for dt, kho_data in dates.items():
+        for kho, rows in kho_data.items():
+            for r in rows:
+                if r.get("trip") == tid:
+                    found_dates.append(f"{dt}/{kho}/{r.get('dest','?')}")
+    if found_dates:
+        print(f"  {tid}: {found_dates}")
+    else:
+        print(f"  {tid}: NOT found in any date")
