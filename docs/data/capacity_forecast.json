@@ -1,5 +1,5 @@
 {
-  "_updated": "29/05/2026 10:59",
+  "_updated": "29/05/2026 11:15",
   "krc": {
     "benchmark_tons": 65,
     "alert_threshold_pct": 5,
@@ -203,15 +203,15 @@
       {
         "date": "29/05/2026",
         "iso": "2026-05-29",
-        "tons": 67.03,
-        "pct_capacity": 103.1,
-        "exceeds_alert": false
+        "tons": 69.77,
+        "pct_capacity": 107.3,
+        "exceeds_alert": true
       },
       {
         "date": "30/05/2026",
         "iso": "2026-05-30",
-        "tons": 4.21,
-        "pct_capacity": 6.5,
+        "tons": 5.04,
+        "pct_capacity": 7.8,
         "exceeds_alert": false
       }
     ]
