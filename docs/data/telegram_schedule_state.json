@@ -3,5 +3,8 @@
     "morning_batch",
     "afternoon_batch",
     "late_batch"
+  ],
+  "2026-05-29": [
+    "morning_batch"
   ]
 }
