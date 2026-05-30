@@ -174,10 +174,10 @@ def check_schedule():
             save_state(state)
             log("Afternoon batch completed.")
 
-    # ── 16:30 | Chieu muon: DONG & MAT (Hom nay) ──
-    if (now.hour > 16) or (now.hour == 16 and now.minute >= 30):
+    # ── 17:00 | Chieu muon: DONG & MAT (Hom nay) ──
+    if now.hour >= 17:
         if "late_batch" not in sent_today:
-            log(f"=== [16:30 BATCH TRIGGERED] at {now.strftime('%H:%M:%S')} ===")
+            log(f"=== [17:00 BATCH TRIGGERED] at {now.strftime('%H:%M:%S')} ===")
             sync_tracking_data()
             send_report("ĐÔNG", today_str)
             send_report("MÁT", today_str)
@@ -205,7 +205,7 @@ def main():
     log("Schedule:")
     log("  09:00 -> KRC (today) & KSL-Toi (yesterday)")
     log("  15:00 -> KSL-Sang (today)")
-    log("  16:30 -> DONG (today) & MAT (today)")
+    log("  17:00 -> DONG (today) & MAT (today)")
     log("-" * 60)
     log("Running in background... (Ctrl+C to stop)")
 
