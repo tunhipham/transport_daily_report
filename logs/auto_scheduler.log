@@ -28,3 +28,14 @@
 2026-05-30 13:45:13 [INFO]   |   ✅ Done! 2 report(s)
 2026-05-30 13:45:13 [INFO]   | ════════════════════════════════════════════════════════════
 2026-05-30 13:45:13 [INFO] Morning batch completed.
+2026-05-30 15:00:16 [INFO] === [15:00 BATCH TRIGGERED] at 15:00:16 ===
+2026-05-30 15:00:16 [INFO] Fetching latest tracking data from DB...
+2026-05-30 15:01:50 [INFO] Tracking data synced OK
+2026-05-30 15:01:50 [INFO] Generating & Sending: KSL-Sáng (2026-05-30)
+2026-05-30 15:01:57 [INFO] OK: KSL-Sáng (2026-05-30) sent successfully
+2026-05-30 15:01:57 [INFO]   | 📤 Sending 1 report(s) to Telegram...
+2026-05-30 15:01:57 [INFO]   |   ✅ Sent link: KSL-Sáng 2026-05-30
+2026-05-30 15:01:57 [INFO]   | ════════════════════════════════════════════════════════════
+2026-05-30 15:01:57 [INFO]   |   ✅ Done! 1 report(s)
+2026-05-30 15:01:57 [INFO]   | ════════════════════════════════════════════════════════════
+2026-05-30 15:01:58 [INFO] Afternoon batch completed.
