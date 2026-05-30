@@ -4,6 +4,14 @@
     <Description>Auto-Scheduler Báo Cáo Giao Hàng Telegram — Chạy ngầm gửi KRC/KSL/ĐÔNG/MÁT theo lịch cố định. Tự khởi động khi logon hoặc resume từ sleep.</Description>
   </RegistrationInfo>
   <Triggers>
+    <!-- Trigger 0: Daily safety net — always start before 09:00 batch -->
+    <CalendarTrigger>
+      <StartBoundary>2026-05-30T08:45:00</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByDay>
+        <DaysInterval>1</DaysInterval>
+      </ScheduleByDay>
+    </CalendarTrigger>
     <!-- Trigger 1: Logon (reboot / first login) -->
     <LogonTrigger>
       <Enabled>true</Enabled>
