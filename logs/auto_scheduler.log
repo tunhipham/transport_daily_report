@@ -1,0 +1,30 @@
+2026-05-30 13:43:33 [INFO] ============================================================
+2026-05-30 13:43:33 [INFO] AUTO-SCHEDULER BAO CAO GIAO HANG — started
+2026-05-30 13:43:33 [INFO] Time: 13:43:33 30/05/2026
+2026-05-30 13:43:33 [INFO] PID: 7432
+2026-05-30 13:43:33 [INFO] Log file: G:\My Drive\DOCS\transport_daily_report\logs\auto_scheduler.log
+2026-05-30 13:43:33 [INFO] ============================================================
+2026-05-30 13:43:33 [INFO] Schedule:
+2026-05-30 13:43:33 [INFO]   09:00 -> KRC (today) & KSL-Toi (yesterday)
+2026-05-30 13:43:33 [INFO]   15:00 -> KSL-Sang (today)
+2026-05-30 13:43:33 [INFO]   16:30 -> DONG (today) & MAT (today)
+2026-05-30 13:43:33 [INFO] ------------------------------------------------------------
+2026-05-30 13:43:33 [INFO] Running in background... (Ctrl+C to stop)
+2026-05-30 13:43:33 [INFO] === [09:00 BATCH TRIGGERED] at 13:43:33 ===
+2026-05-30 13:43:33 [INFO] Fetching latest tracking data from DB...
+2026-05-30 13:44:51 [INFO] Tracking data synced OK
+2026-05-30 13:44:51 [INFO] Generating & Sending: KRC (2026-05-30)
+2026-05-30 13:45:03 [INFO] OK: KRC (2026-05-30) sent successfully
+2026-05-30 13:45:03 [INFO]   |   ✅ Sent link: KRC 2026-05-30
+2026-05-30 13:45:03 [INFO]   |   ✅ Sent image: KRC 2026-05-30
+2026-05-30 13:45:03 [INFO]   | ════════════════════════════════════════════════════════════
+2026-05-30 13:45:03 [INFO]   |   ✅ Done! 2 report(s)
+2026-05-30 13:45:03 [INFO]   | ════════════════════════════════════════════════════════════
+2026-05-30 13:45:03 [INFO] Generating & Sending: KSL-Tối (2026-05-29)
+2026-05-30 13:45:13 [INFO] OK: KSL-Tối (2026-05-29) sent successfully
+2026-05-30 13:45:13 [INFO]   |   ✅ Sent link: KSL-Tối 2026-05-29
+2026-05-30 13:45:13 [INFO]   |   ✅ Sent image: KSL-Tối 2026-05-29
+2026-05-30 13:45:13 [INFO]   | ════════════════════════════════════════════════════════════
+2026-05-30 13:45:13 [INFO]   |   ✅ Done! 2 report(s)
+2026-05-30 13:45:13 [INFO]   | ════════════════════════════════════════════════════════════
+2026-05-30 13:45:13 [INFO] Morning batch completed.
