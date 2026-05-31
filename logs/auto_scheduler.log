@@ -93,3 +93,34 @@
 2026-05-31 13:48:56 [INFO]   | ════════════════════════════════════════════════════════════
 2026-05-31 13:48:56 [INFO] morning_batch completed (forced).
 2026-05-31 13:48:56 [INFO] Done.
+2026-05-31 13:55:39 [INFO] ============================================================
+2026-05-31 13:55:39 [INFO] AUTO-SCHEDULER BAO CAO GIAO HANG — FORCE morning_batch
+2026-05-31 13:55:39 [INFO] Time: 13:55:39 31/05/2026
+2026-05-31 13:55:39 [INFO] PID: 28508
+2026-05-31 13:55:39 [INFO] Log file: G:\My Drive\DOCS\transport_daily_report\logs\auto_scheduler.log
+2026-05-31 13:55:39 [INFO] ============================================================
+2026-05-31 13:55:39 [INFO] Schedule:
+2026-05-31 13:55:39 [INFO]   09:00 -> KRC & KSL-Tối
+2026-05-31 13:55:39 [INFO]   15:00 -> KSL-Sáng
+2026-05-31 13:55:39 [INFO]   17:00 -> ĐÔNG & MÁT
+2026-05-31 13:55:39 [INFO] ------------------------------------------------------------
+2026-05-31 13:55:39 [INFO] Batch 'morning_batch' already sent today, forcing re-send...
+2026-05-31 13:55:39 [INFO] === [MORNING_BATCH FORCED] at 13:55:39 ===
+2026-05-31 13:55:39 [INFO] Fetching latest tracking data from DB...
+2026-05-31 13:56:53 [INFO] Tracking data synced OK
+2026-05-31 13:56:53 [INFO] Generating & Sending: KRC (2026-05-31)
+2026-05-31 13:57:07 [INFO] OK: KRC (2026-05-31) sent successfully
+2026-05-31 13:57:07 [INFO]   | 📤 Sending 1 report(s) to Telegram...
+2026-05-31 13:57:07 [INFO]   |   ✅ Sent link: KRC 2026-05-31
+2026-05-31 13:57:07 [INFO]   | ════════════════════════════════════════════════════════════
+2026-05-31 13:57:07 [INFO]   |   ✅ Done! 1 report(s)
+2026-05-31 13:57:07 [INFO]   | ════════════════════════════════════════════════════════════
+2026-05-31 13:57:07 [INFO] Generating & Sending: KSL-Tối (2026-05-30)
+2026-05-31 13:57:14 [INFO] OK: KSL-Tối (2026-05-30) sent successfully
+2026-05-31 13:57:14 [INFO]   | 📤 Sending 1 report(s) to Telegram...
+2026-05-31 13:57:14 [INFO]   |   ✅ Sent link: KSL-Tối 2026-05-30
+2026-05-31 13:57:14 [INFO]   | ════════════════════════════════════════════════════════════
+2026-05-31 13:57:14 [INFO]   |   ✅ Done! 1 report(s)
+2026-05-31 13:57:14 [INFO]   | ════════════════════════════════════════════════════════════
+2026-05-31 13:57:15 [INFO] morning_batch completed (forced).
+2026-05-31 13:57:15 [INFO] Done.

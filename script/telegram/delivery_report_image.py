@@ -28,6 +28,10 @@ GITHUB_PAGES_BASE = "https://tunhipham.github.io/transport_daily_report/delivery
 
 PILOT_STORES = ["HTP", "SCV"]
 
+# Destinations to exclude from reports (not KFM supermarkets)
+EXCLUDED_DESTS = {"STS"}              # exact matches
+EXCLUDED_DEST_PREFIXES = ("A8",)      # prefix matches (A8001, A8002, ...)
+
 KHO_ACCENT_HEX = {
     "KRC": "#6CA6FF",
     "ĐÔNG": "#4CAF50",
@@ -47,6 +51,19 @@ def load_tracking():
 
 def get_kho_rows(tracking, kho, date_iso):
     return tracking.get("dates", {}).get(date_iso, {}).get(kho, [])
+
+
+def filter_excluded_dests(rows):
+    """Remove rows whose dest is in the exclusion list (STS, A8xxx, etc.)."""
+    filtered = [
+        r for r in rows
+        if r.get("dest", "") not in EXCLUDED_DESTS
+        and not r.get("dest", "").startswith(EXCLUDED_DEST_PREFIXES)
+    ]
+    n_removed = len(rows) - len(filtered)
+    if n_removed:
+        print(f"  🚫 Excluded {n_removed} non-KFM destinations (STS/A8xxx)")
+    return filtered
 
 
 def sort_rows(rows):
@@ -606,6 +623,10 @@ def main():
         rows = get_kho_rows(tracking, kho, date_iso)
         if not rows:
             print(f"  ⚠ No data for {kho} on {date_iso}")
+            continue
+        rows = filter_excluded_dests(rows)
+        if not rows:
+            print(f"  ⚠ No data after filtering for {kho} on {date_iso}")
             continue
         print(f"  📊 {len(rows)} rows")
 
