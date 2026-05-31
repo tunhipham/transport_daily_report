@@ -51,3 +51,15 @@
 2026-05-30 15:05:02 [INFO]   17:00 -> DONG (today) & MAT (today)
 2026-05-30 15:05:02 [INFO] ------------------------------------------------------------
 2026-05-30 15:05:02 [INFO] Running in background... (Ctrl+C to stop)
+2026-05-31 12:57:07 [INFO] ============================================================
+2026-05-31 12:57:07 [INFO] AUTO-SCHEDULER BAO CAO GIAO HANG — started
+2026-05-31 12:57:07 [INFO] Time: 12:57:07 31/05/2026
+2026-05-31 12:57:07 [INFO] PID: 7440
+2026-05-31 12:57:07 [INFO] Log file: G:\My Drive\DOCS\transport_daily_report\logs\auto_scheduler.log
+2026-05-31 12:57:07 [INFO] ============================================================
+2026-05-31 12:57:07 [INFO] Schedule:
+2026-05-31 12:57:07 [INFO]   09:00 -> KRC (today) & KSL-Toi (yesterday)
+2026-05-31 12:57:07 [INFO]   15:00 -> KSL-Sang (today)
+2026-05-31 12:57:07 [INFO]   17:00 -> DONG (today) & MAT (today)
+2026-05-31 12:57:07 [INFO] ------------------------------------------------------------
+2026-05-31 12:57:07 [INFO] Running in background... (Ctrl+C to stop)
