@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Auto-scheduler for KFM Delivery Reports.
-Runs continuously in the background and sends reports at scheduled times.
+
+Modes:
+  --once     Run check_schedule() once and exit.  (Recommended: use with Windows Task Scheduler)
+  (default)  Run continuously with while-True loop (legacy, fragile).
+  --run-batch morning|afternoon|late   Force a specific batch NOW (ignores time check).
+
 Features catch-up logic: if started after the scheduled time, it sends immediately.
 Prevents duplicate sends via a state file.
 
@@ -13,6 +18,7 @@ import sys
 import time
 import json
 import logging
+import argparse
 import subprocess
 from datetime import datetime, timedelta
 
@@ -140,7 +146,39 @@ def send_report(kho, date_iso, is_pilot=False):
         log(f"ERROR in send_report {kho}: {e}", "error")
 
 
-def check_schedule():
+# ── Batch definitions ────────────────────────────────────────
+# Each batch: (name, trigger_hour, actions)
+# actions is a list of (kho, date_func, pilot_flag)
+BATCHES = [
+    ("morning_batch",   9, [
+        ("KRC",      "today",     True),
+        ("KSL-Tối",  "yesterday", True),
+    ]),
+    ("afternoon_batch", 15, [
+        ("KSL-Sáng", "today",     False),
+    ]),
+    ("late_batch",      17, [
+        ("ĐÔNG",     "today",     False),
+        ("MÁT",      "today",     False),
+    ]),
+]
+
+
+def run_batch(batch_name, today_str, yesterday_str):
+    """Execute a single batch by name. Returns True if it ran."""
+    for name, _, actions in BATCHES:
+        if name == batch_name:
+            log(f"=== [{batch_name.upper()} FORCED] at {datetime.now().strftime('%H:%M:%S')} ===")
+            sync_tracking_data()
+            for kho, date_key, pilot in actions:
+                d = today_str if date_key == "today" else yesterday_str
+                send_report(kho, d, is_pilot=pilot)
+            return True
+    log(f"Unknown batch: {batch_name}", "error")
+    return False
+
+
+def check_schedule(force_batch=None):
     now = datetime.now()
     today_str = now.strftime("%Y-%m-%d")
     yesterday_str = (now - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -151,40 +189,31 @@ def check_schedule():
 
     sent_today = state[today_str]
 
-    # ── 09:00 | Sang mo may: KRC (Hom nay) & KSL-Toi (Hom qua) ──
-    if now.hour >= 9:
-        if "morning_batch" not in sent_today:
-            log(f"=== [09:00 BATCH TRIGGERED] at {now.strftime('%H:%M:%S')} ===")
-            sync_tracking_data()
-            send_report("KRC", today_str, is_pilot=True)
-            send_report("KSL-Tối", yesterday_str, is_pilot=True)
+    # ── Force a specific batch (--run-batch) ──
+    if force_batch:
+        if force_batch in sent_today:
+            log(f"Batch '{force_batch}' already sent today, forcing re-send...")
+            sent_today.remove(force_batch)
+        run_batch(force_batch, today_str, yesterday_str)
+        sent_today.append(force_batch)
+        save_state(state)
+        log(f"{force_batch} completed (forced).")
+        return
 
-            sent_today.append("morning_batch")
+    # ── Normal schedule check ──
+    data_synced = False
+    for batch_name, trigger_hour, actions in BATCHES:
+        if now.hour >= trigger_hour and batch_name not in sent_today:
+            log(f"=== [{batch_name.upper()} TRIGGERED] at {now.strftime('%H:%M:%S')} ===")
+            if not data_synced:
+                sync_tracking_data()
+                data_synced = True
+            for kho, date_key, pilot in actions:
+                d = today_str if date_key == "today" else yesterday_str
+                send_report(kho, d, is_pilot=pilot)
+            sent_today.append(batch_name)
             save_state(state)
-            log("Morning batch completed.")
-
-    # ── 15:00 | Chieu: KSL-Sang (Hom nay) ──
-    if now.hour >= 15:
-        if "afternoon_batch" not in sent_today:
-            log(f"=== [15:00 BATCH TRIGGERED] at {now.strftime('%H:%M:%S')} ===")
-            sync_tracking_data()
-            send_report("KSL-Sáng", today_str)
-
-            sent_today.append("afternoon_batch")
-            save_state(state)
-            log("Afternoon batch completed.")
-
-    # ── 17:00 | Chieu muon: DONG & MAT (Hom nay) ──
-    if now.hour >= 17:
-        if "late_batch" not in sent_today:
-            log(f"=== [17:00 BATCH TRIGGERED] at {now.strftime('%H:%M:%S')} ===")
-            sync_tracking_data()
-            send_report("ĐÔNG", today_str)
-            send_report("MÁT", today_str)
-
-            sent_today.append("late_batch")
-            save_state(state)
-            log("Late batch completed.")
+            log(f"{batch_name} completed.")
 
     # ── Cleanup: remove state entries older than 7 days ──
     cutoff = (now - timedelta(days=7)).strftime("%Y-%m-%d")
@@ -195,18 +224,48 @@ def check_schedule():
         save_state(state)
 
 
-def main():
+def _log_banner(mode_label):
     log("=" * 60)
-    log("AUTO-SCHEDULER BAO CAO GIAO HANG — started")
+    log(f"AUTO-SCHEDULER BAO CAO GIAO HANG — {mode_label}")
     log(f"Time: {datetime.now().strftime('%H:%M:%S %d/%m/%Y')}")
     log(f"PID: {os.getpid()}")
     log(f"Log file: {LOG_FILE}")
     log("=" * 60)
     log("Schedule:")
-    log("  09:00 -> KRC (today) & KSL-Toi (yesterday)")
-    log("  15:00 -> KSL-Sang (today)")
-    log("  17:00 -> DONG (today) & MAT (today)")
+    for name, hour, actions in BATCHES:
+        khos = " & ".join(k for k, _, _ in actions)
+        log(f"  {hour:02d}:00 -> {khos}")
     log("-" * 60)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="KFM Delivery Report Scheduler")
+    parser.add_argument("--once", action="store_true",
+                        help="Run check_schedule() once and exit (for Task Scheduler)")
+    parser.add_argument("--run-batch", choices=["morning_batch", "afternoon_batch", "late_batch"],
+                        help="Force a specific batch NOW (ignores time/state)")
+    args = parser.parse_args()
+
+    if args.run_batch:
+        _log_banner(f"FORCE {args.run_batch}")
+        check_schedule(force_batch=args.run_batch)
+        log("Done.")
+        return
+
+    if args.once:
+        _log_banner("once")
+        try:
+            check_schedule()
+        except Exception as e:
+            log(f"Error in check_schedule: {e}", "error")
+            import traceback
+            log(traceback.format_exc(), "error")
+            sys.exit(1)
+        log("Done (--once).")
+        return
+
+    # ── Legacy: continuous loop ──
+    _log_banner("started (loop)")
     log("Running in background... (Ctrl+C to stop)")
 
     while True:
