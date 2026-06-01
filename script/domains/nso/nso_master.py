@@ -431,7 +431,7 @@ class NsoMaster:
                     na = _normalize(sa.get("name_mail") or sa.get("name_full") or "")
                     nb = _normalize(sb.get("name_mail") or sb.get("name_full") or "")
                     is_dup = False
-                    # Check 1: fuzzy name match
+                    # Check 1: fuzzy name match (LCS ≥70%)
                     if na and nb and _is_name_match(na, nb):
                         is_dup = True
                     # Check 2: code of one appears in name_mail of other
@@ -443,6 +443,18 @@ class NsoMaster:
                             is_dup = True
                         elif cb and cb in nm_a:
                             is_dup = True
+                    # Check 3: shared number tokens + relaxed LCS (≥50%)
+                    # Catches "Vinhomes Grand Park S8.02" vs "Vinhome Grand Park S8.02 A182"
+                    if not is_dup and na and nb:
+                        import re as _re
+                        nums_a = set(_re.findall(r'[a-z]*\d+(?:\.\d+)?', na))
+                        nums_b = set(_re.findall(r'[a-z]*\d+(?:\.\d+)?', nb))
+                        shared = nums_a & nums_b
+                        if shared:
+                            shorter = min(len(na), len(nb))
+                            lcs = _lcs_length(na, nb)
+                            if shorter > 0 and lcs / shorter >= 0.50:
+                                is_dup = True
                     if is_dup:
                         # Keep the one with more data (has code > no code, has version > no version)
                         score_a = (1 if sa.get("code") else 0) + (1 if sa.get("version") else 0)

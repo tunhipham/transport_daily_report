@@ -1,8 +1,8 @@
 {
-  "_updated": "01/06/2026 13:52",
+  "_updated": "01/06/2026 13:57",
   "stats": {
-    "total": 61,
-    "upcoming": 29,
+    "total": 60,
+    "upcoming": 28,
     "opening": 3,
     "reschedule": 5
   },
@@ -374,14 +374,6 @@
       "iso_date": "2026-05-29",
       "status_type": "opening",
       "status_text": "Đang khai trương"
-    },
-    {
-      "name": "Vinhome Grand Park - S8.02 - A182",
-      "code": "",
-      "opening_date": "05/06/2026",
-      "iso_date": "2026-06-05",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
     },
     {
       "name": "Shophouse A1.03 Chung cư Sunrise City View - A198",
@@ -772,12 +764,6 @@
       "label": "A183 - 86C-88 Đường 339, Phường Phước Long B - A183",
       "code": "A183",
       "type": "opening"
-    },
-    {
-      "date": "2026-06-05",
-      "label": "None - Vinhome Grand Park - S8.02 - A182",
-      "code": "",
-      "type": "upcoming"
     },
     {
       "date": "2026-06-12",
