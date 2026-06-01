@@ -1,8 +1,8 @@
 {
-  "_updated": "01/06/2026 13:48",
+  "_updated": "01/06/2026 13:52",
   "stats": {
-    "total": 63,
-    "upcoming": 31,
+    "total": 61,
+    "upcoming": 29,
     "opening": 3,
     "reschedule": 5
   },
@@ -488,22 +488,6 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "32-34 Đường số 10, Phường Bình Hưng - A202",
-      "code": "",
-      "opening_date": "05/06/2026",
-      "iso_date": "2026-06-05",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
-    },
-    {
-      "name": "Chung Cư Millennium Bến Văn Đồn, Quận 4 - A194",
-      "code": "",
-      "opening_date": "06/06/2026",
-      "iso_date": "2026-06-06",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
-    },
-    {
       "name": "1132 Nguyễn Duy Trinh, Phường Long Trường - A204",
       "code": "",
       "opening_date": "27/06/2026",
@@ -870,18 +854,6 @@
     {
       "date": "2026-09-25",
       "label": "None - 310/10 Thạnh Xuân 14, Phường Thạnh Xuân - A214 ★",
-      "code": "",
-      "type": "upcoming"
-    },
-    {
-      "date": "2026-06-05",
-      "label": "None - 32-34 Đường số 10, Phường Bình Hưng - A202",
-      "code": "",
-      "type": "upcoming"
-    },
-    {
-      "date": "2026-06-06",
-      "label": "None - Chung Cư Millennium Bến Văn Đồn, Quận 4 - A194",
       "code": "",
       "type": "upcoming"
     },

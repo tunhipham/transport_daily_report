@@ -393,7 +393,8 @@ class NsoMaster:
                               old_code or "—", dsst_code, "DSST")
                     enriched.append(dsst_code)
 
-        # ── Dedup: remove duplicate stores (same name_mail + opening_date) ──
+        # ── Dedup: remove duplicate stores (same opening_date + fuzzy name match) ──
+        # Phase 1: exact dedup (same normalized name + date)
         seen = set()
         deduped = []
         for store in self.stores:
@@ -405,6 +406,55 @@ class NsoMaster:
                 continue
             seen.add(key)
             deduped.append(store)
+
+        # Phase 2: fuzzy dedup within same opening_date
+        # Detect: "Vinhomes Grand Park - S8.02" vs "Vinhome Grand Park - S8.02 - A182"
+        # Detect: "DS10 Bình Hưng" (code A202) vs "32-34 ... Bình Hưng - A202"
+        from collections import defaultdict
+        by_date = defaultdict(list)
+        for i, s in enumerate(deduped):
+            od = s.get("opening_date", "")
+            if od:
+                by_date[od].append(i)
+
+        remove_indices = set()
+        for od, indices in by_date.items():
+            if len(indices) < 2:
+                continue
+            for a in range(len(indices)):
+                if indices[a] in remove_indices:
+                    continue
+                for b in range(a + 1, len(indices)):
+                    if indices[b] in remove_indices:
+                        continue
+                    sa, sb = deduped[indices[a]], deduped[indices[b]]
+                    na = _normalize(sa.get("name_mail") or sa.get("name_full") or "")
+                    nb = _normalize(sb.get("name_mail") or sb.get("name_full") or "")
+                    is_dup = False
+                    # Check 1: fuzzy name match
+                    if na and nb and _is_name_match(na, nb):
+                        is_dup = True
+                    # Check 2: code of one appears in name_mail of other
+                    if not is_dup:
+                        ca, cb = sa.get("code") or "", sb.get("code") or ""
+                        nm_a = sa.get("name_mail") or ""
+                        nm_b = sb.get("name_mail") or ""
+                        if ca and ca in nm_b:
+                            is_dup = True
+                        elif cb and cb in nm_a:
+                            is_dup = True
+                    if is_dup:
+                        # Keep the one with more data (has code > no code, has version > no version)
+                        score_a = (1 if sa.get("code") else 0) + (1 if sa.get("version") else 0)
+                        score_b = (1 if sb.get("code") else 0) + (1 if sb.get("version") else 0)
+                        if score_b > score_a:
+                            remove_indices.add(indices[a])
+                        else:
+                            remove_indices.add(indices[b])
+
+        if remove_indices:
+            deduped = [s for i, s in enumerate(deduped) if i not in remove_indices]
+
         removed = len(self.stores) - len(deduped)
         if removed:
             self.stores = deduped
