@@ -330,6 +330,30 @@ class NsoMaster:
         # ⚠ CRITICAL: Check NKT (ngày khai trương) cross-match — same name/address
         # but different NKT means different store. Must NOT map old code to new store.
         from fetch_nso_mail import _normalize, _lcs_length, _is_name_match
+        import re as _re
+
+        # ── Phase A: Extract A-codes from name_mail for stores without code ──
+        # Mail often includes explicit codes: "Vinhome Grand Park - S8.02 - A182"
+        for store in self.stores:
+            if store.get("code"):
+                continue
+            nm = store.get("name_mail") or ""
+            m = _re.search(r'[-–—]\s*(A\d{2,4})\s*[★]?\s*$', nm)
+            if m:
+                extracted = m.group(1)
+                store["code"] = extracted
+                # Look up DSST for system name + version
+                dsst = dsst_lookup.get(extracted, {})
+                if dsst:
+                    if dsst.get("name_system"):
+                        store["name_system"] = dsst["name_system"]
+                    if dsst.get("name_full"):
+                        store["name_full"] = dsst["name_full"]
+                    if dsst.get("version") and not store.get("version"):
+                        store["version"] = dsst["version"]
+                    enriched.append(extracted)
+
+        # ── Phase B: DSST enrichment with NKT validation ──
         for store in self.stores:
             code = store.get("code")
             if code:
@@ -345,6 +369,8 @@ class NsoMaster:
                               f"→ None (store date={store_opening})", "NKT guard")
                     store["code"] = None
                     store["name_system"] = None
+                    # Reset name_full to name_mail (remove stale DSST data)
+                    store["name_full"] = store.get("name_mail") or store.get("name_full")
                     # Don't continue — fall through to fuzzy match below
                 else:
                     if dsst.get("name_system") and not store.get("name_system"):
