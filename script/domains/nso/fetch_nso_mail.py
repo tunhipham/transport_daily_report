@@ -623,6 +623,27 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
     # Enrich with DSST data — match against name_full (NOT branch_name prefix)
     # ⚠ CRITICAL: Check NKT (ngày khai trương) when matching — same code/name
     # but different NKT means different store. Must NOT map wrong code.
+    import re as _re
+
+    # ── Phase A: Extract A-codes from name_mail for stores without code ──
+    for store in current_stores:
+        if store.get("code"):
+            continue
+        nm = store.get("name_mail") or ""
+        m = _re.search(r'[-–—]\s*(A\d{2,4})\s*[★]?\s*$', nm)
+        if m:
+            extracted = m.group(1)
+            store["code"] = extracted
+            dsst = dsst_lookup.get(extracted, {})
+            if dsst:
+                if dsst.get("name_system"):
+                    store["name_system"] = dsst["name_system"]
+                if dsst.get("name_full"):
+                    store["name_full"] = dsst["name_full"]
+                if dsst.get("version") and not store.get("version"):
+                    store["version"] = dsst["version"]
+
+    # ── Phase B: DSST enrichment with NKT validation ──
     for store in current_stores:
         code = store.get("code")
 
@@ -630,12 +651,12 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
         if code:
             dsst = dsst_lookup.get(code, {})
             # ⚠ NKT GUARD: validate existing code against DSST NKT
-            # If DSST has NKT that doesn't match store opening_date → wrong code, strip it
             dsst_nkt = dsst.get("nkt", "")
             store_opening = store.get("opening_date", "")
             if dsst_nkt and store_opening and dsst_nkt != store_opening:
                 store["code"] = None
                 store["name_system"] = None
+                store["name_full"] = store.get("name_mail") or store.get("name_full")
                 # Don't continue — fall through to fuzzy match below
             else:
                 if dsst.get("name_system") and not store.get("name_system"):
@@ -663,11 +684,10 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
                 continue
 
             # ⚠ NKT cross-check: if DSST has NKT, store MUST have opening_date AND it must match
-            # No opening_date → can't verify → skip (don't risk mapping old code to new store)
             dsst_nkt = dsst_info.get("nkt", "")
             if dsst_nkt:
                 if not store_opening or dsst_nkt != store_opening:
-                    continue  # No date to verify OR different date → skip
+                    continue
 
             lcs = _lcs_length(mail_name, dsst_name)
             if lcs > best_lcs:

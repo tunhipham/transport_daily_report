@@ -1,5 +1,5 @@
 {
-  "_updated": "01/06/2026 13:57",
+  "_updated": "01/06/2026 14:49",
   "stats": {
     "total": 60,
     "upcoming": 28,
@@ -344,14 +344,6 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "Vinhomes Grand Park - S8.02",
-      "code": "",
-      "opening_date": "05/06/2026",
-      "iso_date": "2026-06-05",
-      "status_type": "upcoming",
-      "status_text": "Sắp khai trương"
-    },
-    {
       "name": "902 Nguyễn Duy Trinh - TDU",
       "code": "",
       "opening_date": "23/10/2026",
@@ -384,8 +376,8 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "Số 81/2 Đường số 59, Phường 14, Quận Gò Vấp - A205",
-      "code": "",
+      "name": "KFM_HCM_GVA - 81/2 Đường 59 An Hội Tây",
+      "code": "A205",
       "opening_date": "19/06/2026",
       "iso_date": "2026-06-19",
       "status_type": "reschedule",
@@ -409,7 +401,7 @@
     },
     {
       "name": "Đường 20, Opal Garden (sau lưng Giga Mall) - A158",
-      "code": "",
+      "code": "A158",
       "opening_date": "26/06/2026",
       "iso_date": "2026-06-26",
       "status_type": "upcoming",
@@ -417,7 +409,7 @@
     },
     {
       "name": "TM SH01 - 2A đường A5, KDC Palm Residence - A207",
-      "code": "",
+      "code": "A207",
       "opening_date": "27/06/2026",
       "iso_date": "2026-06-27",
       "status_type": "upcoming",
@@ -425,7 +417,7 @@
     },
     {
       "name": "Vinhome Grand Park - BS801.S03 - A208",
-      "code": "",
+      "code": "A208",
       "opening_date": "27/06/2026",
       "iso_date": "2026-06-27",
       "status_type": "upcoming",
@@ -433,7 +425,7 @@
     },
     {
       "name": "32B-34 Đường số 1, Phường An Hội Đồng (P.16) - A201",
-      "code": "",
+      "code": "A201",
       "opening_date": "10/07/2026",
       "iso_date": "2026-07-10",
       "status_type": "upcoming",
@@ -441,7 +433,7 @@
     },
     {
       "name": "145B Lê Trọng Tấn, Phường An Bình, Thị xã Dĩ An - A209",
-      "code": "",
+      "code": "A209",
       "opening_date": "17/07/2026",
       "iso_date": "2026-07-17",
       "status_type": "upcoming",
@@ -449,7 +441,7 @@
     },
     {
       "name": "Vinhome Grand Park Q9 - S20101.S12 - A180",
-      "code": "",
+      "code": "A180",
       "opening_date": "24/07/2026",
       "iso_date": "2026-07-24",
       "status_type": "upcoming",
@@ -457,7 +449,7 @@
     },
     {
       "name": "66/14 Vĩnh Phú 41, Thuận An, Bình Dương - A210 ★",
-      "code": "",
+      "code": "A210",
       "opening_date": "24/07/2026",
       "iso_date": "2026-07-24",
       "status_type": "upcoming",
@@ -465,7 +457,7 @@
     },
     {
       "name": "113/29 Đường 30/4, Thủ Dầu Một, Bình Dương - A213 ★",
-      "code": "",
+      "code": "A213",
       "opening_date": "22/08/2026",
       "iso_date": "2026-08-22",
       "status_type": "upcoming",
@@ -473,7 +465,7 @@
     },
     {
       "name": "310/10 Thạnh Xuân 14, Phường Thạnh Xuân - A214 ★",
-      "code": "",
+      "code": "A214",
       "opening_date": "25/09/2026",
       "iso_date": "2026-09-25",
       "status_type": "upcoming",
@@ -481,9 +473,17 @@
     },
     {
       "name": "1132 Nguyễn Duy Trinh, Phường Long Trường - A204",
-      "code": "",
+      "code": "A204",
       "opening_date": "27/06/2026",
       "iso_date": "2026-06-27",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "KFM_HCM_TDU - S08.02 Vinhomes Grand Park",
+      "code": "A182",
+      "opening_date": "05/06/2026",
+      "iso_date": "2026-06-05",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
     }
@@ -742,12 +742,6 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-06-05",
-      "label": "None - Vinhomes Grand Park - S8.02",
-      "code": "",
-      "type": "upcoming"
-    },
-    {
       "date": "2026-10-23",
       "label": "None - 902 Nguyễn Duy Trinh - TDU",
       "code": "",
@@ -773,8 +767,8 @@
     },
     {
       "date": "2026-06-19",
-      "label": "None - Số 81/2 Đường số 59, Phường 14, Quận Gò Vấp - A205",
-      "code": "",
+      "label": "A205 - Số 81/2 Đường số 59, Phường 14, Quận Gò Vấp - A205",
+      "code": "A205",
       "type": "reschedule"
     },
     {
@@ -791,62 +785,68 @@
     },
     {
       "date": "2026-06-26",
-      "label": "None - Đường 20, Opal Garden (sau lưng Giga Mall) - A158",
-      "code": "",
+      "label": "A158 - Đường 20, Opal Garden (sau lưng Giga Mall) - A158",
+      "code": "A158",
       "type": "upcoming"
     },
     {
       "date": "2026-06-27",
-      "label": "None - TM SH01 - 2A đường A5, KDC Palm Residence - A207",
-      "code": "",
+      "label": "A207 - TM SH01 - 2A đường A5, KDC Palm Residence - A207",
+      "code": "A207",
       "type": "upcoming"
     },
     {
       "date": "2026-06-27",
-      "label": "None - Vinhome Grand Park - BS801.S03 - A208",
-      "code": "",
+      "label": "A208 - Vinhome Grand Park - BS801.S03 - A208",
+      "code": "A208",
       "type": "upcoming"
     },
     {
       "date": "2026-07-10",
-      "label": "None - 32B-34 Đường số 1, Phường An Hội Đồng (P.16) - A201",
-      "code": "",
+      "label": "A201 - 32B-34 Đường số 1, Phường An Hội Đồng (P.16) - A201",
+      "code": "A201",
       "type": "upcoming"
     },
     {
       "date": "2026-07-17",
-      "label": "None - 145B Lê Trọng Tấn, Phường An Bình, Thị xã Dĩ An - A209",
-      "code": "",
+      "label": "A209 - 145B Lê Trọng Tấn, Phường An Bình, Thị xã Dĩ An - A209",
+      "code": "A209",
       "type": "upcoming"
     },
     {
       "date": "2026-07-24",
-      "label": "None - Vinhome Grand Park Q9 - S20101.S12 - A180",
-      "code": "",
+      "label": "A180 - Vinhome Grand Park Q9 - S20101.S12 - A180",
+      "code": "A180",
       "type": "upcoming"
     },
     {
       "date": "2026-07-24",
-      "label": "None - 66/14 Vĩnh Phú 41, Thuận An, Bình Dương - A210 ★",
-      "code": "",
+      "label": "A210 - 66/14 Vĩnh Phú 41, Thuận An, Bình Dương - A210 ★",
+      "code": "A210",
       "type": "upcoming"
     },
     {
       "date": "2026-08-22",
-      "label": "None - 113/29 Đường 30/4, Thủ Dầu Một, Bình Dương - A213 ★",
-      "code": "",
+      "label": "A213 - 113/29 Đường 30/4, Thủ Dầu Một, Bình Dương - A213 ★",
+      "code": "A213",
       "type": "upcoming"
     },
     {
       "date": "2026-09-25",
-      "label": "None - 310/10 Thạnh Xuân 14, Phường Thạnh Xuân - A214 ★",
-      "code": "",
+      "label": "A214 - 310/10 Thạnh Xuân 14, Phường Thạnh Xuân - A214 ★",
+      "code": "A214",
       "type": "upcoming"
     },
     {
       "date": "2026-06-27",
-      "label": "None - 1132 Nguyễn Duy Trinh, Phường Long Trường - A204",
-      "code": "",
+      "label": "A204 - 1132 Nguyễn Duy Trinh, Phường Long Trường - A204",
+      "code": "A204",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-05",
+      "label": "A182 - Vinhome Grand Park - S8.02 - A182",
+      "code": "A182",
       "type": "upcoming"
     }
   ],
@@ -966,35 +966,35 @@
       "total_dm": 400
     },
     {
-      "label": "Vinhomes Grand Park - S8.02 (None)",
-      "version": 2000,
+      "label": "KFM_HCM_TDU - S08.02 Vinhomes Grand Park (A182)",
+      "version": 1000,
       "days": [
         {
           "date": "05/06/2026",
           "day_name": "Thứ 6",
           "label": "D",
-          "ksl": 3500,
+          "ksl": 2500,
           "dm": 0
         },
         {
           "date": "06/06/2026",
           "day_name": "Thứ 7",
           "label": "D+1",
-          "ksl": 5500,
+          "ksl": 4000,
           "dm": 400
         },
         {
           "date": "07/06/2026",
           "day_name": "CN",
           "label": "D+2",
-          "ksl": 3500,
+          "ksl": 2500,
           "dm": 0
         },
         {
           "date": "08/06/2026",
           "day_name": "Thứ 2",
           "label": "D+3",
-          "ksl": 3000,
+          "ksl": 2100,
           "dm": 0
         },
         {
@@ -1019,7 +1019,7 @@
           "dm": 0
         }
       ],
-      "total_ksl": 15500,
+      "total_ksl": 11100,
       "total_dm": 400
     }
   ],
