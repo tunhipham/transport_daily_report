@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Check barcode 11486 detail on 01/06"""
+"""Check timezone issue for PO1002529950"""
 import sys, os, json
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 BASE = r'g:\My Drive\DOCS\transport_daily_report'
@@ -17,104 +17,95 @@ def q(sql):
 
 KRC = '5fdc170ebd89c10006f15b7c'
 
-# 1) All entries for barcode 11486 on 01/06
+# 1) Raw timestamp for PO1002529950
 print("=" * 70)
-print("  Barcode 11486 — all receipt_items entries on 01/06")
+print("  PO1002529950 — raw timestamp check")
 print("=" * 70)
 
 r1 = q(f"""
 SELECT
-    ri.purchase_code AS po_code,
-    ri.product_barcode,
-    ri.product_name,
-    ri.po_qty,
-    ri.qty AS receipt_qty,
-    ri.net_weight,
-    po.status,
-    po.sub_status,
-    has(po.list_sub_status, 11) AS cancelled,
-    formatDateTime(fromUnixTimestamp(toUInt32(po.delivery_date_vendor_confirm)), '%d/%m/%Y') AS del_date
-FROM kf_receipt_items ri
-INNER JOIN kf_purchase_order po
-    ON ri.purchase_code = po.code
-    AND po.branch_id = '{KRC}'
-    AND po.deleted = 0
-WHERE ri.branch_id = '{KRC}'
-  AND ri.product_barcode = '11486'
-  AND formatDateTime(fromUnixTimestamp(toUInt32(po.delivery_date_vendor_confirm)), '%d/%m/%Y') = '01/06/2026'
+    code,
+    delivery_date_vendor_confirm AS raw_ts,
+    fromUnixTimestamp(toUInt32(delivery_date_vendor_confirm)) AS utc_datetime,
+    formatDateTime(fromUnixTimestamp(toUInt32(delivery_date_vendor_confirm)), '%d/%m/%Y %H:%M') AS utc_formatted,
+    formatDateTime(fromUnixTimestamp(toUInt32(delivery_date_vendor_confirm)), '%d/%m/%Y %H:%M', 'Asia/Ho_Chi_Minh') AS vn_formatted,
+    delivery_date AS raw_del_date,
+    formatDateTime(fromUnixTimestamp(toUInt32(delivery_date)), '%d/%m/%Y %H:%M') AS del_date_utc,
+    formatDateTime(fromUnixTimestamp(toUInt32(delivery_date)), '%d/%m/%Y %H:%M', 'Asia/Ho_Chi_Minh') AS del_date_vn
+FROM kf_purchase_order
+WHERE code = 'PO1002529950'
 FORMAT JSONEachRow
 """)
 
-print(f"\n  PO_code | barcode | po_qty | rcpt_qty | nw | status | sub | cancelled | del_date | name")
 for line in r1.split('\n'):
     if not line.strip(): continue
     o = json.loads(line)
-    print(f"  {o['po_code']} | {o['product_barcode']} | {o['po_qty']} | {o['receipt_qty']} | {o['net_weight']} | {o['status']} | {o['sub_status']} | {o['cancelled']} | {o['del_date']} | {o.get('product_name','')[:30]}")
+    print(f"\n  PO: {o['code']}")
+    print(f"  delivery_date_vendor_confirm:")
+    print(f"    raw timestamp:  {o['raw_ts']}")
+    print(f"    UTC formatted:  {o['utc_formatted']}")
+    print(f"    VN formatted:   {o['vn_formatted']}")
+    print(f"  delivery_date:")
+    print(f"    raw timestamp:  {o['raw_del_date']}")
+    print(f"    UTC formatted:  {o['del_date_utc']}")
+    print(f"    VN formatted:   {o['del_date_vn']}")
 
-# 2) What does the dedup (GROUP BY purchase_code, barcode) produce?
+# 2) Check a few more POs to confirm pattern
 print(f"\n\n{'='*70}")
-print("  Deduped result for barcode 11486:")
+print("  Last 10 POs — UTC vs VN timezone comparison")
 print("=" * 70)
 
 r2 = q(f"""
 SELECT
-    ri.purchase_code AS po_code,
-    ri.product_barcode,
-    any(ri.product_name) AS name,
-    any(ri.po_qty) AS qty,
-    any(ri.net_weight) AS nw
-FROM kf_receipt_items ri
-INNER JOIN kf_purchase_order po
-    ON ri.purchase_code = po.code
-    AND po.branch_id = '{KRC}'
-    AND po.deleted = 0
-    AND NOT has(po.list_sub_status, 11)
-WHERE ri.branch_id = '{KRC}'
-  AND ri.product_barcode = '11486'
-  AND formatDateTime(fromUnixTimestamp(toUInt32(po.delivery_date_vendor_confirm)), '%d/%m/%Y') = '01/06/2026'
-GROUP BY po_code, ri.product_barcode
+    code,
+    formatDateTime(fromUnixTimestamp(toUInt32(delivery_date_vendor_confirm)), '%d/%m/%Y %H:%M') AS utc,
+    formatDateTime(fromUnixTimestamp(toUInt32(delivery_date_vendor_confirm)), '%d/%m/%Y %H:%M', 'Asia/Ho_Chi_Minh') AS vn
+FROM kf_purchase_order
+WHERE branch_id = '{KRC}'
+  AND deleted = 0
+  AND delivery_date_vendor_confirm > 0
+ORDER BY delivery_date_vendor_confirm DESC
+LIMIT 10
 FORMAT JSONEachRow
 """)
 
+print(f"\n  {'PO':<18} {'UTC':>16} {'VN (UTC+7)':>16}")
 for line in r2.split('\n'):
     if not line.strip(): continue
     o = json.loads(line)
-    print(f"  PO: {o['po_code']} | qty={o['qty']} | nw={o['nw']} | {o.get('name','')[:40]}")
+    diff = " ← DATE SHIFT!" if o['utc'].split(' ')[0] != o['vn'].split(' ')[0] else ""
+    print(f"  {o['code']:<18} {o['utc']:>16} {o['vn']:>16}{diff}")
 
-# 3) Check this barcode on other dates to see if qty is always this large
+# 3) Count how many POs have date shift between UTC and VN
 print(f"\n\n{'='*70}")
-print("  Barcode 11486 — qty on other dates (last 10):")
+print("  How many POs have date shift (UTC vs VN)?")
 print("=" * 70)
 
 r3 = q(f"""
 SELECT
-    formatDateTime(fromUnixTimestamp(toUInt32(po.delivery_date_vendor_confirm)), '%d/%m/%Y') AS del_date,
-    count(DISTINCT ri.purchase_code) AS po_count,
-    SUM(qty_dedup) AS total_qty
-FROM (
-    SELECT
-        ri.purchase_code,
-        any(ri.po_qty) AS qty_dedup,
-        any(po.delivery_date_vendor_confirm) AS dv
-    FROM kf_receipt_items ri
-    INNER JOIN kf_purchase_order po
-        ON ri.purchase_code = po.code
-        AND po.branch_id = '{KRC}'
-        AND po.deleted = 0
-        AND NOT has(po.list_sub_status, 11)
-    WHERE ri.branch_id = '{KRC}'
-      AND ri.product_barcode = '11486'
-    GROUP BY ri.purchase_code, ri.product_barcode
-)
-GROUP BY del_date
-ORDER BY del_date DESC
-LIMIT 10
+    countIf(
+        formatDateTime(fromUnixTimestamp(toUInt32(delivery_date_vendor_confirm)), '%d/%m/%Y') !=
+        formatDateTime(fromUnixTimestamp(toUInt32(delivery_date_vendor_confirm)), '%d/%m/%Y', 'Asia/Ho_Chi_Minh')
+    ) AS shifted,
+    count(*) AS total
+FROM kf_purchase_order
+WHERE branch_id = '{KRC}'
+  AND deleted = 0
+  AND delivery_date_vendor_confirm > 0
 FORMAT JSONEachRow
 """)
 
 for line in r3.split('\n'):
     if not line.strip(): continue
     o = json.loads(line)
-    print(f"  {o['del_date']}: {o['po_count']} POs, total qty={o['total_qty']}")
+    pct = float(o['shifted']) / float(o['total']) * 100 if float(o['total']) > 0 else 0
+    print(f"  Shifted: {o['shifted']} / {o['total']} ({pct:.1f}%)")
+
+# 4) Check ClickHouse server timezone
+print(f"\n\n{'='*70}")
+print("  ClickHouse server timezone")
+print("=" * 70)
+r4 = q("SELECT timezone()")
+print(f"  Server timezone: {r4}")
 
 print("\nDone.")

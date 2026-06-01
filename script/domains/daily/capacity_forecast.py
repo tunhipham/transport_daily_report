@@ -169,7 +169,7 @@ def read_po_krc_from_db(master_weights=None):
         # GROUP BY purchase_code + barcode to deduplicate (PO ảo / cutoff dupes)
         sql = f"""
         SELECT
-            formatDateTime(fromUnixTimestamp(toUInt32(po.delivery_date_vendor_confirm)), '%d/%m/%Y') AS del_date,
+            formatDateTime(fromUnixTimestamp(toUInt32(po.delivery_date_vendor_confirm)), '%d/%m/%Y', 'Asia/Ho_Chi_Minh') AS del_date,
             ri.product_barcode AS barcode,
             any(ri.product_name) AS product_name,
             any(ri.po_qty) AS qty,
