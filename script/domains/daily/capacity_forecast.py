@@ -604,10 +604,12 @@ def export_capacity_forecast():
     master_weights = load_master_weights()
     krc_data = read_po_krc(master_weights)
     
-    # KRC: filter to current month onwards
-    krc_cutoff = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    # KRC: filter to 30-day rolling window (today → today+30)
+    krc_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    krc_end = krc_start + timedelta(days=30)
     all_dates_krc = sorted(
-        [d for d in krc_data.keys() if datetime.strptime(d, "%d/%m/%Y") >= krc_cutoff],
+        [d for d in krc_data.keys()
+         if krc_start <= datetime.strptime(d, "%d/%m/%Y") <= krc_end],
         key=lambda d: datetime.strptime(d, "%d/%m/%Y")
     )
     
