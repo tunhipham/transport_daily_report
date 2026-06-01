@@ -1,5 +1,5 @@
 {
-  "_updated": "01/06/2026 13:45",
+  "_updated": "01/06/2026 13:48",
   "stats": {
     "total": 63,
     "upcoming": 31,
@@ -216,16 +216,16 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_GVA - 173 Lê Văn Chí - Thủ Đức",
-      "code": "LVT",
+      "name": "173 Lê Văn Chí - Thủ Đức",
+      "code": "",
       "opening_date": "03/07/2026",
       "iso_date": "2026-07-03",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_Q07 - 1652 Huỳnh Tấn Phát - Phú Xuân",
-      "code": "HTP",
+      "name": "1652 Huỳnh Tấn Phát - Phú Xuân",
+      "code": "",
       "opening_date": "25/09/2026",
       "iso_date": "2026-09-25",
       "status_type": "upcoming",
@@ -304,8 +304,8 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_TDU - 305 Nguyễn Duy Trinh",
-      "code": "NDT",
+      "name": "1132 Nguyễn Duy Trinh (67 NDT) - TDU",
+      "code": "",
       "opening_date": "23/10/2026",
       "iso_date": "2026-10-23",
       "status_type": "reschedule",
@@ -344,16 +344,16 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_TDU - S10.02 Vinhomes Grand Park",
-      "code": "VH2",
+      "name": "Vinhomes Grand Park - S8.02",
+      "code": "",
       "opening_date": "05/06/2026",
       "iso_date": "2026-06-05",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_TDU - 305 Nguyễn Duy Trinh",
-      "code": "NDT",
+      "name": "902 Nguyễn Duy Trinh - TDU",
+      "code": "",
       "opening_date": "23/10/2026",
       "iso_date": "2026-10-23",
       "status_type": "reschedule",
@@ -384,16 +384,16 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_Q07 - A1.03 Sunrise City View",
-      "code": "A198",
+      "name": "Shophouse A1.03 Chung cư Sunrise City View - A198",
+      "code": "",
       "opening_date": "12/06/2026",
       "iso_date": "2026-06-12",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_BTA - 99 Đường Số 7",
-      "code": "DS7",
+      "name": "Số 81/2 Đường số 59, Phường 14, Quận Gò Vấp - A205",
+      "code": "",
       "opening_date": "19/06/2026",
       "iso_date": "2026-06-19",
       "status_type": "reschedule",
@@ -440,8 +440,8 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_BTA - 99 Đường Số 7",
-      "code": "DS7",
+      "name": "32B-34 Đường số 1, Phường An Hội Đồng (P.16) - A201",
+      "code": "",
       "opening_date": "10/07/2026",
       "iso_date": "2026-07-10",
       "status_type": "upcoming",
@@ -671,14 +671,14 @@
     },
     {
       "date": "2026-07-03",
-      "label": "LVT - 173 Lê Văn Chí - Thủ Đức",
-      "code": "LVT",
+      "label": "None - 173 Lê Văn Chí - Thủ Đức",
+      "code": "",
       "type": "upcoming"
     },
     {
       "date": "2026-09-25",
-      "label": "HTP - 1652 Huỳnh Tấn Phát - Phú Xuân",
-      "code": "HTP",
+      "label": "None - 1652 Huỳnh Tấn Phát - Phú Xuân",
+      "code": "",
       "type": "upcoming"
     },
     {
@@ -737,8 +737,8 @@
     },
     {
       "date": "2026-10-23",
-      "label": "NDT - 1132 Nguyễn Duy Trinh (67 NDT) - TDU",
-      "code": "NDT",
+      "label": "None - 1132 Nguyễn Duy Trinh (67 NDT) - TDU",
+      "code": "",
       "type": "reschedule"
     },
     {
@@ -767,14 +767,14 @@
     },
     {
       "date": "2026-06-05",
-      "label": "VH2 - Vinhomes Grand Park - S8.02",
-      "code": "VH2",
+      "label": "None - Vinhomes Grand Park - S8.02",
+      "code": "",
       "type": "upcoming"
     },
     {
       "date": "2026-10-23",
-      "label": "NDT - 902 Nguyễn Duy Trinh - TDU",
-      "code": "NDT",
+      "label": "None - 902 Nguyễn Duy Trinh - TDU",
+      "code": "",
       "type": "reschedule"
     },
     {
@@ -797,14 +797,14 @@
     },
     {
       "date": "2026-06-12",
-      "label": "A198 - Shophouse A1.03 Chung cư Sunrise City View - A198",
-      "code": "A198",
+      "label": "None - Shophouse A1.03 Chung cư Sunrise City View - A198",
+      "code": "",
       "type": "upcoming"
     },
     {
       "date": "2026-06-19",
-      "label": "DS7 - Số 81/2 Đường số 59, Phường 14, Quận Gò Vấp - A205",
-      "code": "DS7",
+      "label": "None - Số 81/2 Đường số 59, Phường 14, Quận Gò Vấp - A205",
+      "code": "",
       "type": "reschedule"
     },
     {
@@ -839,8 +839,8 @@
     },
     {
       "date": "2026-07-10",
-      "label": "DS7 - 32B-34 Đường số 1, Phường An Hội Đồng (P.16) - A201",
-      "code": "DS7",
+      "label": "None - 32B-34 Đường số 1, Phường An Hội Đồng (P.16) - A201",
+      "code": "",
       "type": "upcoming"
     },
     {
@@ -1008,7 +1008,7 @@
       "total_dm": 400
     },
     {
-      "label": "KFM_HCM_TDU - S10.02 Vinhomes Grand Park (VH2)",
+      "label": "Vinhomes Grand Park - S8.02 (None)",
       "version": 2000,
       "days": [
         {

@@ -334,12 +334,25 @@ class NsoMaster:
             code = store.get("code")
             if code:
                 dsst = dsst_lookup.get(code, {})
-                if dsst.get("name_system") and not store.get("name_system"):
-                    store["name_system"] = dsst["name_system"]
-                    enriched.append(code)
-                if dsst.get("version") and not store.get("version"):
-                    store["version"] = dsst["version"]
-                continue
+                # ⚠ NKT GUARD: validate existing code against DSST NKT
+                # If DSST has NKT that doesn't match store opening_date → wrong code, strip it
+                dsst_nkt = dsst.get("nkt", "")
+                store_opening = store.get("opening_date", "")
+                if dsst_nkt and store_opening and dsst_nkt != store_opening:
+                    self._log(code, store.get("name_full", ""),
+                              "Strip wrong code (NKT mismatch)",
+                              f"{code} (DSST NKT={dsst_nkt})",
+                              f"→ None (store date={store_opening})", "NKT guard")
+                    store["code"] = None
+                    store["name_system"] = None
+                    # Don't continue — fall through to fuzzy match below
+                else:
+                    if dsst.get("name_system") and not store.get("name_system"):
+                        store["name_system"] = dsst["name_system"]
+                        enriched.append(code)
+                    if dsst.get("version") and not store.get("version"):
+                        store["version"] = dsst["version"]
+                    continue
 
             # Fuzzy match — use _is_name_match (LCS ≥10 + ≥70% ratio)
             mail_name = _normalize(store.get("name_mail") or store.get("name_full") or "")

@@ -626,14 +626,23 @@ def merge_stores(current_stores, mail_stores, dsst_lookup):
     for store in current_stores:
         code = store.get("code")
 
-        # If already has code, just fill missing fields
+        # If already has code, validate NKT then fill missing fields
         if code:
             dsst = dsst_lookup.get(code, {})
-            if dsst.get("name_system") and not store.get("name_system"):
-                store["name_system"] = dsst["name_system"]
-            if dsst.get("version") and not store.get("version"):
-                store["version"] = dsst["version"]
-            continue
+            # ⚠ NKT GUARD: validate existing code against DSST NKT
+            # If DSST has NKT that doesn't match store opening_date → wrong code, strip it
+            dsst_nkt = dsst.get("nkt", "")
+            store_opening = store.get("opening_date", "")
+            if dsst_nkt and store_opening and dsst_nkt != store_opening:
+                store["code"] = None
+                store["name_system"] = None
+                # Don't continue — fall through to fuzzy match below
+            else:
+                if dsst.get("name_system") and not store.get("name_system"):
+                    store["name_system"] = dsst["name_system"]
+                if dsst.get("version") and not store.get("version"):
+                    store["version"] = dsst["version"]
+                continue
 
         # No code — match mail name against DSST name_full (not branch_name)
         mail_name = _normalize(store.get("name_mail") or store.get("name_full") or "")
