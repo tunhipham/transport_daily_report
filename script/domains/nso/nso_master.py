@@ -356,11 +356,12 @@ class NsoMaster:
                 if not _is_name_match(mail_name, dsst_name):
                     continue
 
-                # ⚠ NKT cross-check: if DSST has NKT, it must match store opening_date
-                # Same address but different NKT → different store (old vs new), skip
+                # ⚠ NKT cross-check: if DSST has NKT, store MUST have opening_date AND match
+                # No opening_date → can't verify → skip (don't risk mapping old code to new store)
                 dsst_nkt = dsst_info.get("nkt", "")
-                if dsst_nkt and store_opening and dsst_nkt != store_opening:
-                    continue
+                if dsst_nkt:
+                    if not store_opening or dsst_nkt != store_opening:
+                        continue  # No date to verify OR different date → skip
 
                 lcs = _lcs_length(mail_name, dsst_name)
                 if lcs > best_lcs:
