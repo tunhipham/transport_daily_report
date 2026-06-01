@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Báo Cáo Giao Hàng — KSL-Sáng 01/06/2026</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box }
+  body { background:#0F172A; color:#E2E8F0; font-family:'Segoe UI',Arial,sans-serif; font-size:14px }
+
+  .header { background:linear-gradient(135deg, #1E293B 0%, #0F172A 100%); padding:20px 24px 16px; border-bottom:3px solid #FFD966 }
+  .header h1 { font-size:20px; color:#FFD966; margin-bottom:6px; letter-spacing:0.3px }
+  .header .sub { color:#94A3B8; font-size:14px }
+  .header .ts { float:right; color:#64748B; font-size:11px; margin-top:-36px }
+
+  .summary { background:#1E293B; padding:16px 24px; display:flex; gap:24px; flex-wrap:wrap; align-items:center; border-bottom:1px solid #334155 }
+  .s-item { display:flex; align-items:center; gap:8px }
+  .s-val { font-weight:700; font-size:18px }
+  .s-label { color:#94A3B8; font-size:13px }
+  .green { color:#10B981 }
+  .red { color:#EF4444 }
+  .white { color:#F1F5F9 }
+
+  .search-bar { padding:12px 24px; background:#0F172A; display:flex; gap:10px; flex-wrap:wrap }
+  .search-bar input { background:#1E293B; border:1px solid #334155; color:#E2E8F0; border-radius:8px; padding:8px 14px; font-size:13px; width:220px; outline:none; transition:border-color .2s }
+  .search-bar input:focus { border-color:#FFD966 }
+  .search-bar input::placeholder { color:#64748B }
+
+  .wrap { overflow-x:auto }
+  table { width:100%; border-collapse:collapse; font-size:14px }
+  thead { position:sticky; top:0; z-index:2 }
+  th { background:#1E293B; color:#F0C060; padding:12px 12px; font-weight:700; text-align:center; border-bottom:2px solid #FFD966; white-space:nowrap; font-size:14px }
+  td { padding:10px 12px; border-bottom:1px solid #1E293B; font-size:14px }
+  .tc { text-align:center }
+  .dest { font-weight:700; white-space:nowrap; font-size:15px }
+  .trip-cell { color:#FFD966; font-family:monospace; font-size:12px; white-space:nowrap }
+  .even { background:#1E293B }
+  .odd { background:#0F172A }
+
+  .arr-done { color:#10B981; font-weight:600 }
+  .arr-pending { color:#EF4444; font-weight:600 }
+  .st-ok { color:#10B981; font-weight:700 }
+  .st-bad { color:#EF4444; font-weight:700 }
+  .st-warn { color:#F97316; font-weight:700 }
+  .st-na { color:#475569 }
+
+  .footer { background:#0B1120; padding:14px 24px; text-align:center; color:#475569; font-size:12px; border-top:2px solid #FFD966 }
+
+  @media(max-width:600px) {
+    .summary { padding:12px 16px; gap:16px }
+    .search-bar { padding:10px 16px }
+    .search-bar input { width:45% }
+    th, td { padding:8px 6px; font-size:13px }
+    .trip-meta { display:none }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📦 BÁO CÁO GIAO HÀNG — KSL-Sáng</h1>
+  <div class="sub">Thứ 2, 01/06/2026</div>
+  <div class="ts">Cập nhật: 15:12 01/06/2026</div>
+</div>
+
+<div class="summary">
+  <div class="s-item"><span>🚛</span><span class="s-val white">16</span><span class="s-label">trip</span></div>
+  <div class="s-item"><span>✅</span><span class="s-val green">38</span><span class="s-label">đã giao</span></div>
+  <div class="s-item"><span>❌</span><span class="s-val red">0</span><span class="s-label">chưa giao</span></div>
+  <div class="s-item"><span>📤</span><span class="s-val white">2,797</span><span class="s-label">giao</span></div>
+  <div class="s-item"><span>📥</span><span class="s-val white">2,796</span><span class="s-label">nhận</span></div>
+  <div class="s-item"><span style="color:#ef4444;font-weight:700">🔴 THIẾU 1</span></div>
+</div>
+
+<div class="search-bar">
+  <input type="text" id="searchTrip" placeholder="🔍 Tìm Trip ID..." onkeyup="filterRows()">
+  <input type="text" id="searchSthi" placeholder="🔍 Tìm Siêu Thị..." onkeyup="filterRows()">
+</div>
+
+<div class="wrap">
+<table>
+<thead><tr><th>Trip</th><th>Siêu Thị</th><th>Giao</th><th>Nhận</th><th>Đủ/Thiếu/Dư</th></tr></thead>
+<tbody id="tbody">
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054436</td>
+  <td class="dest">A156</td>
+  <td class="tc">49</td>
+  <td class="tc">49</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054436</td>
+  <td class="dest">SFR</td>
+  <td class="tc">146</td>
+  <td class="tc">146</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054437</td>
+  <td class="dest">HNN</td>
+  <td class="tc">67</td>
+  <td class="tc">67</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054437</td>
+  <td class="dest">EH3</td>
+  <td class="tc">80</td>
+  <td class="tc">80</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054437</td>
+  <td class="dest">A131</td>
+  <td class="tc">41</td>
+  <td class="tc">41</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054438</td>
+  <td class="dest">CN1</td>
+  <td class="tc">74</td>
+  <td class="tc">74</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054438</td>
+  <td class="dest">A145</td>
+  <td class="tc">32</td>
+  <td class="tc">32</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054438</td>
+  <td class="dest">A149</td>
+  <td class="tc">58</td>
+  <td class="tc">58</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054439</td>
+  <td class="dest">A138</td>
+  <td class="tc">58</td>
+  <td class="tc">58</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054439</td>
+  <td class="dest">NTU</td>
+  <td class="tc">106</td>
+  <td class="tc">106</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054439</td>
+  <td class="dest">A134</td>
+  <td class="tc">28</td>
+  <td class="tc">28</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054440</td>
+  <td class="dest">PPZ</td>
+  <td class="tc">72</td>
+  <td class="tc">72</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054440</td>
+  <td class="dest">A151</td>
+  <td class="tc">19</td>
+  <td class="tc">19</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054440</td>
+  <td class="dest">HNG</td>
+  <td class="tc">77</td>
+  <td class="tc">77</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054441</td>
+  <td class="dest">NVK</td>
+  <td class="tc">92</td>
+  <td class="tc">92</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054441</td>
+  <td class="dest">PVB</td>
+  <td class="tc">93</td>
+  <td class="tc">93</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054442</td>
+  <td class="dest">HPD</td>
+  <td class="tc">55</td>
+  <td class="tc">54</td>
+  <td class="tc st-bad">Thiếu 1 ❌</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054442</td>
+  <td class="dest">ACU</td>
+  <td class="tc">61</td>
+  <td class="tc">61</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054442</td>
+  <td class="dest">A179</td>
+  <td class="tc">52</td>
+  <td class="tc">52</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054443</td>
+  <td class="dest">A143</td>
+  <td class="tc">56</td>
+  <td class="tc">56</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054443</td>
+  <td class="dest">A169</td>
+  <td class="tc">53</td>
+  <td class="tc">53</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054443</td>
+  <td class="dest">A139</td>
+  <td class="tc">72</td>
+  <td class="tc">72</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054444</td>
+  <td class="dest">EMR</td>
+  <td class="tc">93</td>
+  <td class="tc">93</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054444</td>
+  <td class="dest">A151</td>
+  <td class="tc">43</td>
+  <td class="tc">43</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054445</td>
+  <td class="dest">SFR</td>
+  <td class="tc">118</td>
+  <td class="tc">118</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054445</td>
+  <td class="dest">A165</td>
+  <td class="tc">34</td>
+  <td class="tc">34</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054445</td>
+  <td class="dest">A184</td>
+  <td class="tc">58</td>
+  <td class="tc">58</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054446</td>
+  <td class="dest">A128</td>
+  <td class="tc">82</td>
+  <td class="tc">82</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054446</td>
+  <td class="dest">PHI</td>
+  <td class="tc">106</td>
+  <td class="tc">106</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054447</td>
+  <td class="dest">A117</td>
+  <td class="tc">80</td>
+  <td class="tc">80</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054447</td>
+  <td class="dest">EMR</td>
+  <td class="tc">80</td>
+  <td class="tc">80</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054448</td>
+  <td class="dest">JKD</td>
+  <td class="tc">117</td>
+  <td class="tc">117</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054449</td>
+  <td class="dest">DXH</td>
+  <td class="tc">63</td>
+  <td class="tc">63</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054449</td>
+  <td class="dest">A137</td>
+  <td class="tc">112</td>
+  <td class="tc">112</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054450</td>
+  <td class="dest">A101</td>
+  <td class="tc">130</td>
+  <td class="tc">130</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054450</td>
+  <td class="dest">BCG</td>
+  <td class="tc">47</td>
+  <td class="tc">47</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="odd">
+  <td class="trip-cell">TRIP0000054451</td>
+  <td class="dest">BCG</td>
+  <td class="tc">71</td>
+  <td class="tc">71</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+<tr class="even">
+  <td class="trip-cell">TRIP0000054451</td>
+  <td class="dest">CHR</td>
+  <td class="tc">122</td>
+  <td class="tc">122</td>
+  <td class="tc st-ok">Đủ ✅</td>
+</tr>
+
+</tbody>
+</table>
+</div>
+
+<div class="footer">KFM Command Center • 38 điểm giao • 16 chuyến</div>
+
+<script>
+function filterRows() {
+  const tq = document.getElementById('searchTrip').value.toLowerCase();
+  const sq = document.getElementById('searchSthi').value.toLowerCase();
+  const rows = document.querySelectorAll('#tbody tr');
+  rows.forEach(r => {
+    const text = r.textContent.toLowerCase();
+    const match = text.includes(tq) && text.includes(sq);
+    r.style.display = match ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
