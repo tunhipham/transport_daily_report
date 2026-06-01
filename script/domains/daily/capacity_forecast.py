@@ -599,23 +599,50 @@ def export_capacity_forecast():
     # Load existing cache
     existing = _load_existing_forecast()
     
-    # ── KRC: always re-query DB (fast) ──
+    # ── KRC: incremental — lock past dates from cache, update today+future from DB ──
     print("\n📦 KRC — PO Data:")
+    
+    # Build cache of past KRC dates (locked — not overwritten by DB)
+    cached_krc = {}
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    if existing and "krc" in existing and existing["krc"].get("data"):
+        for entry in existing["krc"]["data"]:
+            entry_dt = datetime.strptime(entry["date"], "%d/%m/%Y")
+            if entry_dt < today:
+                # Past date → locked in cache, DB cannot overwrite
+                cached_krc[entry["date"]] = entry["tons"]
+        print(f"  🔒 Cache: {len(cached_krc)} past dates locked from existing JSON")
+    
+    # Re-query DB for today + future (fast ~1s)
     master_weights = load_master_weights()
     krc_data = read_po_krc(master_weights)
     
-    # KRC: filter to 30-day rolling window (today → today+30)
-    krc_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    krc_end = krc_start + timedelta(days=30)
-    all_dates_krc = sorted(
-        [d for d in krc_data.keys()
-         if krc_start <= datetime.strptime(d, "%d/%m/%Y") <= krc_end],
-        key=lambda d: datetime.strptime(d, "%d/%m/%Y")
-    )
+    # Merge: locked past dates + DB data for today+future
+    merged_krc = dict(cached_krc)  # start with locked past
+    krc_end = today + timedelta(days=30)
+    # For past dates window: keep up to 90 days back for dashboard context
+    krc_past_limit = today - timedelta(days=90)
+    db_updated = 0
+    db_backfilled = 0
+    for d, tons in krc_data.items():
+        dt = datetime.strptime(d, "%d/%m/%Y")
+        if dt >= today and dt <= krc_end:
+            # Today or future → always use latest DB value
+            merged_krc[d] = tons
+            db_updated += 1
+        elif dt < today and dt >= krc_past_limit and d not in cached_krc:
+            # Past date not in cache → backfill from DB (first run / data recovery)
+            merged_krc[d] = tons
+            db_backfilled += 1
+    if db_backfilled > 0:
+        print(f"  🔄 Backfilled {db_backfilled} past dates from DB (no cache existed)")
+    print(f"  📎 Merged: {len(cached_krc)} locked past + {db_backfilled} backfilled + {db_updated} DB today/future = {len(merged_krc)} total")
+    
+    all_dates_krc = sorted(merged_krc.keys(), key=lambda d: datetime.strptime(d, "%d/%m/%Y"))
     
     krc_forecast = []
     for d in all_dates_krc:
-        tons = round(krc_data[d], 2)
+        tons = round(merged_krc[d], 2)
         exceeds = tons > KRC_BENCHMARK_TONS * (1 + ALERT_THRESHOLD_PCT / 100)
         pct_of_cap = round(tons / KRC_BENCHMARK_TONS * 100, 1) if KRC_BENCHMARK_TONS > 0 else 0
         dt = datetime.strptime(d, "%d/%m/%Y")
@@ -684,7 +711,7 @@ def export_capacity_forecast():
     cached_count = len(cached_ksl)
     print(f"\n{'='*60}")
     print(f"  ✅ Output: {out_path}")
-    print(f"     KRC: {len(krc_forecast)} days, benchmark {KRC_BENCHMARK_TONS}T")
+    print(f"     KRC: {len(krc_forecast)} days ({len(cached_krc)} locked + {db_updated} DB), benchmark {KRC_BENCHMARK_TONS}T")
     print(f"     KSL: {len(ksl_forecast)} days ({cached_count} cached + {new_count} new), benchmark {KSL_BENCHMARK_ITEMS:,} items")
     
     krc_alerts = sum(1 for d in krc_forecast if d["exceeds_alert"])
