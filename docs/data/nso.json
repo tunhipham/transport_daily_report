@@ -1,10 +1,10 @@
 {
-  "_updated": "01/06/2026 13:30",
+  "_updated": "01/06/2026 13:45",
   "stats": {
-    "total": 59,
-    "upcoming": 28,
+    "total": 63,
+    "upcoming": 31,
     "opening": 3,
-    "reschedule": 4
+    "reschedule": 5
   },
   "stores": [
     {
@@ -344,12 +344,20 @@
       "status_text": "Sắp khai trương"
     },
     {
-      "name": "KFM_HCM_TDU - 305 Nguyễn Duy Trinh",
-      "code": "NDT",
-      "opening_date": "28/08/2026",
-      "iso_date": "2026-08-28",
+      "name": "KFM_HCM_TDU - S10.02 Vinhomes Grand Park",
+      "code": "VH2",
+      "opening_date": "05/06/2026",
+      "iso_date": "2026-06-05",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "KFM_HCM_TDU - 305 Nguyễn Duy Trinh",
+      "code": "NDT",
+      "opening_date": "23/10/2026",
+      "iso_date": "2026-10-23",
+      "status_type": "reschedule",
+      "status_text": "Dời lịch: 28/08/2026 → 23/10/2026"
     },
     {
       "name": "Hồng Lạc - TBI",
@@ -368,8 +376,8 @@
       "status_text": "Đang khai trương"
     },
     {
-      "name": "KFM_HCM_TDU - S8.02 Vinhomes Grand Park",
-      "code": "A182",
+      "name": "Vinhome Grand Park - S8.02 - A182",
+      "code": "",
       "opening_date": "05/06/2026",
       "iso_date": "2026-06-05",
       "status_type": "upcoming",
@@ -386,14 +394,14 @@
     {
       "name": "KFM_HCM_BTA - 99 Đường Số 7",
       "code": "DS7",
-      "opening_date": "10/07/2026",
-      "iso_date": "2026-07-10",
+      "opening_date": "19/06/2026",
+      "iso_date": "2026-06-19",
       "status_type": "reschedule",
-      "status_text": "Dời lịch: 19/06/2026 → 10/07/2026"
+      "status_text": "Đôn lịch: 19/06/2026 → 19/06/2026"
     },
     {
-      "name": "146 Đường D1, Phường Phước Long B, Quận 9 - A212 ★",
-      "code": "",
+      "name": "146 Đường D1, Phường Phước Long B, Quận 9 - A212",
+      "code": "A212",
       "opening_date": "20/06/2026",
       "iso_date": "2026-06-20",
       "status_type": "upcoming",
@@ -476,6 +484,30 @@
       "code": "",
       "opening_date": "25/09/2026",
       "iso_date": "2026-09-25",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "32-34 Đường số 10, Phường Bình Hưng - A202",
+      "code": "",
+      "opening_date": "05/06/2026",
+      "iso_date": "2026-06-05",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "Chung Cư Millennium Bến Văn Đồn, Quận 4 - A194",
+      "code": "",
+      "opening_date": "06/06/2026",
+      "iso_date": "2026-06-06",
+      "status_type": "upcoming",
+      "status_text": "Sắp khai trương"
+    },
+    {
+      "name": "1132 Nguyễn Duy Trinh, Phường Long Trường - A204",
+      "code": "",
+      "opening_date": "27/06/2026",
+      "iso_date": "2026-06-27",
       "status_type": "upcoming",
       "status_text": "Sắp khai trương"
     }
@@ -734,10 +766,16 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-08-28",
+      "date": "2026-06-05",
+      "label": "VH2 - Vinhomes Grand Park - S8.02",
+      "code": "VH2",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-10-23",
       "label": "NDT - 902 Nguyễn Duy Trinh - TDU",
       "code": "NDT",
-      "type": "upcoming"
+      "type": "reschedule"
     },
     {
       "date": "2026-07-31",
@@ -753,8 +791,8 @@
     },
     {
       "date": "2026-06-05",
-      "label": "A182 - Vinhome Grand Park - S8.02 - A182",
-      "code": "A182",
+      "label": "None - Vinhome Grand Park - S8.02 - A182",
+      "code": "",
       "type": "upcoming"
     },
     {
@@ -764,15 +802,15 @@
       "type": "upcoming"
     },
     {
-      "date": "2026-07-10",
+      "date": "2026-06-19",
       "label": "DS7 - Số 81/2 Đường số 59, Phường 14, Quận Gò Vấp - A205",
       "code": "DS7",
       "type": "reschedule"
     },
     {
       "date": "2026-06-20",
-      "label": "None - 146 Đường D1, Phường Phước Long B, Quận 9 - A212 ★",
-      "code": "",
+      "label": "A212 - 146 Đường D1, Phường Phước Long B, Quận 9 - A212 ★",
+      "code": "A212",
       "type": "upcoming"
     },
     {
@@ -832,6 +870,24 @@
     {
       "date": "2026-09-25",
       "label": "None - 310/10 Thạnh Xuân 14, Phường Thạnh Xuân - A214 ★",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-05",
+      "label": "None - 32-34 Đường số 10, Phường Bình Hưng - A202",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-06",
+      "label": "None - Chung Cư Millennium Bến Văn Đồn, Quận 4 - A194",
+      "code": "",
+      "type": "upcoming"
+    },
+    {
+      "date": "2026-06-27",
+      "label": "None - 1132 Nguyễn Duy Trinh, Phường Long Trường - A204",
       "code": "",
       "type": "upcoming"
     }
@@ -949,6 +1005,63 @@
         }
       ],
       "total_ksl": 12100,
+      "total_dm": 400
+    },
+    {
+      "label": "KFM_HCM_TDU - S10.02 Vinhomes Grand Park (VH2)",
+      "version": 2000,
+      "days": [
+        {
+          "date": "05/06/2026",
+          "day_name": "Thứ 6",
+          "label": "D",
+          "ksl": 3500,
+          "dm": 0
+        },
+        {
+          "date": "06/06/2026",
+          "day_name": "Thứ 7",
+          "label": "D+1",
+          "ksl": 5500,
+          "dm": 400
+        },
+        {
+          "date": "07/06/2026",
+          "day_name": "CN",
+          "label": "D+2",
+          "ksl": 3500,
+          "dm": 0
+        },
+        {
+          "date": "08/06/2026",
+          "day_name": "Thứ 2",
+          "label": "D+3",
+          "ksl": 3000,
+          "dm": 0
+        },
+        {
+          "date": "09/06/2026",
+          "day_name": "Thứ 3",
+          "label": "D+4",
+          "ksl": "Daily",
+          "dm": 0
+        },
+        {
+          "date": "10/06/2026",
+          "day_name": "Thứ 4",
+          "label": "D+5",
+          "ksl": "Daily",
+          "dm": 0
+        },
+        {
+          "date": "11/06/2026",
+          "day_name": "Thứ 5",
+          "label": "D+6",
+          "ksl": "Daily",
+          "dm": 0
+        }
+      ],
+      "total_ksl": 15500,
       "total_dm": 400
     }
   ],
