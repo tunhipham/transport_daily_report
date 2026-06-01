@@ -18,6 +18,7 @@
   ],
   "2026-06-01": [
     "morning_batch",
-    "afternoon_batch"
+    "afternoon_batch",
+    "late_batch"
   ]
 }

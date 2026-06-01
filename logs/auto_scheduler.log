@@ -556,3 +556,23 @@
 2026-06-01 16:57:18 [INFO]   17:00 -> ĐÔNG & MÁT
 2026-06-01 16:57:18 [INFO] ------------------------------------------------------------
 2026-06-01 16:57:18 [INFO] Done (--once).
+2026-06-01 17:12:18 [INFO] ============================================================
+2026-06-01 17:12:18 [INFO] AUTO-SCHEDULER BAO CAO GIAO HANG — once
+2026-06-01 17:12:18 [INFO] Time: 17:12:18 01/06/2026
+2026-06-01 17:12:18 [INFO] PID: 31904
+2026-06-01 17:12:18 [INFO] Log file: G:\My Drive\DOCS\transport_daily_report\logs\auto_scheduler.log
+2026-06-01 17:12:18 [INFO] ============================================================
+2026-06-01 17:12:18 [INFO] Schedule:
+2026-06-01 17:12:18 [INFO]   09:00 -> KRC & KSL-Tối
+2026-06-01 17:12:18 [INFO]   15:00 -> KSL-Sáng
+2026-06-01 17:12:18 [INFO]   17:00 -> ĐÔNG & MÁT
+2026-06-01 17:12:18 [INFO] ------------------------------------------------------------
+2026-06-01 17:12:18 [INFO] === [LATE_BATCH TRIGGERED] at 17:12:18 ===
+2026-06-01 17:12:18 [INFO] Fetching latest tracking data from DB...
+2026-06-01 17:12:34 [INFO] Tracking data synced OK
+2026-06-01 17:12:34 [INFO] Generating & Sending: ĐÔNG (2026-06-01)
+2026-06-01 17:12:35 [ERROR] FAILED send_report ĐÔNG: exit code 1
+2026-06-01 17:12:35 [INFO] Generating & Sending: MÁT (2026-06-01)
+2026-06-01 17:12:35 [ERROR] FAILED send_report MÁT: exit code 1
+2026-06-01 17:12:35 [INFO] late_batch completed.
+2026-06-01 17:12:35 [INFO] Done (--once).
